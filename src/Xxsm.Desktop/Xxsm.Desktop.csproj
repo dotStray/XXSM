@@ -1,0 +1,53 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The Avalonia interface. No System.IO and no business logic: the disk is reached through Core. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>Xxsm.Desktop</RootNamespace>
+    <BuiltInComInteropSupport>false</BuiltInComInteropSupport>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <RollForward>Major</RollForward>
+
+    <!-- The resource file's own language, so the runtime never probes for a satellite of it. -->
+    <NeutralLanguage>en</NeutralLanguage>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets/**" />
+  </ItemGroup>
+
+  <!-- Global, not per file: dotnet format cannot see the generated Strings class and removes the using. -->
+  <ItemGroup>
+    <Using Include="Xxsm.Desktop.Resources" />
+  </ItemGroup>
+
+  <!-- PublicClass is required: {x:Static} needs public members (AVLN2000), and only a clean build shows it. -->
+  <ItemGroup>
+    <EmbeddedResource Update="Resources/Strings.resx"
+                      Generator="MSBuild:Compile"
+                      StronglyTypedFileName="$(IntermediateOutputPath)Strings.Designer.cs"
+                      StronglyTypedLanguage="CSharp"
+                      StronglyTypedNamespace="Xxsm.Desktop.Resources"
+                      StronglyTypedClassName="Strings"
+                      PublicClass="true" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Desktop" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
+    <PackageReference Include="Avalonia.Fonts.Inter" />
+    <PackageReference Include="Avalonia.Controls.DataGrid" />
+    <PackageReference Include="AvaloniaUI.DiagnosticsSupport" Condition="'$(Configuration)' == 'Debug'" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Xxsm.Core/Xxsm.Core.csproj" />
+    <ProjectReference Include="../Xxsm.Packs/Xxsm.Packs.csproj" />
+  </ItemGroup>
+
+</Project>

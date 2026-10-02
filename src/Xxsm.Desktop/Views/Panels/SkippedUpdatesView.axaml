@@ -1,0 +1,93 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Xxsm.Desktop.ViewModels"
+             x:Class="Xxsm.Desktop.Views.Panels.SkippedUpdatesView"
+             x:Name="Root"
+             x:DataType="vm:SkippedUpdatesViewModel">
+
+  <!-- Every change withheld from an edited character, per field: old pack, new, yours. -->
+  <Border Classes="card" MaxWidth="760" MaxHeight="620"
+          HorizontalAlignment="Center" VerticalAlignment="Center"
+          IsVisible="{Binding IsOpen}">
+    <DockPanel>
+
+      <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,12">
+        <TextBlock Classes="subheading" Text="{Binding Heading}" />
+        <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding SummaryText}" />
+        <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                   Text="{DynamicResource Text.SkippedUpdates_Body}" />
+        <!-- Opened for another game it only reads, and says why: taking a field writes the selected game's overlay. -->
+        <TextBlock FontSize="12" TextWrapping="Wrap"
+                   Foreground="{DynamicResource XxsmWarnBrush}"
+                   IsVisible="{Binding IsOtherGame}"
+                   Text="{Binding OtherGameText}" />
+      </StackPanel>
+
+      <Grid DockPanel.Dock="Bottom" ColumnDefinitions="Auto,*,Auto,Auto" Margin="0,12,0,0">
+        <Button Grid.Column="0"
+                IsEnabled="{Binding IsForSelectedGame}"
+                Command="{Binding TakeAllCommand}"
+                Content="{DynamicResource Text.SkippedUpdates_TakeAll}" />
+        <Button Grid.Column="2"
+                Command="{Binding DismissCommand}"
+                Content="{DynamicResource Text.SkippedUpdates_Dismiss}" />
+        <Button Grid.Column="3" Classes="accent" Margin="8,0,0,0"
+                IsEnabled="{Binding CanTake}"
+                Command="{Binding TakeSelectedCommand}"
+                Content="{Binding TakeText}" />
+      </Grid>
+
+      <ScrollViewer>
+        <ItemsControl ItemsSource="{Binding Variants}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:SkippedVariantViewModel">
+              <StackPanel Spacing="6" Margin="0,0,0,14">
+
+                <TextBlock Text="{Binding DisplayName}"
+                           Foreground="{DynamicResource XxsmTextBrush}" />
+
+                <!-- The rows' first column, so a header sits over its values; an empty Auto column would collapse. -->
+                <Grid ColumnDefinitions="32,1.1*,1.1*,1.1*" Margin="0,2,0,2">
+                  <TextBlock Grid.Column="1" Classes="sectionLabel"
+                             Text="{DynamicResource Text.SkippedUpdates_WasPack}" />
+                  <TextBlock Grid.Column="2" Classes="sectionLabel"
+                             Text="{DynamicResource Text.SkippedUpdates_NowPack}" />
+                  <TextBlock Grid.Column="3" Classes="sectionLabel"
+                             Text="{DynamicResource Text.SkippedUpdates_Yours}" />
+                </Grid>
+
+                <ItemsControl ItemsSource="{Binding Fields}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:SkippedFieldViewModel">
+                      <Grid ColumnDefinitions="32,1.1*,1.1*,1.1*" Margin="0,3">
+                        <CheckBox Grid.Column="0" VerticalAlignment="Top"
+                                  IsChecked="{Binding IsSelected}"
+                                  AutomationProperties.Name="{Binding Field}" />
+                        <StackPanel Grid.Column="1" Spacing="1">
+                          <TextBlock Classes="muted" FontSize="11" Text="{Binding Field}" />
+                          <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                                     Text="{Binding PackOldText}" />
+                        </StackPanel>
+                        <TextBlock Grid.Column="2" FontSize="12" TextWrapping="Wrap"
+                                   VerticalAlignment="Bottom"
+                                   Foreground="{DynamicResource XxsmAccentBrush}"
+                                   Text="{Binding PackNewText}" />
+                        <TextBlock Grid.Column="3" FontSize="12" TextWrapping="Wrap"
+                                   VerticalAlignment="Bottom"
+                                   Foreground="{DynamicResource XxsmTextBrush}"
+                                   Text="{Binding UserText}" />
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+              </StackPanel>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+
+    </DockPanel>
+  </Border>
+
+</UserControl>

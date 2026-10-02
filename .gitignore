@@ -1,0 +1,32 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+artifacts/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Test output
+[Tt]est[Rr]esult*/
+coverage/
+*.coverage
+*.trx
+
+# Rider / VS / VS Code
+.idea/
+.vs/
+.vscode/
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local scratch
+/scratch/

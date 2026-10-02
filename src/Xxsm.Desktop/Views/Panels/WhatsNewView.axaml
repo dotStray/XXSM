@@ -1,0 +1,47 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Xxsm.Desktop.ViewModels"
+             x:Class="Xxsm.Desktop.Views.Panels.WhatsNewView"
+             x:DataType="vm:WhatsNewViewModel">
+
+  <!-- What a pack update changed, worked out from the version it replaced. Read-only. -->
+  <Border Classes="card" MinWidth="460" MaxWidth="760" MaxHeight="620" Margin="24"
+          HorizontalAlignment="Center" VerticalAlignment="Center"
+          IsVisible="{Binding IsOpen}">
+    <DockPanel>
+
+      <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,12">
+        <TextBlock Classes="subheading" Text="{Binding Heading}" />
+        <TextBlock Classes="muted" Text="{Binding VersionsText}" />
+      </StackPanel>
+
+      <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto" Margin="0,12,0,0">
+        <Button Grid.Column="1" Classes="accent"
+                Command="{Binding CloseCommand}"
+                Content="{DynamicResource Text.WhatsNew_Close}" />
+      </Grid>
+
+      <ScrollViewer>
+        <StackPanel>
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     IsVisible="{Binding IsEmpty}"
+                     Text="{DynamicResource Text.WhatsNew_Nothing}" />
+          <ItemsControl ItemsSource="{Binding Sections}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:WhatsNewSection">
+                <StackPanel Spacing="3" Margin="0,0,0,14">
+                  <TextBlock Classes="sectionLabel" Text="{Binding Heading}" />
+                  <TextBlock FontSize="13" TextWrapping="Wrap"
+                             Foreground="{DynamicResource XxsmTextBrush}"
+                             Text="{Binding Names}" />
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </ScrollViewer>
+
+    </DockPanel>
+  </Border>
+
+</UserControl>

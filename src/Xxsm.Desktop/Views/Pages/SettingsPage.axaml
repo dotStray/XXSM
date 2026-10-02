@@ -1,0 +1,580 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:paths="clr-namespace:Xxsm.Desktop.Converters"
+             xmlns:panels="clr-namespace:Xxsm.Desktop.Views.Panels"
+             xmlns:pages="clr-namespace:Xxsm.Desktop.ViewModels.Pages"
+             xmlns:settings="clr-namespace:Xxsm.Core.Settings;assembly=Xxsm.Core"
+             xmlns:vm="clr-namespace:Xxsm.Desktop.ViewModels"
+             x:Class="Xxsm.Desktop.Views.Pages.SettingsPage"
+             x:DataType="pages:SettingsPageViewModel">
+
+  <!-- This tab's button width: wide enough for Browse…, Choose…, Create the file, Open the folder. -->
+  <UserControl.Resources>
+    <x:Double x:Key="ButtonMinWidth">130</x:Double>
+  </UserControl.Resources>
+
+  <DockPanel Classes="page">
+
+    <!-- The title at the top-left of the content, which here is a centred column. -->
+    <Grid Classes="pageHeader" ColumnDefinitions="*,Auto" MaxWidth="780">
+      <TextBlock Grid.Column="0" Classes="heading" Text="{DynamicResource Text.Settings_Heading}" />
+    </Grid>
+
+    <ScrollViewer Classes="besideMargin">
+      <!-- Centred: a form has a readable maximum width. The heading is in the band every page has. -->
+      <StackPanel Spacing="18" MaxWidth="780" Margin="0,0,0,24">
+
+        <!-- Appearance -->
+        <Border Classes="card">
+          <StackPanel Spacing="10">
+            <TextBlock Classes="subheading" Text="{DynamicResource Text.Settings_Appearance_Heading}" />
+
+            <StackPanel Spacing="4">
+              <RadioButton GroupName="theme"
+                           Content="{DynamicResource Text.Settings_Theme_System}"
+                           IsChecked="{Binding Theme, Converter={StaticResource EnumToBoolean}, ConverterParameter={x:Static settings:AppTheme.System}}" />
+              <RadioButton GroupName="theme"
+                           Content="{DynamicResource Text.Settings_Theme_Light}"
+                           IsChecked="{Binding Theme, Converter={StaticResource EnumToBoolean}, ConverterParameter={x:Static settings:AppTheme.Light}}" />
+              <RadioButton GroupName="theme"
+                           Content="{DynamicResource Text.Settings_Theme_Dark}"
+                           IsChecked="{Binding Theme, Converter={StaticResource EnumToBoolean}, ConverterParameter={x:Static settings:AppTheme.Dark}}" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <!-- This game -->
+        <Border Classes="card">
+          <StackPanel Spacing="12">
+            <StackPanel Spacing="2">
+              <TextBlock Classes="subheading" Text="{DynamicResource Text.Settings_Game_Heading}" />
+              <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding HasGame}">
+                <panels:GameIconView DataContext="{Binding GameIcon}" Width="18" Height="18" />
+                <TextBlock Classes="muted" FontSize="12" VerticalAlignment="Center"
+                           Text="{Binding GameDisplayName}" />
+              </StackPanel>
+            </StackPanel>
+
+            <TextBlock Classes="muted" IsVisible="{Binding !HasGame}"
+                       Text="{DynamicResource Text.Settings_Game_None}" />
+
+            <StackPanel Spacing="10" IsVisible="{Binding HasGame}">
+
+              <StackPanel Spacing="4">
+                <TextBlock Classes="sectionLabel" Text="{DynamicResource Text.Settings_ModsFolder_Label}" />
+                <Grid ColumnDefinitions="*,Auto">
+                  <!-- Two blocks, not TargetNullValue: a DynamicResource there is not resolved. -->
+                  <SelectableTextBlock Grid.Column="0" Classes="mono" FontSize="12"
+                                       VerticalAlignment="Center"
+                                       IsVisible="{Binding HasModsDirectory}"
+                                       Text="{Binding ModsDirectory, Converter={x:Static paths:PathConverters.Display}}" />
+                  <TextBlock Grid.Column="0" Classes="muted" FontSize="12"
+                             VerticalAlignment="Center"
+                             IsVisible="{Binding !HasModsDirectory}"
+                             Text="{DynamicResource Text.Settings_ModsFolder_Unset}" />
+                  <Button Grid.Column="1" Margin="12,0,0,0"
+                          Command="{Binding BrowseForModsFolderCommand}"
+                          Content="{DynamicResource Text.Settings_ModsFolder_Browse}"
+                          AutomationProperties.Name="{DynamicResource Text.Settings_ModsFolder_Label}" />
+                </Grid>
+                <TextBlock Classes="muted" FontSize="12"
+                           IsVisible="{Binding ModsDirectoryNote, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                           Text="{Binding ModsDirectoryNote}" />
+              </StackPanel>
+
+              <StackPanel Spacing="4">
+                <TextBlock Classes="sectionLabel" Text="{DynamicResource Text.Settings_SkinDisplay_Label}" />
+                <RadioButton GroupName="skins"
+                             Content="{DynamicResource Text.Settings_SkinDisplay_Grouped}"
+                             IsChecked="{Binding SkinDisplayMode, Converter={StaticResource EnumToBoolean}, ConverterParameter={x:Static settings:SkinDisplayMode.Grouped}}" />
+                <RadioButton GroupName="skins"
+                             Content="{DynamicResource Text.Settings_SkinDisplay_Separate}"
+                             IsChecked="{Binding SkinDisplayMode, Converter={StaticResource EnumToBoolean}, ConverterParameter={x:Static settings:SkinDisplayMode.Separate}}" />
+                <TextBlock Classes="muted" FontSize="12"
+                           Text="{DynamicResource Text.Settings_SkinDisplay_Help}" />
+              </StackPanel>
+
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <!-- Game Pack updates: one switch for every game, stored in packs.json. -->
+        <Border Classes="card">
+          <StackPanel Spacing="10">
+            <TextBlock Classes="subheading" Text="{DynamicResource Text.Settings_PackUpdates_Heading}" />
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <ToggleSwitch Classes="modSwitch" VerticalAlignment="Center"
+                            IsChecked="{Binding AutoUpdatePacks}"
+                            OnContent="{x:Null}"
+                            OffContent="{x:Null}"
+                            AutomationProperties.Name="{DynamicResource Text.Settings_PackUpdates_Auto}" />
+              <TextBlock VerticalAlignment="Center" Foreground="{DynamicResource XxsmTextBrush}"
+                         Text="{DynamicResource Text.Settings_PackUpdates_Auto}" />
+            </StackPanel>
+            <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                       Text="{DynamicResource Text.Settings_PackUpdates_Help}" />
+          </StackPanel>
+        </Border>
+
+        <!-- GameBanana: one master switch, off at first; nothing here contacts the site while it is off. -->
+        <Border Classes="card">
+          <StackPanel Spacing="12">
+            <TextBlock Classes="subheading" Text="{DynamicResource Text.Settings_GameBanana_Heading}" />
+
+            <StackPanel Spacing="6">
+              <StackPanel Orientation="Horizontal" Spacing="10">
+                <ToggleSwitch Classes="modSwitch" VerticalAlignment="Center"
+                              IsChecked="{Binding GameBananaEnabled}"
+                              OnContent="{x:Null}"
+                              OffContent="{x:Null}"
+                              AutomationProperties.Name="{DynamicResource Text.Settings_GameBanana_Enabled}" />
+                <TextBlock VerticalAlignment="Center" Foreground="{DynamicResource XxsmTextBrush}"
+                           Text="{DynamicResource Text.Settings_GameBanana_Enabled}" />
+              </StackPanel>
+              <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                         Text="{DynamicResource Text.Settings_GameBanana_Enabled_Help}" />
+            </StackPanel>
+
+            <StackPanel Spacing="12" IsVisible="{Binding GameBananaEnabled}">
+
+              <StackPanel Spacing="6">
+                <CheckBox IsChecked="{Binding GameBananaFetchOnInstall}"
+                          Content="{DynamicResource Text.Settings_GameBanana_FetchOnInstall}" />
+                <CheckBox IsChecked="{Binding GameBananaAddFromUrl}"
+                          Content="{DynamicResource Text.Settings_GameBanana_AddFromUrl}" />
+                <CheckBox IsChecked="{Binding GameBananaPasteStartsLookup}"
+                          Content="{DynamicResource Text.Settings_GameBanana_Paste}" />
+                <CheckBox IsChecked="{Binding GameBananaDownloadPictures}"
+                          Content="{DynamicResource Text.Settings_GameBanana_Pictures}" />
+              </StackPanel>
+
+              <StackPanel Spacing="4">
+                <TextBlock Classes="sectionLabel"
+                           Text="{DynamicResource Text.Settings_GameBanana_PasteInto}" />
+                <RadioButton GroupName="gamebananaPaste"
+                             Content="{DynamicResource Text.Settings_GameBanana_PasteInto_Ask}"
+                             IsChecked="{Binding GameBananaPasteIntoExisting, Converter={StaticResource EnumToBoolean}, ConverterParameter={x:Static settings:GameBananaPasteAction.Ask}}" />
+                <RadioButton GroupName="gamebananaPaste"
+                             Content="{DynamicResource Text.Settings_GameBanana_PasteInto_FillBlanks}"
+                             IsChecked="{Binding GameBananaPasteIntoExisting, Converter={StaticResource EnumToBoolean}, ConverterParameter={x:Static settings:GameBananaPasteAction.FillBlanks}}" />
+                <RadioButton GroupName="gamebananaPaste"
+                             Content="{DynamicResource Text.Settings_GameBanana_PasteInto_SaveOnly}"
+                             IsChecked="{Binding GameBananaPasteIntoExisting, Converter={StaticResource EnumToBoolean}, ConverterParameter={x:Static settings:GameBananaPasteAction.SaveOnly}}" />
+              </StackPanel>
+
+              <StackPanel Spacing="6">
+                <CheckBox IsChecked="{Binding GameBananaCheckForUpdates}"
+                          Content="{DynamicResource Text.Settings_GameBanana_CheckUpdates}" />
+
+                <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="8">
+                  <TextBlock Grid.Column="0" Classes="muted" FontSize="12" VerticalAlignment="Center"
+                             Text="{DynamicResource Text.Settings_GameBanana_CheckInterval}" />
+                  <NumericUpDown Grid.Column="1" Width="110" Minimum="1" Maximum="720" Increment="1"
+                                 FormatString="0"
+                                 Value="{Binding GameBananaCheckIntervalHours}"
+                                 AutomationProperties.Name="{DynamicResource Text.Settings_GameBanana_CheckInterval}" />
+                  <Button Grid.Column="3"
+                          Command="{Binding CheckForUpdatesNowCommand}"
+                          IsEnabled="{Binding GameBananaCanCheckNow}"
+                          Content="{DynamicResource Text.Settings_GameBanana_CheckNow}" />
+                </Grid>
+
+                <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                           IsVisible="{Binding GameBananaCheckNote, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                           Text="{Binding GameBananaCheckNote}" />
+              </StackPanel>
+
+              <!-- How long a finished download is kept before its archive goes. -->
+              <StackPanel Spacing="4">
+                <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                           Text="{DynamicResource Text.Settings_GameBanana_KeepDownloads}" />
+                <NumericUpDown Minimum="1" Maximum="365" Increment="1" FormatString="0"
+                               HorizontalAlignment="Left" Width="200"
+                               Value="{Binding GameBananaKeepDownloadsDays}"
+                               AutomationProperties.Name="{DynamicResource Text.Settings_GameBanana_KeepDownloads}" />
+              </StackPanel>
+
+              <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                <StackPanel Grid.Column="0" Spacing="4">
+                  <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                             Text="{DynamicResource Text.Settings_GameBanana_CacheHours}" />
+                  <NumericUpDown Minimum="1" Maximum="168" Increment="1" FormatString="0"
+                                 Value="{Binding GameBananaCacheHours}"
+                                 AutomationProperties.Name="{DynamicResource Text.Settings_GameBanana_CacheHours}" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" Spacing="4">
+                  <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                             Text="{DynamicResource Text.Settings_GameBanana_Rate}" />
+                  <NumericUpDown Minimum="1" Maximum="60" Increment="1" FormatString="0.##"
+                                 Value="{Binding GameBananaSecondsBetweenRequests}"
+                                 AutomationProperties.Name="{DynamicResource Text.Settings_GameBanana_Rate}" />
+                </StackPanel>
+              </Grid>
+
+              <StackPanel Spacing="4">
+                <TextBlock Classes="sectionLabel" Text="{DynamicResource Text.Settings_GameBanana_Api}" />
+                <TextBox Classes="mono" FontSize="12" Text="{Binding GameBananaApiBaseUrl}"
+                         AutomationProperties.Name="{DynamicResource Text.Settings_GameBanana_Api}" />
+                <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                           Text="{DynamicResource Text.Settings_GameBanana_Api_Help}" />
+              </StackPanel>
+
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <!-- XXSM updates: whether the app asks if a newer version is out; it only ever links the download. -->
+        <Border Classes="card">
+          <StackPanel Spacing="10">
+            <TextBlock Classes="subheading" Text="{DynamicResource Text.Settings_AppUpdates_Heading}" />
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <ToggleSwitch Classes="modSwitch" VerticalAlignment="Center"
+                            IsChecked="{Binding CheckForAppUpdates}"
+                            OnContent="{x:Null}"
+                            OffContent="{x:Null}"
+                            AutomationProperties.Name="{DynamicResource Text.Settings_AppUpdates_Check}" />
+              <TextBlock VerticalAlignment="Center" Foreground="{DynamicResource XxsmTextBrush}"
+                         Text="{DynamicResource Text.Settings_AppUpdates_Check}" />
+            </StackPanel>
+            <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                       Text="{DynamicResource Text.Settings_AppUpdates_Help}" />
+          </StackPanel>
+        </Border>
+
+        <!-- Pack Studio: hidden until switched on. -->
+        <Border Classes="card">
+          <StackPanel Spacing="10">
+            <TextBlock Classes="subheading" Text="{DynamicResource Text.Settings_Studio_Heading}" />
+
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <ToggleSwitch Classes="modSwitch" VerticalAlignment="Center"
+                            IsChecked="{Binding ShowPackStudio}"
+                            OnContent="{x:Null}"
+                            OffContent="{x:Null}"
+                            AutomationProperties.Name="{DynamicResource Text.Settings_Studio_Show}" />
+              <TextBlock VerticalAlignment="Center" Foreground="{DynamicResource XxsmTextBrush}"
+                         Text="{DynamicResource Text.Settings_Studio_Show}" />
+            </StackPanel>
+
+            <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                       Text="{DynamicResource Text.Settings_Studio_Help}" />
+          </StackPanel>
+        </Border>
+
+        <!-- Registries, stored in packs.json. -->
+        <Border Classes="card">
+          <StackPanel Spacing="10">
+            <StackPanel Spacing="2">
+              <TextBlock Classes="subheading" Text="{DynamicResource Text.Settings_Registries_Heading}" />
+              <TextBlock Classes="muted" FontSize="12"
+                         Text="{DynamicResource Text.Settings_Registries_Help}" />
+            </StackPanel>
+
+            <StackPanel Spacing="4" IsVisible="{Binding UsesDefaultRegistry}">
+              <TextBlock Classes="muted" FontSize="12"
+                         Text="{DynamicResource Text.Settings_Registries_Default}" />
+              <SelectableTextBlock Classes="mono" FontSize="11" Text="{Binding DefaultRegistry}" />
+            </StackPanel>
+
+            <ItemsControl ItemsSource="{Binding Registries}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:RegistrySourceViewModel">
+                  <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,6">
+
+                    <!-- Removing a source asks first, and the path stays visible while it asks. -->
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
+                      <SelectableTextBlock Classes="mono" FontSize="12" Text="{Binding Location}" />
+                      <TextBlock FontSize="12"
+                                 Foreground="{DynamicResource XxsmWarnBrush}"
+                                 IsVisible="{Binding IsConfirmingRemoval}"
+                                 Text="{DynamicResource Text.Settings_Registries_Confirm}" />
+                    </StackPanel>
+
+                    <Button Classes="destructive" Grid.Column="1" Margin="12,0,0,0"
+                            IsVisible="{Binding !IsConfirmingRemoval}"
+                            Command="{Binding $parent[ItemsControl].((pages:SettingsPageViewModel)DataContext).AskRemoveRegistryCommand}"
+                            CommandParameter="{Binding}"
+                            Content="{DynamicResource Text.Settings_Registries_Remove}" />
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="12,0,0,0"
+                                IsVisible="{Binding IsConfirmingRemoval}">
+                      <Button Command="{Binding $parent[ItemsControl].((pages:SettingsPageViewModel)DataContext).CancelRemoveRegistryCommand}"
+                              CommandParameter="{Binding}"
+                              Content="{DynamicResource Text.Common_Cancel}" />
+                      <Button Classes="destructive" Command="{Binding $parent[ItemsControl].((pages:SettingsPageViewModel)DataContext).RemoveRegistryCommand}"
+                              CommandParameter="{Binding}"
+                              Content="{DynamicResource Text.Settings_Registries_Remove}" />
+                    </StackPanel>
+
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- The folder picker until something is typed: a registry is often a folder. -->
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBox Grid.Column="0" Text="{Binding NewRegistry}"
+                       PlaceholderText="{DynamicResource Text.Settings_Registries_Watermark}"
+                       AutomationProperties.Name="{DynamicResource Text.Settings_Registries_Watermark}" />
+              <Button Grid.Column="1" Margin="12,0,0,0"
+                      Command="{Binding AddOrBrowseRegistryCommand}"
+                      Content="{Binding AddOrBrowseLabel}" />
+            </Grid>
+          </StackPanel>
+        </Border>
+
+        <!-- Auto-sort's advanced settings. -->
+        <Border Classes="card">
+          <StackPanel Spacing="12">
+            <StackPanel Spacing="2">
+              <TextBlock Classes="subheading" Text="{DynamicResource Text.Settings_Sort_Heading}" />
+              <TextBlock Classes="muted" FontSize="12" Text="{DynamicResource Text.Settings_Sort_Help}" />
+            </StackPanel>
+
+            <Grid ColumnDefinitions="*,140" RowDefinitions="Auto,Auto,Auto,Auto" >
+
+              <StackPanel Grid.Row="0" Grid.Column="0" Spacing="1" Margin="0,0,12,10">
+                <TextBlock Text="{DynamicResource Text.Settings_Sort_MinScore}" />
+                <TextBlock Classes="muted" FontSize="11"
+                           Text="{DynamicResource Text.Settings_Sort_MinScore_Help}" />
+              </StackPanel>
+              <NumericUpDown Grid.Row="0" Grid.Column="1" Margin="0,0,0,10"
+                             Minimum="1" Maximum="200" Increment="1" FormatString="0"
+                             Value="{Binding MinScore}"
+                             AutomationProperties.Name="{DynamicResource Text.Settings_Sort_MinScore}" />
+
+              <StackPanel Grid.Row="1" Grid.Column="0" Spacing="1" Margin="0,0,12,10">
+                <TextBlock Text="{DynamicResource Text.Settings_Sort_MarginRatio}" />
+                <TextBlock Classes="muted" FontSize="11"
+                           Text="{DynamicResource Text.Settings_Sort_MarginRatio_Help}" />
+              </StackPanel>
+              <NumericUpDown Grid.Row="1" Grid.Column="1" Margin="0,0,0,10"
+                             Minimum="1" Maximum="10" Increment="0.05" FormatString="0.00"
+                             Value="{Binding MarginRatio}"
+                             AutomationProperties.Name="{DynamicResource Text.Settings_Sort_MarginRatio}" />
+
+              <StackPanel Grid.Row="2" Grid.Column="0" Spacing="1" Margin="0,0,12,10">
+                <TextBlock Text="{DynamicResource Text.Settings_Sort_Ambiguity}" />
+                <TextBlock Classes="muted" FontSize="11"
+                           Text="{DynamicResource Text.Settings_Sort_Ambiguity_Help}" />
+              </StackPanel>
+              <NumericUpDown Grid.Row="2" Grid.Column="1" Margin="0,0,0,10"
+                             Minimum="1" Maximum="1000" Increment="1" FormatString="0"
+                             Value="{Binding AmbiguityThreshold}"
+                             AutomationProperties.Name="{DynamicResource Text.Settings_Sort_Ambiguity}" />
+
+              <StackPanel Grid.Row="3" Grid.Column="0" Spacing="1" Margin="0,0,12,0">
+                <TextBlock Text="{DynamicResource Text.Settings_Sort_Ceiling}" />
+                <TextBlock Classes="muted" FontSize="11"
+                           Text="{DynamicResource Text.Settings_Sort_Ceiling_Help}" />
+              </StackPanel>
+              <NumericUpDown Grid.Row="3" Grid.Column="1"
+                             Minimum="0.5" Maximum="1" Increment="0.05" FormatString="0.00"
+                             Value="{Binding ConfidenceCeiling}"
+                             AutomationProperties.Name="{DynamicResource Text.Settings_Sort_Ceiling}" />
+
+            </Grid>
+
+            <StackPanel Orientation="Horizontal" Spacing="12">
+              <Button Command="{Binding ResetSortCommand}"
+                      IsVisible="{Binding SortIsOverridden}"
+                      Content="{DynamicResource Text.Settings_Sort_Reset}" />
+              <TextBlock Classes="muted" FontSize="12" VerticalAlignment="Center"
+                         IsVisible="{Binding SortIsOverridden}"
+                         Text="{DynamicResource Text.Settings_Sort_Overridden}" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <!-- Wording: says the interface's words can be changed, in text.json. -->
+        <Border Classes="card" IsVisible="{Binding CanEditText}">
+          <StackPanel Spacing="12">
+            <StackPanel Spacing="2">
+              <TextBlock Classes="subheading" Text="{DynamicResource Text.Settings_Text_Heading}" />
+              <TextBlock Classes="muted" FontSize="12"
+                         Text="{DynamicResource Text.Settings_Text_Help}" />
+            </StackPanel>
+
+            <StackPanel Spacing="4">
+              <TextBlock Classes="sectionLabel" Text="{DynamicResource Text.Settings_Text_File}" />
+              <SelectableTextBlock Classes="mono" FontSize="11" Text="{Binding TextPath, Converter={x:Static paths:PathConverters.Display}}" />
+              <TextBlock Classes="muted" FontSize="12" Text="{Binding TextSummary}" />
+            </StackPanel>
+
+            <TextBlock FontSize="12" TextWrapping="Wrap"
+                       Foreground="{DynamicResource XxsmWarnBrush}"
+                       IsVisible="{Binding TextProblem, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                       Text="{Binding TextProblem}" />
+
+            <TextBlock FontSize="12" TextWrapping="Wrap"
+                       Foreground="{DynamicResource XxsmWarnBrush}"
+                       IsVisible="{Binding TextUnknown, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                       Text="{Binding TextUnknown}" />
+
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <Button Command="{Binding CreateTextFileCommand}"
+                      IsVisible="{Binding !HasTextFile}"
+                      Content="{DynamicResource Text.Settings_Text_Create}" />
+              <Button Command="{Binding OpenConfigFolderCommand}"
+                      Content="{DynamicResource Text.Settings_Text_Open}" />
+            </StackPanel>
+
+            <TextBlock Classes="muted" FontSize="12"
+                       IsVisible="{Binding TextNote, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                       Text="{Binding TextNote}" />
+
+            <TextBlock Classes="muted" FontSize="11"
+                       Text="{DynamicResource Text.Settings_Text_Reference}" />
+          </StackPanel>
+        </Border>
+
+        <!-- Where things are -->
+        <Border Classes="card">
+          <StackPanel Spacing="10">
+            <TextBlock Classes="subheading" Text="{DynamicResource Text.Settings_Files_Heading}" />
+
+            <!-- Each place; Open, a link at the end of its path, shows it in the file manager. -->
+            <Grid ColumnDefinitions="150,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+
+              <TextBlock Grid.Row="0" Grid.Column="0" Classes="muted" FontSize="12"
+                         Text="{DynamicResource Text.Settings_Files_Settings}" />
+              <SelectableTextBlock Grid.Row="0" Grid.Column="1" Classes="mono" FontSize="11" TextWrapping="Wrap">
+                <Run Text="{Binding SettingsPath, Converter={x:Static paths:PathConverters.Display}}" />
+                <InlineUIContainer BaselineAlignment="Center">
+                  <Button Classes="textLink" Margin="10,0,0,0"
+                          Command="{Binding OpenPlaceCommand}" CommandParameter="{Binding SettingsFolder}"
+                          AutomationProperties.Name="{DynamicResource Text.Settings_Files_Open}">
+                    <TextBlock TextDecorations="Underline" Text="{DynamicResource Text.Settings_Files_Open}" />
+                  </Button>
+                </InlineUIContainer>
+              </SelectableTextBlock>
+
+              <TextBlock Grid.Row="1" Grid.Column="0" Classes="muted" FontSize="12" Margin="0,6,0,0"
+                         Text="{DynamicResource Text.Settings_Files_Packs}" />
+              <SelectableTextBlock Grid.Row="1" Grid.Column="1" Classes="mono" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0">
+                <Run Text="{Binding PacksDirectory, Converter={x:Static paths:PathConverters.Display}}" />
+                <InlineUIContainer BaselineAlignment="Center">
+                  <Button Classes="textLink" Margin="10,0,0,0"
+                          Command="{Binding OpenPlaceCommand}" CommandParameter="{Binding PacksDirectory}"
+                          AutomationProperties.Name="{DynamicResource Text.Settings_Files_Open}">
+                    <TextBlock TextDecorations="Underline" Text="{DynamicResource Text.Settings_Files_Open}" />
+                  </Button>
+                </InlineUIContainer>
+              </SelectableTextBlock>
+
+              <TextBlock Grid.Row="2" Grid.Column="0" Classes="muted" FontSize="12" Margin="0,6,0,0"
+                         Text="{DynamicResource Text.Settings_Files_Overlays}" />
+              <SelectableTextBlock Grid.Row="2" Grid.Column="1" Classes="mono" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0">
+                <Run Text="{Binding OverlaysDirectory, Converter={x:Static paths:PathConverters.Display}}" />
+                <InlineUIContainer BaselineAlignment="Center">
+                  <Button Classes="textLink" Margin="10,0,0,0"
+                          Command="{Binding OpenPlaceCommand}" CommandParameter="{Binding OverlaysDirectory}"
+                          AutomationProperties.Name="{DynamicResource Text.Settings_Files_Open}">
+                    <TextBlock TextDecorations="Underline" Text="{DynamicResource Text.Settings_Files_Open}" />
+                  </Button>
+                </InlineUIContainer>
+              </SelectableTextBlock>
+
+              <TextBlock Grid.Row="3" Grid.Column="0" Classes="muted" FontSize="12" Margin="0,6,0,0"
+                         Text="{DynamicResource Text.Settings_Files_Logs}" />
+              <SelectableTextBlock Grid.Row="3" Grid.Column="1" Classes="mono" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0">
+                <Run Text="{Binding LogsDirectory, Converter={x:Static paths:PathConverters.Display}}" />
+                <InlineUIContainer BaselineAlignment="Center">
+                  <Button Classes="textLink" Margin="10,0,0,0"
+                          Command="{Binding OpenPlaceCommand}" CommandParameter="{Binding LogsDirectory}"
+                          AutomationProperties.Name="{DynamicResource Text.Settings_Files_Open}">
+                    <TextBlock TextDecorations="Underline" Text="{DynamicResource Text.Settings_Files_Open}" />
+                  </Button>
+                </InlineUIContainer>
+              </SelectableTextBlock>
+
+              <TextBlock Grid.Row="4" Grid.Column="0" Classes="muted" FontSize="12" Margin="0,6,0,0"
+                         Text="{DynamicResource Text.Settings_Files_Cache}" />
+              <SelectableTextBlock Grid.Row="4" Grid.Column="1" Classes="mono" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0">
+                <Run Text="{Binding CacheDirectory, Converter={x:Static paths:PathConverters.Display}}" />
+                <InlineUIContainer BaselineAlignment="Center">
+                  <Button Classes="textLink" Margin="10,0,0,0"
+                          Command="{Binding OpenPlaceCommand}" CommandParameter="{Binding CacheDirectory}"
+                          AutomationProperties.Name="{DynamicResource Text.Settings_Files_Open}">
+                    <TextBlock TextDecorations="Underline" Text="{DynamicResource Text.Settings_Files_Open}" />
+                  </Button>
+                </InlineUIContainer>
+              </SelectableTextBlock>
+
+            </Grid>
+          </StackPanel>
+        </Border>
+
+        <!-- Reset: the first press only says what would go; the work happens at the next start. -->
+        <Border Classes="card">
+          <StackPanel Spacing="10">
+            <StackPanel Spacing="2">
+              <TextBlock Classes="subheading" Text="{DynamicResource Text.Settings_Reset_Heading}" />
+              <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                         Text="{DynamicResource Text.Settings_Reset_Help}" />
+            </StackPanel>
+
+            <Button Classes="danger" HorizontalAlignment="Left"
+                    IsVisible="{Binding !IsConfirmingReset}"
+                    Command="{Binding AskResetCommand}"
+                    Content="{DynamicResource Text.Settings_Reset_Button}" />
+
+            <StackPanel Spacing="10" IsVisible="{Binding IsConfirmingReset}">
+              <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource XxsmWarnBrush}"
+                         Text="{DynamicResource Text.Settings_Reset_Confirm}" />
+
+              <StackPanel Spacing="3">
+                <TextBlock Classes="sectionLabel" Text="{DynamicResource Text.Settings_Reset_Goes_Label}" />
+                <TextBlock FontSize="12" TextWrapping="Wrap" Margin="12,0,0,0"
+                           Text="{Binding ResetSettingsLine}" />
+                <TextBlock FontSize="12" TextWrapping="Wrap" Margin="12,0,0,0"
+                           Text="{DynamicResource Text.Settings_Reset_Goes_Packs}" />
+                <TextBlock FontSize="12" TextWrapping="Wrap" Margin="12,0,0,0"
+                           Text="{DynamicResource Text.Settings_Reset_Goes_Pictures}" />
+                <TextBlock FontSize="12" TextWrapping="Wrap" Margin="12,0,0,0"
+                           Text="{DynamicResource Text.Settings_Reset_Goes_Downloads}" />
+                <TextBlock FontSize="12" TextWrapping="Wrap" Margin="12,0,0,0"
+                           Text="{DynamicResource Text.Settings_Reset_Goes_Records}" />
+              </StackPanel>
+
+              <StackPanel Spacing="3">
+                <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{Binding ResetSummary}" />
+                <ItemsControl ItemsSource="{Binding ResetDirectories}" Margin="12,0,0,0">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="x:String">
+                      <SelectableTextBlock Classes="mono" FontSize="11" Text="{Binding}" />
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+
+              <StackPanel Spacing="3">
+                <TextBlock Classes="sectionLabel" Text="{DynamicResource Text.Settings_Reset_Stays_Label}" />
+                <TextBlock FontSize="12" TextWrapping="Wrap" Margin="12,0,0,0"
+                           Text="{DynamicResource Text.Settings_Reset_Stays}" />
+              </StackPanel>
+
+              <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                         Text="{DynamicResource Text.Settings_Reset_Undo}" />
+
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Command="{Binding CancelResetCommand}"
+                        Content="{DynamicResource Text.Common_Cancel}" />
+                <Button Classes="danger solid"
+                        Command="{Binding ConfirmResetCommand}"
+                        Content="{DynamicResource Text.Settings_Reset_Go}" />
+              </StackPanel>
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <TextBlock Classes="muted" FontSize="12" IsVisible="{Binding ShowSaved}"
+                   Foreground="{DynamicResource XxsmOkBrush}"
+                   Text="{DynamicResource Text.Settings_Saved}" />
+
+      </StackPanel>
+    </ScrollViewer>
+
+  </DockPanel>
+
+</UserControl>

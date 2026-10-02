@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Everything that needs a Game Pack: loading, overlays, sorting, installing, Studio, GameBanana. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Http" />
+    <PackageReference Include="SharpCompress" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Xxsm.Core/Xxsm.Core.csproj" />
+  </ItemGroup>
+
+</Project>

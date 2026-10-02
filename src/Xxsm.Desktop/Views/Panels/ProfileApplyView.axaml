@@ -1,0 +1,81 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Xxsm.Desktop.ViewModels"
+             x:Class="Xxsm.Desktop.Views.Panels.ProfileApplyView"
+             x:DataType="vm:ProfileApplyViewModel">
+
+  <!-- "Apply Evening?" and "Switch every mod off?": lists, not tick boxes, as a profile is an exact state. -->
+  <Border Classes="card" MaxWidth="560" MaxHeight="600"
+          HorizontalAlignment="Stretch" VerticalAlignment="Center"
+          IsVisible="{Binding IsOpen}">
+    <DockPanel>
+
+      <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,12">
+        <TextBlock Classes="subheading" TextWrapping="Wrap" Text="{Binding Heading}" />
+        <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding Body}" />
+      </StackPanel>
+
+      <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right"
+                  Spacing="8" Margin="0,12,0,0">
+        <Button Command="{Binding CloseCommand}"
+                Content="{DynamicResource Text.Profiles_Cancel}" />
+        <Button Classes="accent" IsEnabled="{Binding CanApply}"
+                Command="{Binding ApplyCommand}"
+                Content="{Binding ApplyText}" />
+      </StackPanel>
+
+      <ScrollViewer>
+        <StackPanel Spacing="14">
+
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     IsVisible="{Binding NothingText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                     Text="{Binding NothingText}" />
+
+          <StackPanel Spacing="4" IsVisible="{Binding HasSwitchOn}">
+            <TextBlock Classes="sectionLabel" Text="{Binding SwitchOnLabel}" />
+            <ItemsControl ItemsSource="{Binding SwitchOn}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="x:String">
+                  <TextBlock Foreground="{DynamicResource XxsmTextBrush}" TextTrimming="CharacterEllipsis" Text="{Binding}" />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+
+          <StackPanel Spacing="4" IsVisible="{Binding HasSwitchOff}">
+            <TextBlock Classes="sectionLabel" Text="{Binding SwitchOffLabel}" />
+            <ItemsControl ItemsSource="{Binding SwitchOff}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="x:String">
+                  <TextBlock Foreground="{DynamicResource XxsmTextBrush}" TextTrimming="CharacterEllipsis" Text="{Binding}" />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+
+          <StackPanel Spacing="4" IsVisible="{Binding HasMissing}">
+            <TextBlock Classes="sectionLabel" Foreground="{DynamicResource XxsmWarnBrush}" Text="{Binding MissingLabel}" />
+            <ItemsControl ItemsSource="{Binding Missing}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="x:String">
+                  <TextBlock Classes="muted" TextTrimming="CharacterEllipsis" Text="{Binding}" />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+
+          <ItemsControl ItemsSource="{Binding Copies}" IsVisible="{Binding HasCopies}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="x:String">
+                <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{Binding}" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+        </StackPanel>
+      </ScrollViewer>
+
+    </DockPanel>
+  </Border>
+
+</UserControl>

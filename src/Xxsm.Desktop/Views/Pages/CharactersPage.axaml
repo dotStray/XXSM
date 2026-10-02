@@ -1,0 +1,377 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Xxsm.Desktop.ViewModels"
+             xmlns:pages="clr-namespace:Xxsm.Desktop.ViewModels.Pages"
+             xmlns:settings="clr-namespace:Xxsm.Core.Settings;assembly=Xxsm.Core"
+             xmlns:controls="clr-namespace:Xxsm.Desktop.Controls"
+             xmlns:panels="clr-namespace:Xxsm.Desktop.Views.Panels"
+             xmlns:conv="clr-namespace:Avalonia.Data.Converters;assembly=Avalonia.Base"
+             x:Class="Xxsm.Desktop.Views.Pages.CharactersPage"
+             x:Name="Page"
+             x:DataType="pages:CharactersPageViewModel">
+
+  <!-- This tab's button width: wide enough for Add mod and New character. -->
+  <UserControl.Resources>
+    <x:Double x:Key="ButtonMinWidth">120</x:Double>
+  </UserControl.Resources>
+
+  <!-- The page, and the panels that cover it: siblings, so a tall panel centres over the whole window. -->
+  <!-- The whole page takes a drop; the transparent background makes it hit-testable. Off a tile, sort decides. -->
+  <Panel Background="Transparent" DragDrop.AllowDrop="True">
+
+  <DockPanel Classes="page">
+
+    <Grid Classes="pageHeader" ColumnDefinitions="*,Auto">
+      <!-- The game's icon and name; "Characters" with no game. -->
+      <StackPanel Grid.Column="0" Spacing="3">
+        <StackPanel Orientation="Horizontal" Spacing="10">
+          <panels:GameIconView DataContext="{Binding GameIcon}" Width="30" Height="30"
+                               IsVisible="{Binding $parent[StackPanel].((pages:CharactersPageViewModel)DataContext).HasGameIcon}" />
+          <TextBlock Classes="heading" Text="{Binding HeadingText}" VerticalAlignment="Center" />
+        </StackPanel>
+        <TextBlock Classes="pageSubtitle" Text="{Binding CountText}" IsVisible="{Binding HasTiles}" />
+      </StackPanel>
+
+      <!-- Creating a character takes only a name; the door to it is on the grid. -->
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center"
+                  IsVisible="{Binding HasPack}">
+        <!-- Refresh, for changes made to the Mods folder outside XXSM. -->
+        <Button Classes="iconButton"
+                Command="{Binding RefreshCommand}"
+                ToolTip.Tip="{DynamicResource Text.Characters_Refresh}"
+                AutomationProperties.Name="{DynamicResource Text.Characters_Refresh}">
+          <Path Data="{StaticResource Icon.refresh}" />
+        </Button>
+        <!-- The same Add entry the character page has; a drop on the grid is a third way. -->
+        <Button Content="{DynamicResource Text.ModInstall_AddMod}">
+          <Button.Flyout>
+            <MenuFlyout>
+              <MenuItem Header="{DynamicResource Text.ModInstall_AddFromFolder}"
+                        Command="{Binding #Page.((pages:CharactersPageViewModel)DataContext).AddFromFolderCommand}" />
+              <MenuItem Header="{DynamicResource Text.ModInstall_AddFromArchive}"
+                        Command="{Binding #Page.((pages:CharactersPageViewModel)DataContext).AddFromArchiveCommand}" />
+              <!-- The same entry with no character: auto-sort decides where it goes. -->
+              <MenuItem IsVisible="{Binding #Page.((pages:CharactersPageViewModel)DataContext).CanAddFromGameBanana}"
+                        Command="{Binding #Page.((pages:CharactersPageViewModel)DataContext).AddFromGameBananaCommand}">
+                <MenuItem.Header>
+                  <StackPanel Spacing="1" MaxWidth="340">
+                    <TextBlock Text="{DynamicResource Text.ModInstall_AddFromGameBanana}" />
+                    <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                               Text="{DynamicResource Text.ModInstall_AddFromGameBanana_Hint}" />
+                  </StackPanel>
+                </MenuItem.Header>
+              </MenuItem>
+            </MenuFlyout>
+          </Button.Flyout>
+        </Button>
+        <Button Command="{Binding CharacterManager.NewCharacterCommand}"
+                Content="{DynamicResource Text.Characters_New}" />
+      </StackPanel>
+    </Grid>
+
+    <!-- Search, sort and the pack's own filter chips; nothing to filter until a pack is installed. -->
+    <StackPanel DockPanel.Dock="Top" Spacing="10" Margin="0,0,0,14" IsVisible="{Binding HasPack}">
+
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBox Grid.Column="0" Classes="toolbarSearch"
+                 Text="{Binding SearchText}"
+                 PlaceholderText="{DynamicResource Text.Characters_Search_Placeholder}"
+                 AutomationProperties.Name="{DynamicResource Text.Characters_Search_Placeholder}" />
+
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" Margin="12,0,0,0">
+          <!-- Sort by, as the character page has it: the field in force, and its direction beside it. -->
+          <Button Classes="toolbarMenu" VerticalAlignment="Center"
+                  ToolTip.Tip="{DynamicResource Text.Characters_Sort_Label}"
+                  AutomationProperties.Name="{DynamicResource Text.Characters_Sort_Label}">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <Path Classes="menuIcon" Data="{StaticResource Icon.sort}" />
+              <TextBlock Text="{Binding SortModeText}" VerticalAlignment="Center" />
+            </StackPanel>
+            <Button.Flyout>
+              <MenuFlyout>
+                <MenuItem Header="{DynamicResource Text.Characters_Sort_Name}"
+                          ToggleType="Radio" GroupName="charactersSortMenu"
+                          IsChecked="{Binding #Page.((pages:CharactersPageViewModel)DataContext).SortMode, Converter={StaticResource EnumToBoolean}, ConverterParameter={x:Static settings:CharacterSortMode.Name}, Mode=OneWay}"
+                          Command="{Binding #Page.((pages:CharactersPageViewModel)DataContext).SetSortCommand}"
+                          CommandParameter="{x:Static settings:CharacterSortMode.Name}" />
+                <MenuItem Header="{DynamicResource Text.Characters_Sort_ModCount}"
+                          ToggleType="Radio" GroupName="charactersSortMenu"
+                          IsChecked="{Binding #Page.((pages:CharactersPageViewModel)DataContext).SortMode, Converter={StaticResource EnumToBoolean}, ConverterParameter={x:Static settings:CharacterSortMode.ModCount}, Mode=OneWay}"
+                          Command="{Binding #Page.((pages:CharactersPageViewModel)DataContext).SetSortCommand}"
+                          CommandParameter="{x:Static settings:CharacterSortMode.ModCount}" />
+              </MenuFlyout>
+            </Button.Flyout>
+          </Button>
+
+          <Button Classes="iconButton" VerticalAlignment="Center"
+                  Command="{Binding ToggleSortDirectionCommand}"
+                  ToolTip.Tip="{Binding SortDirectionText}"
+                  AutomationProperties.Name="{Binding SortDirectionText}">
+            <Panel>
+              <Path Data="{StaticResource Icon.ascending}" IsVisible="{Binding !SortDescending}" />
+              <Path Data="{StaticResource Icon.descending}" IsVisible="{Binding SortDescending}" />
+            </Panel>
+          </Button>
+
+          <!-- The labels over the portraits: custom, hidden, no hashes. -->
+          <ToggleButton Classes="chip" Margin="10,0,0,0" VerticalAlignment="Center"
+                        IsChecked="{Binding ShowLabels}"
+                        Content="{DynamicResource Text.Characters_ShowLabels}" />
+
+          <!-- Only once something is hidden: the way back to a hidden character. -->
+          <ToggleButton Classes="chip" VerticalAlignment="Center"
+                        IsVisible="{Binding HasHidden}"
+                        IsChecked="{Binding ShowHidden}"
+                        Content="{Binding ShowHiddenText}" />
+
+          <!-- Only once a mod has an update, with GameBanana on: the characters that need attention. -->
+          <ToggleButton Classes="chip" VerticalAlignment="Center"
+                        IsVisible="{Binding HasUpdateMarks}"
+                        IsChecked="{Binding UpdatesOnly}"
+                        ToolTip.Tip="{DynamicResource Text.Characters_UpdatesOnly_Tip}"
+                        AutomationProperties.Name="{Binding UpdatesOnlyText}">
+            <StackPanel Orientation="Horizontal" Spacing="5">
+              <Path Classes="updateIcon" Data="{StaticResource Icon.update}" />
+              <TextBlock VerticalAlignment="Center" Text="{Binding UpdateModCount}" />
+            </StackPanel>
+          </ToggleButton>
+        </StackPanel>
+      </Grid>
+
+      <ItemsControl ItemsSource="{Binding AttributeFilterGroups}" IsVisible="{Binding HasAttributeFilters}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <StackPanel Spacing="6" />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <!-- One line per attribute; a line too long for the window scrolls sideways under its fixed label. -->
+          <DataTemplate x:DataType="vm:AttributeFilterGroupViewModel">
+            <Grid ColumnDefinitions="Auto,*">
+              <TextBlock Grid.Column="0" Classes="sectionLabel" VerticalAlignment="Center" MinWidth="64"
+                         Margin="0,0,8,0"
+                         Text="{Binding DisplayName}" />
+              <controls:ScrollingLine Grid.Column="1">
+                <ItemsControl ItemsSource="{Binding Values}">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <StackPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:AttributeFilterValueViewModel">
+                      <ToggleButton Classes="chip" Margin="0,0,6,6"
+                                    Content="{Binding DisplayName}"
+                                    IsChecked="{Binding IsSelected}" />
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </controls:ScrollingLine>
+            </Grid>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+
+    </StackPanel>
+
+    <!-- One slot, one thing in it: a DockPanel would dock an undocked child to the left. -->
+    <Panel>
+
+      <!-- Empty state: no pack, with the button to the pack browser. -->
+      <Border Classes="card notice" IsVisible="{Binding !HasPack}">
+        <StackPanel Spacing="12">
+          <TextBlock Classes="subheading" Text="{DynamicResource Text.Characters_NoPack_Heading}" />
+          <TextBlock Classes="muted" Text="{DynamicResource Text.Characters_NoPack_Body}" />
+          <Button Classes="accent" HorizontalAlignment="Left"
+                  Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ShowPacksCommand}"
+                  Content="{DynamicResource Text.Characters_NoPack_Action}" />
+        </StackPanel>
+      </Border>
+
+      <!-- Empty state: a pack that contains nothing. -->
+      <Border Classes="card notice" IsVisible="{Binding IsEmptyPack}">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="subheading" Text="{DynamicResource Text.Characters_Empty_Heading}" />
+          <TextBlock Classes="muted" Text="{DynamicResource Text.Characters_Empty_Body}" />
+        </StackPanel>
+      </Border>
+
+      <!-- Empty state: a search or filter matched nothing. -->
+      <Border Classes="card notice" IsVisible="{Binding IsNoMatches}">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="subheading" Text="{DynamicResource Text.Characters_NoMatches_Heading}" />
+          <TextBlock Classes="muted" Text="{DynamicResource Text.Characters_NoMatches_Body}" />
+        </StackPanel>
+      </Border>
+
+      <!-- Its bar sits in the page's margin, beside the tiles. -->
+      <ScrollViewer Classes="besideMargin" IsVisible="{Binding HasTiles}">
+        <ItemsControl ItemsSource="{Binding Tiles}" Margin="0,0,0,16">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <!-- One tile size at every width: resizing changes how many fit a row, never how big they are. -->
+              <controls:FillingWrapPanel MinItemWidth="132" MaxItemWidth="132"
+                                         ItemSpacing="10" RowSpacing="10" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:CharacterTileViewModel">
+
+              <!-- A Button: pressing opens the character's page; the folder and disable-all are in its menu. -->
+              <Button Classes="tile" Classes.hidden="{Binding IsHidden}"
+                      Command="{Binding $parent[ItemsControl].((pages:CharactersPageViewModel)DataContext).OpenCharacterCommand}"
+                      CommandParameter="{Binding}"
+                      ToolTip.Tip="{Binding DisplayName}"
+                      AutomationProperties.Name="{Binding AutomationName}">
+
+                <Button.ContextMenu>
+                  <!-- The page view model by name: the menu's Popup is outside the tile's visual tree. -->
+                  <!-- The Unsorted tile has no folder of its own; neither it nor Others has a character to edit. -->
+                  <ContextMenu>
+                    <MenuItem Header="{DynamicResource Text.Characters_Tile_OpenFolder}"
+                              IsVisible="{Binding !IsUnsorted}"
+                              Command="{Binding #Page.((pages:CharactersPageViewModel)DataContext).OpenFolderCommand}"
+                              CommandParameter="{Binding}" />
+                    <MenuItem Header="{DynamicResource Text.Characters_Tile_DisableAll}"
+                              Command="{Binding #Page.((pages:CharactersPageViewModel)DataContext).DisableAllCommand}"
+                              CommandParameter="{Binding}"
+                              IsEnabled="{Binding HasEnabledMods}" />
+                    <Separator />
+                    <MenuItem Header="{DynamicResource Text.Characters_Tile_Edit}"
+                              IsVisible="{Binding !IsPlace}"
+                              Command="{Binding #Page.((pages:CharactersPageViewModel)DataContext).CharacterManager.EditCharacterCommand}"
+                              CommandParameter="{Binding}" />
+                    <MenuItem Header="{DynamicResource Text.Characters_Tile_SortHere}"
+                              Command="{Binding #Page.((pages:CharactersPageViewModel)DataContext).SortCharacterCommand}"
+                              CommandParameter="{Binding}" />
+                    <MenuItem Header="{DynamicResource Text.Characters_Tile_Unhide}"
+                              IsVisible="{Binding IsHidden}"
+                              Command="{Binding #Page.((pages:CharactersPageViewModel)DataContext).UnhideCharacterCommand}"
+                              CommandParameter="{Binding}" />
+                  </ContextMenu>
+                </Button.ContextMenu>
+
+                <Panel>
+                  <StackPanel>
+
+                    <!-- The portrait, decoded off-thread into a bounded cache; a letter until it loads. -->
+                    <Panel Height="132">
+                      <Border Classes="tilePortrait" Background="{DynamicResource XxsmBadgeBrush}"
+                              ClipToBounds="True">
+                        <Panel>
+                          <TextBlock Text="{Binding Initial}"
+                                     IsVisible="{Binding !HasPortrait}"
+                                     FontSize="44"
+                                     FontWeight="Light"
+                                     Foreground="{DynamicResource XxsmMutedBrush}"
+                                     HorizontalAlignment="Center"
+                                     VerticalAlignment="Center" />
+                          <Image Source="{Binding Portrait}"
+                                 IsVisible="{Binding HasPortrait}"
+                                 Stretch="UniformToFill" />
+                          <!-- No character, so no portrait and no initial: the rail's own mods icon. -->
+                          <Path Classes="tileIcon" Data="{StaticResource Icon.mods}"
+                                IsVisible="{Binding IsPlace}" />
+                        </Panel>
+                      </Border>
+
+                      <!-- What the character is, on the picture: custom, hidden, hashes pending. Here they wrap. -->
+                      <WrapPanel HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="6"
+                                 ItemSpacing="4" LineSpacing="4"
+                                 IsVisible="{Binding $parent[ItemsControl].((pages:CharactersPageViewModel)DataContext).ShowLabels}">
+                        <Border Classes="statusPill accent" IsVisible="{Binding IsCustom}">
+                          <TextBlock Text="{DynamicResource Text.Characters_Badge_Custom}" />
+                        </Border>
+                        <Border Classes="statusPill" IsVisible="{Binding IsHidden}">
+                          <TextBlock Text="{DynamicResource Text.Characters_Badge_Hidden}" />
+                        </Border>
+                        <Border Classes="statusPill" IsVisible="{Binding HashesPending}">
+                          <TextBlock Text="{DynamicResource Text.Characters_Badge_HashesPending}" />
+                        </Border>
+                      </WrapPanel>
+                    </Panel>
+
+                    <!-- A fixed height, so the grid's rows stay square whatever a tile holds. -->
+                    <StackPanel Margin="10,8,10,10" Spacing="5" Height="46">
+
+                      <TextBlock Text="{Binding DisplayName}"
+                                 FontSize="13"
+                                 TextTrimming="CharacterEllipsis"
+                                 Foreground="{DynamicResource XxsmTextBrush}" />
+
+                      <!-- Docked, so on a narrow tile the skins count gives way and "update" stays whole. -->
+                      <DockPanel>
+
+                        <!-- How many mods, in the colour of how many are on; the tooltip says it in words. -->
+                        <Border DockPanel.Dock="Left" Classes="modCount" Margin="0,0,5,0" VerticalAlignment="Center"
+                                Classes.on="{Binding IsOn}"
+                                Classes.clash="{Binding HasClash}"
+                                IsVisible="{Binding HasMods}"
+                                ToolTip.Tip="{Binding CountToolTip}">
+                          <TextBlock Text="{Binding ModCountText}" />
+                        </Border>
+
+                        <!-- A mod under it has a newer version on GameBanana; the character's page says which. -->
+                        <Path DockPanel.Dock="Right" Margin="4,0,0,0" Classes="updateIcon"
+                              Data="{StaticResource Icon.update}"
+                              IsVisible="{Binding HasUpdates}"
+                              ToolTip.Tip="{DynamicResource Text.Characters_Badge_Update}"
+                              AutomationProperties.Name="{DynamicResource Text.Characters_Badge_Update}" />
+
+                        <!-- In grouped mode a tile stands for a family. -->
+                        <TextBlock Classes="muted" FontSize="11" VerticalAlignment="Center"
+                                   TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
+                                   IsVisible="{Binding HasSkins}"
+                                   Text="{Binding SkinCountText}" />
+
+                      </DockPanel>
+                    </StackPanel>
+                  </StackPanel>
+
+                  <!-- The pin: shown on hover or while pinned. A Button: Avalonia's ToggleButton has no Command. -->
+                  <Button Classes="pin" Classes.pinned="{Binding IsPinned}"
+                          IsVisible="{Binding !IsPlace}"
+                          HorizontalAlignment="Right" VerticalAlignment="Top" Margin="6"
+                          Command="{Binding $parent[ItemsControl].((pages:CharactersPageViewModel)DataContext).TogglePinCommand}"
+                          CommandParameter="{Binding}"
+                          ToolTip.Tip="{DynamicResource Text.Characters_Tile_TogglePin}"
+                          AutomationProperties.Name="{DynamicResource Text.Characters_Tile_TogglePin}">
+                    <Path Classes="pinIcon" Data="{StaticResource Icon.pin}" />
+                  </Button>
+                </Panel>
+              </Button>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+
+    </Panel>
+
+  </DockPanel>
+
+  <!-- Dims the page and swallows the clicks that would reach the grid behind an open panel. -->
+  <Border Classes="scrim" IsVisible="{Binding IsAnyPanelOpen}" />
+
+    <!-- The Character Manager, shared with a character's own page. -->
+    <panels:CharacterManagerView DataContext="{Binding CharacterManager}" />
+
+    <!-- Says what a drop will do while something is over the grid. -->
+    <Border Classes="card notice" VerticalAlignment="Top"
+            IsVisible="{Binding IsDragOver}">
+      <TextBlock Classes="muted" HorizontalAlignment="Center"
+                 Text="{DynamicResource Text.Characters_Drop_Hint}" />
+    </Border>
+
+    <!-- Auto-sort, narrowed to one character. -->
+    <panels:SortReviewView DataContext="{Binding SortReview}" />
+
+    <!-- The install confirm step, for a drop or the archive picker. -->
+    <panels:ModInstallView DataContext="{Binding Install}" />
+
+    <!-- What the selected game's pack update changed, when it installed by itself. -->
+    <panels:WhatsNewView DataContext="{Binding WhatsNew}" />
+
+  </Panel>
+
+</UserControl>

@@ -1,0 +1,74 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Xxsm.Desktop.ViewModels"
+             x:Class="Xxsm.Desktop.Views.Panels.ModExportView"
+             x:DataType="vm:ModExportViewModel">
+
+  <!-- Export: a copy, so nothing to undo; the notice it leaves opens the copy. -->
+  <Border Classes="card" MaxWidth="560"
+          HorizontalAlignment="Stretch" VerticalAlignment="Center"
+          IsVisible="{Binding IsOpen}">
+    <StackPanel Spacing="14">
+
+      <StackPanel Spacing="4">
+        <TextBlock Classes="subheading" Text="{DynamicResource Text.Export_Heading}" />
+        <TextBlock Classes="muted" TextWrapping="Wrap" Text="{DynamicResource Text.Export_Body}" />
+      </StackPanel>
+
+      <StackPanel Spacing="14" IsVisible="{Binding IsChoosing}">
+
+        <StackPanel Spacing="6">
+          <TextBlock Classes="sectionLabel" Text="{DynamicResource Text.Export_Destination_Label}" />
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+            <TextBlock Grid.Column="0" Classes="mono" FontSize="12" VerticalAlignment="Center"
+                       TextTrimming="CharacterEllipsis" Text="{Binding DestinationText}" />
+            <Button Grid.Column="1"
+                    Command="{Binding ChooseDestinationCommand}"
+                    Content="{DynamicResource Text.Export_Choose}" />
+          </Grid>
+        </StackPanel>
+
+        <StackPanel Spacing="6">
+          <CheckBox IsChecked="{Binding EnabledOnly}" Content="{DynamicResource Text.Export_EnabledOnly}" />
+          <CheckBox IsChecked="{Binding SkipMetadata}" Content="{DynamicResource Text.Export_SkipMetadata}" />
+          <CheckBox IsChecked="{Binding OneFolder}" Content="{DynamicResource Text.Export_OneFolder}" />
+        </StackPanel>
+
+        <!-- Only the copies are switched; the Mods folder is never touched. -->
+        <StackPanel Spacing="6">
+          <TextBlock Classes="sectionLabel" Text="{DynamicResource Text.Export_Switching_Label}" />
+          <RadioButton GroupName="exportSwitching" IsChecked="{Binding SwitchAsTheyAre}"
+                       Content="{DynamicResource Text.Export_Switching_AsTheyAre}" />
+          <RadioButton GroupName="exportSwitching" IsChecked="{Binding SwitchAllOn}"
+                       Content="{DynamicResource Text.Export_Switching_AllOn}" />
+          <RadioButton GroupName="exportSwitching" IsChecked="{Binding SwitchAllOff}"
+                       Content="{DynamicResource Text.Export_Switching_AllOff}" />
+        </StackPanel>
+
+        <TextBlock Classes="muted" TextWrapping="Wrap"
+                   IsVisible="{Binding Summary, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                   Text="{Binding Summary}" />
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+          <Button Command="{Binding CloseCommand}"
+                  Content="{DynamicResource Text.Export_Cancel}" />
+          <Button Classes="accent" IsEnabled="{Binding CanExport}"
+                  Command="{Binding ExportCommand}"
+                  Content="{DynamicResource Text.Export_Start}" />
+        </StackPanel>
+
+      </StackPanel>
+
+      <StackPanel Spacing="10" IsVisible="{Binding IsRunning}">
+        <ProgressBar Height="6" Minimum="0" Maximum="100" Value="{Binding Percent}"
+                     AutomationProperties.Name="{DynamicResource Text.Export_Heading}" />
+        <TextBlock Classes="muted" FontSize="12" TextTrimming="CharacterEllipsis" Text="{Binding ProgressText}" />
+        <Button HorizontalAlignment="Right"
+                Command="{Binding StopCommand}"
+                Content="{DynamicResource Text.Export_Stop}" />
+      </StackPanel>
+
+    </StackPanel>
+  </Border>
+
+</UserControl>

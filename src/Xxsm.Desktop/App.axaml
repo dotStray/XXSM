@@ -1,0 +1,191 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:pages="clr-namespace:Xxsm.Desktop.ViewModels.Pages"
+             xmlns:views="clr-namespace:Xxsm.Desktop.Views.Pages"
+             xmlns:conv="clr-namespace:Xxsm.Desktop.Converters"
+             x:Class="Xxsm.Desktop.App"
+             RequestedThemeVariant="Default">
+
+  <!-- Default follows the desktop's light or dark setting; Settings overrides it only for a fixed scheme. -->
+
+  <Application.Resources>
+    <ResourceDictionary>
+
+      <conv:EnumToBooleanConverter x:Key="EnumToBoolean" />
+      <conv:IconKeyConverter x:Key="IconKey" />
+
+      <!-- The narrowest a button is, unless its tab sets its own. -->
+      <x:Double x:Key="ButtonMinWidth">100</x:Double>
+
+      <!-- The icons: stroked outlines, which take the theme's colour and stay sharp at any scale. -->
+      <StreamGeometry x:Key="Icon.characters">M12 11.2a3.4 3.4 0 1 0 0-6.8 3.4 3.4 0 0 0 0 6.8Z M4.8 20c0-3.7 3.2-6.2 7.2-6.2s7.2 2.5 7.2 6.2</StreamGeometry>
+      <StreamGeometry x:Key="Icon.mods">M3.6 6.4h5.8l1.8 2.3h9.2v10.9H3.6Z</StreamGeometry>
+      <StreamGeometry x:Key="Icon.packs">M12 3.6v8.6 M8.8 9.2 12 12.4l3.2-3.2 M4.6 15.4v4.4h14.8v-4.4</StreamGeometry>
+      <StreamGeometry x:Key="Icon.studio">M4.6 19.4l1.1-4.3L15.6 5.2a2 2 0 0 1 2.8 0l0.4 0.4a2 2 0 0 1 0 2.8L8.9 18.3Z M13.8 7l3.2 3.2</StreamGeometry>
+      <StreamGeometry x:Key="Icon.profiles">M4.4 4.4h9v9h-9Z M10.6 10.6h9v9h-9Z</StreamGeometry>
+      <StreamGeometry x:Key="Icon.notices">M12 4.6C9.1 4.6 6.8 6.9 6.8 9.8 6.8 14.2 5.2 15.4 5.2 16.4H18.8C18.8 15.4 17.2 14.2 17.2 9.8 17.2 6.9 14.9 4.6 12 4.6Z M10.2 18.2a2 2 0 0 0 3.6 0</StreamGeometry>
+      <StreamGeometry x:Key="Icon.settings">M4 7.6h16 M4 16.4h16 M8.6 5.6a2 2 0 1 0 0 4 2 2 0 1 0 0-4Z M15.4 14.4a2 2 0 1 0 0 4 2 2 0 1 0 0-4Z</StreamGeometry>
+
+      <!-- The tile's pin: a round head over a point. -->
+      <StreamGeometry x:Key="Icon.pin">M8.4 10.2a3.6 3.6 0 1 1 7.2 0c0 2.7 -3.6 8.4 -3.6 8.4s-3.6 -5.7 -3.6 -8.4Z M12 10.2a1.1 1.1 0 1 0 0 2.2 1.1 1.1 0 0 0 0-2.2Z</StreamGeometry>
+
+      <!-- The detail view's back arrow. -->
+      <StreamGeometry x:Key="Icon.back">M14.5 5.5 8 12l6.5 6.5</StreamGeometry>
+      <StreamGeometry x:Key="Icon.chevronDown">M5.5 9 12 15.5 18.5 9</StreamGeometry>
+      <StreamGeometry x:Key="Icon.chevronLeft">M15 5.5 8.5 12 15 18.5</StreamGeometry>
+      <StreamGeometry x:Key="Icon.chevronRight">M9 5.5 15.5 12 9 18.5</StreamGeometry>
+      <StreamGeometry x:Key="Icon.grip">M5 8h14 M5 12h14 M5 16h14</StreamGeometry>
+
+      <!-- Search: the magnifier that the search box folds away into. -->
+      <StreamGeometry x:Key="Icon.search">M10.8 4.8a6 6 0 1 0 0 12 6 6 0 0 0 0-12Z M15.2 15.2 19.5 19.5</StreamGeometry>
+
+      <!-- Filter: a funnel, for narrowing the rows to enabled or disabled. -->
+      <StreamGeometry x:Key="Icon.filter">M4.5 5.5h15l-5.8 6.9v5.4l-3.4 1.9v-7.3Z</StreamGeometry>
+
+      <!-- Sort: lines of decreasing length, the usual "order these" mark. -->
+      <StreamGeometry x:Key="Icon.sort">M5 6.5h14 M5 12h9 M5 17.5h5</StreamGeometry>
+
+      <!-- Sort direction: two arrows, as one that flips is clearer than one that spins. -->
+      <StreamGeometry x:Key="Icon.ascending">M12 19V5 M6.5 10.5 12 5l5.5 5.5</StreamGeometry>
+      <StreamGeometry x:Key="Icon.descending">M12 5v14 M6.5 13.5 12 19l5.5-5.5</StreamGeometry>
+
+      <!-- Rescan: a circling arrow, for changes made outside XXSM. -->
+      <StreamGeometry x:Key="Icon.refresh">M19 12a7 7 0 1 1-2.05-4.95 M19 4.4V9h-4.6</StreamGeometry>
+
+      <!-- "Open this somewhere else": a box with an arrow leaving it. Beside the mod url. -->
+      <StreamGeometry x:Key="Icon.delete">M5.5 7.5h13 M9.5 7.5V5.5h5v2 M7 7.5l.8 11a1 1 0 0 0 1 .9h6.4a1 1 0 0 0 1-.9l.8-11 M10.5 11v5 M13.5 11v5</StreamGeometry>
+      <StreamGeometry x:Key="Icon.menu">M4 7h16 M4 12h16 M4 17h16</StreamGeometry>
+      <StreamGeometry x:Key="Icon.undo">M9 14 4 9l5-5 M4 9h10.5a5.5 5.5 0 0 1 0 11H11</StreamGeometry>
+      <StreamGeometry x:Key="Icon.redo">M15 14l5-5-5-5 M20 9H9.5a5.5 5.5 0 0 0 0 11H13</StreamGeometry>
+      <StreamGeometry x:Key="Icon.edit">M5 19l1.1-4.2L15.6 5.3a2 2 0 0 1 2.9 0l.2.2a2 2 0 0 1 0 2.9L9.2 17.9z M14 7l3 3</StreamGeometry>
+      <StreamGeometry x:Key="Icon.open">M13.5 5.5h5v5 M18.5 5.5 11 13 M17 14v4.5H5.5V7H10</StreamGeometry>
+
+      <!-- "Read that page and bring it here": an arrow into a tray, beside Icon.open. -->
+      <StreamGeometry x:Key="Icon.download">M12 4.5v9 M8.5 10.5 12 14l3.5-3.5 M5 16.5v2.5h14v-2.5</StreamGeometry>
+
+      <!-- "A newer version is on GameBanana": an arrow rising in a ring. Not Icon.download, which is an action. -->
+      <!-- The "…" on a mod's tile in a profile's list. -->
+      <StreamGeometry x:Key="Icon.more">M5.6 12a1.2 1.2 0 1 0 2.4 0a1.2 1.2 0 1 0 -2.4 0Z M10.8 12a1.2 1.2 0 1 0 2.4 0a1.2 1.2 0 1 0 -2.4 0Z M16 12a1.2 1.2 0 1 0 2.4 0a1.2 1.2 0 1 0 -2.4 0Z</StreamGeometry>
+
+      <!-- A chosen tile in the mod picker. -->
+      <StreamGeometry x:Key="Icon.check">M6 12.5l4 4 8-9</StreamGeometry>
+
+      <StreamGeometry x:Key="Icon.update">M12 4a8 8 0 1 0 0 16a8 8 0 1 0 0-16Z M12 16V8.5 M8.8 11.5 12 8.3l3.2 3.2</StreamGeometry>
+
+      <ResourceDictionary.ThemeDictionaries>
+
+        <!-- XXSM's own palette: Fluent's internal resource names are not public and change between versions. -->
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="XxsmPageBrush" Color="#F5F5F7" />
+          <SolidColorBrush x:Key="XxsmSurfaceBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="XxsmRailBrush" Color="#ECECF0" />
+          <SolidColorBrush x:Key="XxsmBorderBrush" Color="#DFDFE5" />
+          <SolidColorBrush x:Key="XxsmTextBrush" Color="#1A1A1F" />
+          <SolidColorBrush x:Key="XxsmMutedBrush" Color="#6A6A76" />
+          <SolidColorBrush x:Key="XxsmAccentBrush" Color="#4056C8" />
+          <SolidColorBrush x:Key="XxsmOnAccentBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="XxsmBadgeBrush" Color="#E4E7FA" />
+          <SolidColorBrush x:Key="XxsmOkBrush" Color="#2F8F45" />
+          <SolidColorBrush x:Key="XxsmWarnBrush" Color="#9A6410" />
+          <SolidColorBrush x:Key="XxsmScrimBrush" Color="#40000000" />
+          <SolidColorBrush x:Key="XxsmErrorBrush" Color="#C22C2C" />
+          <!-- Reset XXSM under the pointer and pressed: a red button with white words. -->
+          <SolidColorBrush x:Key="XxsmErrorFillBrush" Color="#C22C2C" />
+          <SolidColorBrush x:Key="XxsmErrorPressedBrush" Color="#A21F1F" />
+          <SolidColorBrush x:Key="XxsmOnErrorBrush" Color="#FFFFFF" />
+          <!-- The page's colour fading out, behind the arrows at the ends of a filter line. -->
+          <LinearGradientBrush x:Key="XxsmPageFadeBackBrush" StartPoint="0%,0%" EndPoint="100%,0%">
+            <GradientStop Color="#FFF5F5F7" Offset="0.6" />
+            <GradientStop Color="#00F5F5F7" Offset="1" />
+          </LinearGradientBrush>
+          <LinearGradientBrush x:Key="XxsmPageFadeForwardBrush" StartPoint="0%,0%" EndPoint="100%,0%">
+            <GradientStop Color="#00F5F5F7" Offset="0" />
+            <GradientStop Color="#FFF5F5F7" Offset="0.4" />
+          </LinearGradientBrush>
+          <!-- The same, over a card rather than the page. -->
+          <LinearGradientBrush x:Key="XxsmCardFadeBackBrush" StartPoint="0%,0%" EndPoint="100%,0%">
+            <GradientStop Color="#FFFFFFFF" Offset="0.6" />
+            <GradientStop Color="#00FFFFFF" Offset="1" />
+          </LinearGradientBrush>
+          <LinearGradientBrush x:Key="XxsmCardFadeForwardBrush" StartPoint="0%,0%" EndPoint="100%,0%">
+            <GradientStop Color="#00FFFFFF" Offset="0" />
+            <GradientStop Color="#FFFFFFFF" Offset="0.4" />
+          </LinearGradientBrush>
+        </ResourceDictionary>
+
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="XxsmPageBrush" Color="#161619" />
+          <SolidColorBrush x:Key="XxsmSurfaceBrush" Color="#1E1E23" />
+          <SolidColorBrush x:Key="XxsmRailBrush" Color="#121215" />
+          <SolidColorBrush x:Key="XxsmBorderBrush" Color="#2F2F37" />
+          <SolidColorBrush x:Key="XxsmTextBrush" Color="#ECECF1" />
+          <SolidColorBrush x:Key="XxsmMutedBrush" Color="#9B9BA7" />
+          <SolidColorBrush x:Key="XxsmAccentBrush" Color="#8AA0FF" />
+          <SolidColorBrush x:Key="XxsmOnAccentBrush" Color="#12121A" />
+          <SolidColorBrush x:Key="XxsmBadgeBrush" Color="#2B3155" />
+          <SolidColorBrush x:Key="XxsmOkBrush" Color="#5BC46F" />
+          <SolidColorBrush x:Key="XxsmWarnBrush" Color="#E8B457" />
+          <SolidColorBrush x:Key="XxsmScrimBrush" Color="#88000000" />
+          <SolidColorBrush x:Key="XxsmErrorBrush" Color="#FF7A7A" />
+          <SolidColorBrush x:Key="XxsmErrorFillBrush" Color="#DA3633" />
+          <SolidColorBrush x:Key="XxsmErrorPressedBrush" Color="#B62324" />
+          <SolidColorBrush x:Key="XxsmOnErrorBrush" Color="#FFFFFF" />
+          <!-- The page's colour fading out, behind the arrows at the ends of a filter line. -->
+          <LinearGradientBrush x:Key="XxsmPageFadeBackBrush" StartPoint="0%,0%" EndPoint="100%,0%">
+            <GradientStop Color="#FF161619" Offset="0.6" />
+            <GradientStop Color="#00161619" Offset="1" />
+          </LinearGradientBrush>
+          <LinearGradientBrush x:Key="XxsmPageFadeForwardBrush" StartPoint="0%,0%" EndPoint="100%,0%">
+            <GradientStop Color="#00161619" Offset="0" />
+            <GradientStop Color="#FF161619" Offset="0.4" />
+          </LinearGradientBrush>
+          <LinearGradientBrush x:Key="XxsmCardFadeBackBrush" StartPoint="0%,0%" EndPoint="100%,0%">
+            <GradientStop Color="#FF1E1E23" Offset="0.6" />
+            <GradientStop Color="#001E1E23" Offset="1" />
+          </LinearGradientBrush>
+          <LinearGradientBrush x:Key="XxsmCardFadeForwardBrush" StartPoint="0%,0%" EndPoint="100%,0%">
+            <GradientStop Color="#001E1E23" Offset="0" />
+            <GradientStop Color="#FF1E1E23" Offset="0.4" />
+          </LinearGradientBrush>
+        </ResourceDictionary>
+
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </Application.Resources>
+
+  <Application.DataTemplates>
+    <!-- Explicit templates, not a view locator: a missing view is a build error and bindings stay compiled. -->
+    <DataTemplate DataType="pages:CharactersPageViewModel" x:DataType="pages:CharactersPageViewModel">
+      <views:CharactersPage />
+    </DataTemplate>
+    <DataTemplate DataType="pages:CharacterDetailPageViewModel" x:DataType="pages:CharacterDetailPageViewModel">
+      <views:CharacterDetailPage />
+    </DataTemplate>
+    <DataTemplate DataType="pages:ModsPageViewModel" x:DataType="pages:ModsPageViewModel">
+      <views:ModsPage />
+    </DataTemplate>
+    <DataTemplate DataType="pages:PacksPageViewModel" x:DataType="pages:PacksPageViewModel">
+      <views:PacksPage />
+    </DataTemplate>
+    <DataTemplate DataType="pages:StudioPageViewModel" x:DataType="pages:StudioPageViewModel">
+      <views:StudioPage />
+    </DataTemplate>
+    <DataTemplate DataType="pages:ProfilesPageViewModel" x:DataType="pages:ProfilesPageViewModel">
+      <views:ProfilesPage />
+    </DataTemplate>
+    <DataTemplate DataType="pages:NotificationsPageViewModel" x:DataType="pages:NotificationsPageViewModel">
+      <views:NotificationsPage />
+    </DataTemplate>
+    <DataTemplate DataType="pages:SettingsPageViewModel" x:DataType="pages:SettingsPageViewModel">
+      <views:SettingsPage />
+    </DataTemplate>
+  </Application.DataTemplates>
+
+  <Application.Styles>
+    <FluentTheme />
+    <!-- DataGrid needs its theme included explicitly; without it the control is invisible, not an error. -->
+    <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
+    <StyleInclude Source="avares://Xxsm.Desktop/Styles/Xxsm.axaml" />
+  </Application.Styles>
+
+</Application>

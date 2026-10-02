@@ -1,0 +1,53 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Xxsm.Desktop.ViewModels"
+             x:Class="Xxsm.Desktop.Views.Panels.CaughtUpCorrectionsView"
+             x:Name="Root"
+             x:DataType="vm:CaughtUpCorrectionsViewModel">
+
+  <!-- After a pack install, the corrections it now makes itself, offered for clearing; Keep is the plain button. -->
+  <Border Classes="card" MaxWidth="640" MaxHeight="600"
+          HorizontalAlignment="Center" VerticalAlignment="Center"
+          IsVisible="{Binding IsOpen}">
+    <DockPanel>
+
+      <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,12">
+        <TextBlock Classes="subheading" Text="{DynamicResource Text.CaughtUp_Heading}" />
+        <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource XxsmTextBrush}"
+                   Text="{Binding SummaryText}" />
+        <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                   Text="{DynamicResource Text.CaughtUp_Body}" />
+      </StackPanel>
+
+      <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8"
+                  HorizontalAlignment="Right" Margin="0,12,0,0">
+        <Button Command="{Binding DismissCommand}"
+                Content="{DynamicResource Text.CaughtUp_Keep}" />
+        <Button Classes="accent"
+                IsEnabled="{Binding CanClear}"
+                Command="{Binding ClearSelectedCommand}"
+                Content="{Binding ClearText}" />
+      </StackPanel>
+
+      <ScrollViewer>
+        <ItemsControl ItemsSource="{Binding Corrections}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:CaughtUpCorrectionViewModel">
+              <Grid ColumnDefinitions="32,*" Margin="0,0,0,8">
+                <CheckBox Grid.Column="0" VerticalAlignment="Top"
+                          IsChecked="{Binding IsSelected}"
+                          AutomationProperties.Name="{Binding DisplayName}" />
+                <StackPanel Grid.Column="1" Spacing="2">
+                  <TextBlock Foreground="{DynamicResource XxsmTextBrush}" Text="{Binding DisplayName}" />
+                  <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap" Text="{Binding FieldsText}" />
+                </StackPanel>
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+
+    </DockPanel>
+  </Border>
+
+</UserControl>

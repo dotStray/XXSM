@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=XXSM
+GenericName=Mod Manager
+Comment=Manage the mods XXMI loads into your games
+Exec=XXSM
+Icon=xxsm
+Terminal=false
+Categories=Game;
+Keywords=mods;XXMI;3DMigoto;
+StartupWMClass=xxsm

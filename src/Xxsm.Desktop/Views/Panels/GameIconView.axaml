@@ -1,0 +1,17 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Xxsm.Desktop.ViewModels"
+             x:Class="Xxsm.Desktop.Views.Panels.GameIconView"
+             x:DataType="vm:GameIconViewModel"
+             Width="20" Height="20" VerticalAlignment="Center">
+
+  <!-- A game's icon: the pack's picture, or the name's first letter on the same square, scaled with it. -->
+  <Border Classes="gameIcon">
+    <Panel>
+      <Viewbox Margin="3" IsVisible="{Binding !HasBitmap}">
+        <TextBlock Classes="gameIconInitial" Text="{Binding Initial}" />
+      </Viewbox>
+      <Image Source="{Binding Bitmap}" Stretch="UniformToFill" IsVisible="{Binding HasBitmap}" />
+    </Panel>
+  </Border>
+</UserControl>

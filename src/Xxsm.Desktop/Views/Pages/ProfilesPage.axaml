@@ -1,0 +1,177 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Xxsm.Desktop.ViewModels"
+             xmlns:pages="clr-namespace:Xxsm.Desktop.ViewModels.Pages"
+             xmlns:panels="clr-namespace:Xxsm.Desktop.Views.Panels"
+             x:Class="Xxsm.Desktop.Views.Pages.ProfilesPage"
+             x:DataType="pages:ProfilesPageViewModel">
+
+  <Panel>
+
+  <DockPanel Classes="page">
+
+    <Grid Classes="pageHeader" ColumnDefinitions="*">
+      <StackPanel Spacing="3">
+        <TextBlock Classes="heading" Text="{DynamicResource Text.Profiles_Heading}" />
+        <TextBlock Classes="pageSubtitle" Text="{DynamicResource Text.Profiles_Subtitle}" />
+      </StackPanel>
+    </Grid>
+
+    <Panel>
+
+      <!-- Profiles live in the Mods folder they name; the button is the way to choose one. -->
+      <Border Classes="card notice" IsVisible="{Binding !HasFolder}">
+        <StackPanel Spacing="12">
+          <TextBlock Classes="subheading" Text="{DynamicResource Text.Mods_NoFolder_Heading}" />
+          <TextBlock Classes="muted" Text="{DynamicResource Text.Mods_NoFolder_Body}" />
+          <Button Classes="accent" HorizontalAlignment="Left"
+                  Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ShowSettingsCommand}"
+                  Content="{DynamicResource Text.Mods_NoFolder_Action}" />
+        </StackPanel>
+      </Border>
+
+      <ScrollViewer Classes="besideMargin" IsVisible="{Binding HasFolder}">
+        <StackPanel Spacing="16" Margin="0,0,0,16">
+
+          <!-- Saving a new one, and the one thing that could surprise: Apply switches every other mod off. -->
+          <Border Classes="card">
+            <StackPanel Spacing="10">
+              <TextBlock Classes="subheading" Text="{DynamicResource Text.Profiles_New_Heading}" />
+              <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                         Text="{DynamicResource Text.Profiles_New_Body}" />
+              <WrapPanel ItemSpacing="8" LineSpacing="8">
+                <TextBox x:Name="NewName" Width="380"
+                         Text="{Binding NewName}"
+                         PlaceholderText="{DynamicResource Text.Profiles_New_Placeholder}"
+                         AutomationProperties.Name="{DynamicResource Text.Profiles_New_Placeholder}" />
+                <Button Classes="accent"
+                        Command="{Binding SaveNewCommand}"
+                        Content="{DynamicResource Text.Profiles_New_Save}" />
+                <!-- JASM's empty preset: the one way to switch every mod off at once, and undoable. -->
+                <Button Command="{Binding SaveEmptyCommand}"
+                        Content="{DynamicResource Text.Profiles_New_SaveEmpty}"
+                        ToolTip.Tip="{DynamicResource Text.Profiles_New_SaveEmpty_Tip}" />
+              </WrapPanel>
+            </StackPanel>
+          </Border>
+
+          <!-- A file that cannot be read is said, never hidden and never written over. -->
+          <Border Classes="inlineNotice" Padding="12" IsVisible="{Binding HasProblems}">
+            <StackPanel Spacing="6">
+              <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource XxsmWarnBrush}"
+                         Text="{DynamicResource Text.Profiles_Problems}" />
+              <ItemsControl ItemsSource="{Binding Problems}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="x:String">
+                    <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{Binding}" />
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
+
+          <TextBlock Classes="muted" IsVisible="{Binding ShowEmpty}" Text="{DynamicResource Text.Profiles_Empty}" />
+
+          <ItemsControl ItemsSource="{Binding Profiles}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel Spacing="10" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:ProfileRowViewModel">
+                <Border Classes="card" Padding="14">
+                  <Panel>
+
+                    <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8" IsVisible="{Binding IsIdle}">
+                      <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                          <TextBlock Classes="subheading" TextTrimming="CharacterEllipsis" Text="{Binding Name}" />
+                          <Border Classes="badge" VerticalAlignment="Center" IsVisible="{Binding IsReadOnly}">
+                            <TextBlock Text="{DynamicResource Text.Profiles_ReadOnly}" />
+                          </Border>
+                        </StackPanel>
+                        <TextBlock Classes="muted" FontSize="12" Text="{Binding Subtitle}" />
+                      </StackPanel>
+
+                      <!-- What the profile has, and a way to take any off. -->
+                      <Button Grid.Column="1" VerticalAlignment="Center"
+                              Command="{Binding ShowModsCommand}"
+                              Content="{DynamicResource Text.Profiles_ShowMods}" />
+
+                      <Button Grid.Column="2" Classes="accent" VerticalAlignment="Center"
+                              Command="{Binding ApplyCommand}"
+                              Content="{DynamicResource Text.Profiles_Apply}" />
+
+                      <!-- What changes the profile itself, out of Apply's way; a read-only profile greys them. -->
+                      <Button Grid.Column="3" Classes="toolbarMenu" VerticalAlignment="Center"
+                              ToolTip.Tip="{DynamicResource Text.Profiles_More}"
+                              AutomationProperties.Name="{DynamicResource Text.Profiles_More}">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                          <TextBlock Text="{DynamicResource Text.Profiles_More}" VerticalAlignment="Center" />
+                          <Path Classes="menuIcon" Height="9" MaxWidth="9" Data="{StaticResource Icon.chevronDown}" />
+                        </StackPanel>
+                        <Button.Flyout>
+                          <MenuFlyout>
+                            <MenuItem Header="{DynamicResource Text.Profiles_Replace}"
+                                      IsEnabled="{Binding IsEditable}"
+                                      Command="{Binding StartReplaceCommand}" />
+                            <MenuItem Header="{DynamicResource Text.Profiles_Rename}"
+                                      IsEnabled="{Binding IsEditable}"
+                                      Command="{Binding StartRenameCommand}" />
+                            <MenuItem Header="{Binding ReadOnlyText}"
+                                      Command="{Binding ToggleReadOnlyCommand}" />
+                            <Separator />
+                            <MenuItem Classes="destructive" Header="{DynamicResource Text.Profiles_Delete}"
+                                      IsEnabled="{Binding IsEditable}"
+                                      Command="{Binding DeleteCommand}" />
+                          </MenuFlyout>
+                        </Button.Flyout>
+                      </Button>
+                    </Grid>
+
+                    <Grid ColumnDefinitions="Auto,Auto,Auto" ColumnSpacing="8" IsVisible="{Binding IsRenaming}">
+                      <TextBox Grid.Column="0" Width="320"
+                               Text="{Binding RenameText}"
+                               AutomationProperties.Name="{DynamicResource Text.Profiles_Rename}" />
+                      <Button Grid.Column="1" Classes="accent"
+                              Command="{Binding ConfirmRenameCommand}"
+                              Content="{DynamicResource Text.Profiles_Rename_Save}" />
+                      <Button Grid.Column="2"
+                              Command="{Binding CancelRenameCommand}"
+                              Content="{DynamicResource Text.Profiles_Cancel}" />
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" IsVisible="{Binding IsConfirmingReplace}">
+                      <TextBlock Grid.Column="0" TextWrapping="Wrap" VerticalAlignment="Center"
+                                 Foreground="{DynamicResource XxsmTextBrush}"
+                                 Text="{Binding ReplaceQuestion}" />
+                      <Button Grid.Column="1" Classes="accent" VerticalAlignment="Center"
+                              Command="{Binding ConfirmReplaceCommand}"
+                              Content="{DynamicResource Text.Profiles_Replace_Yes}" />
+                      <Button Grid.Column="2" VerticalAlignment="Center"
+                              Command="{Binding CancelReplaceCommand}"
+                              Content="{DynamicResource Text.Profiles_Cancel}" />
+                    </Grid>
+
+                  </Panel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+        </StackPanel>
+      </ScrollViewer>
+
+    </Panel>
+
+  </DockPanel>
+
+  <Border Classes="scrim" IsVisible="{Binding IsAnyPanelOpen}" />
+
+  <panels:ProfileApplyView DataContext="{Binding Apply}" />
+  <panels:ProfileModsView DataContext="{Binding Mods}" />
+
+  </Panel>
+
+</UserControl>

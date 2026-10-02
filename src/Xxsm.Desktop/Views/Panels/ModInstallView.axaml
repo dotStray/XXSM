@@ -1,0 +1,371 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:paths="clr-namespace:Xxsm.Desktop.Converters"
+             xmlns:vm="clr-namespace:Xxsm.Desktop.ViewModels"
+             xmlns:panels="clr-namespace:Xxsm.Desktop.Views.Panels"
+             x:Class="Xxsm.Desktop.Views.Panels.ModInstallView"
+             x:Name="Root"
+             x:DataType="vm:ModInstallViewModel">
+
+  <!-- The install confirm step: one card per mod, nothing copied until Install. -->
+  <Border Classes="card" MaxWidth="880" MaxHeight="720" Margin="24"
+          VerticalAlignment="Center"
+          IsVisible="{Binding IsOpen}">
+    <DockPanel>
+
+      <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,12">
+        <TextBlock Classes="subheading" Text="{Binding Heading}" />
+        <TextBlock Classes="muted" Text="{Binding SummaryText}" IsVisible="{Binding HasSummary}" />
+        <TextBlock Classes="muted" Text="{DynamicResource Text.ModInstall_Reading}"
+                   IsVisible="{Binding IsReading}" />
+      </StackPanel>
+
+      <!-- While a download runs: Hide leaves it going, Cancel stops it. -->
+      <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto,Auto" Margin="0,12,0,0">
+        <Button Grid.Column="1"
+                IsVisible="{Binding !IsDownloading}"
+                Command="{Binding CloseCommand}"
+                Content="{DynamicResource Text.ModInstall_Cancel}" />
+        <Button Grid.Column="2" Classes="accent" Margin="8,0,0,0"
+                IsVisible="{Binding IsChoosingFile}"
+                IsEnabled="{Binding FileChooser.HasSelection}"
+                Command="{Binding DownloadChosenFileCommand}"
+                Content="{DynamicResource Text.ModInstall_DownloadFile}" />
+        <Button Grid.Column="2" Classes="accent" Margin="8,0,0,0"
+                IsVisible="{Binding IsAlreadyInstalled}"
+                Command="{Binding DownloadAnywayCommand}"
+                Content="{DynamicResource Text.GameBanana_Already_Again}" />
+        <Button Grid.Column="2" Classes="accent" Margin="8,0,0,0"
+                IsVisible="{Binding HasRows}"
+                IsEnabled="{Binding CanInstall}"
+                Command="{Binding InstallCommand}"
+                Content="{Binding InstallText}" />
+
+        <Button Grid.Column="1"
+                IsVisible="{Binding IsDownloading}"
+                Command="{Binding CancelDownloadCommand}"
+                Content="{DynamicResource Text.ModInstall_CancelDownload}" />
+        <Button Grid.Column="2" Classes="accent" Margin="8,0,0,0"
+                IsVisible="{Binding IsDownloading}"
+                Command="{Binding HideDownloadCommand}"
+                Content="{DynamicResource Text.ModInstall_Hide}" />
+      </Grid>
+
+      <!-- The download itself: how much has arrived, how fast, how much longer. First in the panel while it runs. -->
+      <Border DockPanel.Dock="Top" Classes="inlineNotice" Padding="12" Margin="0,0,0,10"
+              IsVisible="{Binding IsDownloading}">
+        <StackPanel Spacing="8">
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+            <TextBlock Grid.Column="0" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
+                       Text="{Binding DownloadName}" />
+            <TextBlock Grid.Column="1" Classes="muted" FontSize="12"
+                       Text="{Binding DownloadProgressText}" />
+          </Grid>
+
+          <ProgressBar Height="6" Minimum="0" Maximum="100"
+                       Value="{Binding DownloadPercent}"
+                       IsIndeterminate="{Binding IsDownloadUnmeasured}"
+                       AutomationProperties.Name="{DynamicResource Text.ModInstall_Downloading}" />
+
+          <StackPanel Orientation="Horizontal" Spacing="12">
+            <TextBlock Classes="muted" FontSize="12"
+                       IsVisible="{Binding DownloadRateText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                       Text="{Binding DownloadRateText}" />
+            <TextBlock Classes="muted" FontSize="12"
+                       IsVisible="{Binding DownloadRemainingText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                       Text="{Binding DownloadRemainingText}" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <!-- What the panel is doing with GameBanana, and the way through if it refuses. -->
+      <StackPanel DockPanel.Dock="Top" Spacing="8" Margin="0,0,0,10"
+                  IsVisible="{Binding HasGameBananaNote}">
+        <Border Classes="inlineNotice" Padding="10">
+          <StackPanel Spacing="8">
+            <TextBlock FontSize="12" TextWrapping="Wrap" Text="{Binding GameBananaNote}" />
+            <Button HorizontalAlignment="Left"
+                    IsVisible="{Binding IsDownloadBlocked}"
+                    Command="{Binding OpenBlockedPageCommand}"
+                    Content="{DynamicResource Text.GameBanana_Prompt_OpenPage}" />
+          </StackPanel>
+        </Border>
+      </StackPanel>
+
+      <Panel>
+
+        <!-- The address prompt, here because the address is the install's first step. -->
+        <StackPanel Spacing="10" VerticalAlignment="Top" IsVisible="{Binding IsAskingForAddress}">
+          <TextBlock Classes="sectionLabel" Text="{DynamicResource Text.GameBanana_Prompt_Label}" />
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+            <TextBox Grid.Column="0" x:Name="AddressBox"
+                     Text="{Binding AddressInput}"
+                     PlaceholderText="{DynamicResource Text.GameBanana_Prompt_Placeholder}"
+                     AutomationProperties.Name="{DynamicResource Text.GameBanana_Prompt_Label}" />
+            <Button Grid.Column="1" Classes="accent"
+                    IsEnabled="{Binding CanSubmitAddress}"
+                    Command="{Binding SubmitAddressCommand}"
+                    Content="{DynamicResource Text.GameBanana_Prompt_Fetch}" />
+          </Grid>
+          <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                     IsVisible="{Binding AddressProblem, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                     Text="{Binding AddressProblem}" />
+        </StackPanel>
+
+        <!-- The page has several files: which one, before anything downloads. -->
+        <Panel IsVisible="{Binding IsChoosingFile}">
+          <panels:GameBananaFileChooserView DataContext="{Binding FileChooser}" />
+        </Panel>
+
+        <!-- The mod is already installed: each copy has a way to it, and Download anyway sits where Install would. -->
+        <StackPanel Spacing="10" VerticalAlignment="Top" IsVisible="{Binding IsAlreadyInstalled}">
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="{DynamicResource Text.GameBanana_Already_Body}" />
+          <ItemsControl ItemsSource="{Binding InstalledCopies}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:InstalledCopyViewModel">
+                <Border Classes="card" Padding="12" Margin="0,0,0,6">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                      <TextBlock Foreground="{DynamicResource XxsmTextBrush}"
+                                 TextTrimming="CharacterEllipsis"
+                                 Text="{Binding DisplayName}" />
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Classes="muted" FontSize="12" TextTrimming="CharacterEllipsis"
+                                   Text="{Binding FolderName}" />
+                        <TextBlock Classes="muted" FontSize="12" Text="{Binding WhereText}" />
+                      </StackPanel>
+                    </StackPanel>
+                    <Button Grid.Column="1" VerticalAlignment="Center"
+                            Command="{Binding $parent[ItemsControl].((vm:ModInstallViewModel)DataContext).GoToCopyCommand}"
+                            CommandParameter="{Binding}"
+                            Content="{DynamicResource Text.GameBanana_Already_GoTo}" />
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+
+        <StackPanel Spacing="8" VerticalAlignment="Center" IsVisible="{Binding IsEmpty}">
+          <TextBlock Classes="subheading" HorizontalAlignment="Center"
+                     Text="{DynamicResource Text.ModInstall_Empty_Heading}" />
+          <TextBlock Classes="muted" HorizontalAlignment="Center" TextWrapping="Wrap"
+                     Text="{DynamicResource Text.ModInstall_Empty_Body}" />
+        </StackPanel>
+
+        <ScrollViewer IsVisible="{Binding HasRows}">
+          <StackPanel Spacing="10">
+
+            <ItemsControl ItemsSource="{Binding Rows}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:InstallRowViewModel">
+                  <Border Classes="card" Padding="12" Margin="0,0,0,6">
+                    <DockPanel>
+
+                      <!-- The tickbox and where this mod is inside the source. -->
+                      <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*" Margin="0,0,0,10">
+                        <CheckBox Grid.Column="0" Margin="0,0,8,0"
+                                  IsChecked="{Binding IsSelected}"
+                                  AutomationProperties.Name="{Binding Name}" />
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                          <TextBlock FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
+                                     Text="{Binding Candidate.Name}" />
+                          <TextBlock Classes="muted" FontSize="11" TextTrimming="CharacterEllipsis"
+                                     IsVisible="{Binding HasRelativePath}"
+                                     Text="{Binding RelativePath, Converter={x:Static paths:PathConverters.Display}}" />
+                        </StackPanel>
+                      </Grid>
+
+                      <Grid ColumnDefinitions="260,*" ColumnSpacing="14">
+
+                        <!-- The mod's own picture, found in its files, large enough to tell two skins apart. -->
+                        <StackPanel Grid.Column="0" Spacing="8">
+                          <!-- A drop, Ctrl+V or the menu; held until Install. -->
+                          <Border Classes="modPreview imageTarget" Height="190"
+                                  Focusable="True" DragDrop.AllowDrop="True"
+                                  AutomationProperties.Name="{DynamicResource Text.ModImage_Area}">
+                            <Border.KeyBindings>
+                              <KeyBinding Gesture="Ctrl+V" Command="{Binding PastePictureCommand}" />
+                            </Border.KeyBindings>
+                            <Border.ContextMenu>
+                              <ContextMenu>
+                                <MenuItem Header="{DynamicResource Text.ModImage_Choose}"
+                                          Command="{Binding ChoosePictureCommand}" />
+                                <MenuItem Header="{DynamicResource Text.ModImage_Paste}"
+                                          Command="{Binding PastePictureCommand}" />
+                              </ContextMenu>
+                            </Border.ContextMenu>
+                            <Panel>
+                              <TextBlock Classes="muted" FontSize="11" Margin="16,0"
+                                         HorizontalAlignment="Center" VerticalAlignment="Center"
+                                         TextWrapping="Wrap" TextAlignment="Center"
+                                         IsVisible="{Binding !HasPreview}"
+                                         Text="{DynamicResource Text.ModInstall_NoPreview}" />
+                              <Image Source="{Binding PreviewImage}" IsVisible="{Binding HasPreview}"
+                                     Stretch="UniformToFill" />
+                            </Panel>
+                          </Border>
+
+                          <TextBlock FontSize="11" TextWrapping="Wrap"
+                                     Foreground="{DynamicResource XxsmWarnBrush}"
+                                     IsVisible="{Binding HasPictureError}"
+                                     Text="{Binding PictureError}" />
+
+                          <TextBlock FontSize="11" TextWrapping="Wrap"
+                                     Foreground="{DynamicResource XxsmAccentBrush}"
+                                     Text="{Binding DestinationText}" />
+
+                          <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                                     Text="{Binding Reason}" />
+
+                          <TextBlock FontSize="11" TextWrapping="Wrap"
+                                     Foreground="{DynamicResource XxsmWarnBrush}"
+                                     IsVisible="{Binding IsUncertain}"
+                                     Text="{Binding CertaintyText}" />
+
+                          <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                                     Text="{Binding DetailText}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Spacing="8">
+
+                          <!-- What it is called, and who made it. -->
+                          <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                            <StackPanel Grid.Column="0" Spacing="3">
+                              <TextBlock Classes="sectionLabel"
+                                         Text="{DynamicResource Text.ModInstall_DisplayName}" />
+                              <TextBox Text="{Binding DisplayName}"
+                                       AutomationProperties.Name="{DynamicResource Text.ModInstall_DisplayName}" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Spacing="3">
+                              <TextBlock Classes="sectionLabel"
+                                         Text="{DynamicResource Text.ModInstall_Author}" />
+                              <TextBox Text="{Binding Author}"
+                                       AutomationProperties.Name="{DynamicResource Text.ModInstall_Author}" />
+                            </StackPanel>
+                          </Grid>
+
+                          <!-- Where it lands: the folder it becomes, and the character it goes under. -->
+                          <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                            <StackPanel Grid.Column="0" Spacing="3">
+                              <TextBlock Classes="sectionLabel"
+                                         Text="{DynamicResource Text.ModInstall_Name}" />
+                              <TextBox Text="{Binding Name}"
+                                       AutomationProperties.Name="{DynamicResource Text.ModInstall_Name}" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Spacing="3">
+                              <TextBlock Classes="sectionLabel"
+                                         Text="{DynamicResource Text.ModInstall_Target}" />
+                              <!-- An AutoCompleteBox: a roster of a hundred characters is no list to scroll. -->
+                              <AutoCompleteBox ItemsSource="{Binding Targets}"
+                                               SelectedItem="{Binding Target}"
+                                               FilterMode="Contains"
+                                               ValueMemberBinding="{Binding DisplayName}"
+                                               PlaceholderText="{Binding FolderText}"
+                                               AutomationProperties.Name="{DynamicResource Text.ModInstall_Target}">
+                                <AutoCompleteBox.ItemTemplate>
+                                  <DataTemplate x:DataType="vm:CharacterChoiceViewModel">
+                                    <TextBlock Text="{Binding DisplayName}" />
+                                  </DataTemplate>
+                                </AutoCompleteBox.ItemTemplate>
+                              </AutoCompleteBox>
+                            </StackPanel>
+                          </Grid>
+
+                          <!-- A GameBanana address: Fetch fills only what is blank. -->
+                          <StackPanel Spacing="3">
+                            <TextBlock Classes="sectionLabel"
+                                       Text="{DynamicResource Text.ModInstall_Url}" />
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                              <TextBox Grid.Column="0" Text="{Binding ModUrl}"
+                                       PlaceholderText="{DynamicResource Text.ModInstall_Url_Placeholder}"
+                                       AutomationProperties.Name="{DynamicResource Text.ModInstall_Url}" />
+                              <Button Grid.Column="1"
+                                      IsEnabled="{Binding CanFetch}"
+                                      Command="{Binding FetchCommand}"
+                                      Content="{DynamicResource Text.ModInstall_Url_Fetch}" />
+                            </Grid>
+                            <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                                       IsVisible="{Binding FetchNote, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                       Text="{Binding FetchNote}" />
+                          </StackPanel>
+
+                          <StackPanel Spacing="3">
+                            <TextBlock Classes="sectionLabel"
+                                       Text="{DynamicResource Text.ModInstall_Version}" />
+                            <TextBox Text="{Binding Version}"
+                                     AutomationProperties.Name="{DynamicResource Text.ModInstall_Version}" />
+                          </StackPanel>
+
+                          <!-- Filled in by Fetch, and editable. -->
+                          <StackPanel Spacing="3">
+                            <TextBlock Classes="sectionLabel"
+                                       Text="{DynamicResource Text.ModInstall_Description}" />
+                            <TextBox Text="{Binding Description}"
+                                     AcceptsReturn="True" TextWrapping="Wrap" Height="56"
+                                     AutomationProperties.Name="{DynamicResource Text.ModInstall_Description}" />
+                          </StackPanel>
+
+                          <StackPanel Spacing="3">
+                            <TextBlock Classes="sectionLabel"
+                                       Text="{DynamicResource Text.ModInstall_Notes}" />
+                            <TextBox Text="{Binding Notes}"
+                                     AcceptsReturn="True" TextWrapping="Wrap" Height="56"
+                                     AutomationProperties.Name="{DynamicResource Text.ModInstall_Notes}" />
+                          </StackPanel>
+
+                          <!-- The files it holds; open for one mod, folded for several. -->
+                          <Expander IsVisible="{Binding HasFiles}"
+                                    IsExpanded="{Binding AreFilesExpanded}"
+                                    HorizontalAlignment="Stretch"
+                                    HorizontalContentAlignment="Stretch"
+                                    Header="{Binding FilesHeaderText}">
+                            <StackPanel Spacing="4">
+                              <ScrollViewer MaxHeight="150">
+                                <ItemsControl ItemsSource="{Binding Files}">
+                                  <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="x:String">
+                                      <TextBlock Classes="muted" FontSize="11" Text="{Binding}"
+                                                 TextTrimming="CharacterEllipsis" />
+                                    </DataTemplate>
+                                  </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                              </ScrollViewer>
+                              <TextBlock Classes="muted" FontSize="11"
+                                         IsVisible="{Binding IsFileListTruncated}"
+                                         Text="{Binding FileListTruncatedText}" />
+                            </StackPanel>
+                          </Expander>
+
+                        </StackPanel>
+                      </Grid>
+                    </DockPanel>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- Warned before the installation instructions would be lost, not after. -->
+            <StackPanel Spacing="4" IsVisible="{Binding HasStranded}">
+              <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap" Text="{Binding StrandedText}" />
+              <ItemsControl ItemsSource="{Binding StrandedFiles}" Margin="10,0,0,0">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="x:String">
+                    <TextBlock Classes="muted" FontSize="11" Text="{Binding}"
+                               TextTrimming="CharacterEllipsis" />
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+
+          </StackPanel>
+        </ScrollViewer>
+
+      </Panel>
+    </DockPanel>
+  </Border>
+
+</UserControl>

@@ -1,0 +1,50 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Xxsm.Desktop.ViewModels"
+             x:Class="Xxsm.Desktop.Views.Panels.FolderRenameView"
+             x:DataType="vm:FolderRenameViewModel">
+
+  <!-- Renaming one of two folders that differ only by capitals. Offered, not forced: Linux keeps them apart. -->
+  <Border Classes="card" MaxWidth="480"
+          HorizontalAlignment="Stretch" VerticalAlignment="Center"
+          IsVisible="{Binding IsOpen}">
+    <StackPanel Spacing="12">
+
+      <StackPanel Spacing="4">
+        <TextBlock Classes="subheading" Text="{DynamicResource Text.FolderRename_Heading}" />
+        <TextBlock Classes="muted" TextWrapping="Wrap" Text="{DynamicResource Text.FolderRename_Body}" />
+      </StackPanel>
+
+      <ItemsControl ItemsSource="{Binding Choices}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:RenameChoiceViewModel">
+            <RadioButton GroupName="folderRenameChoice" Margin="0,2"
+                         IsChecked="{Binding IsSelected}"
+                         Content="{Binding Name}" />
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+
+      <StackPanel Spacing="4">
+        <TextBlock Classes="sectionLabel" Text="{DynamicResource Text.FolderRename_Name}" />
+        <TextBox Text="{Binding NewName}"
+                 AutomationProperties.Name="{DynamicResource Text.FolderRename_Name}" />
+        <TextBlock FontSize="12" TextWrapping="Wrap"
+                   Foreground="{DynamicResource XxsmWarnBrush}"
+                   IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                   Text="{Binding Error}" />
+      </StackPanel>
+
+      <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+        <Button Command="{Binding CloseCommand}"
+                Content="{DynamicResource Text.FolderRename_Cancel}" />
+        <Button Classes="accent"
+                IsEnabled="{Binding CanRename}"
+                Command="{Binding RenameCommand}"
+                Content="{DynamicResource Text.FolderRename_Confirm}" />
+      </StackPanel>
+
+    </StackPanel>
+  </Border>
+
+</UserControl>

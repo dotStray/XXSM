@@ -1,0 +1,149 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Xxsm.Desktop.ViewModels"
+             xmlns:pages="clr-namespace:Xxsm.Desktop.ViewModels.Pages"
+             xmlns:svc="clr-namespace:Xxsm.Desktop.Services"
+             xmlns:panels="clr-namespace:Xxsm.Desktop.Views.Panels"
+             x:Class="Xxsm.Desktop.Views.Pages.NotificationsPage"
+             x:DataType="pages:NotificationsPageViewModel">
+
+  <Panel>
+
+  <DockPanel Classes="page">
+
+    <Grid Classes="pageHeader" ColumnDefinitions="*,Auto">
+      <TextBlock Grid.Column="0" Classes="heading"
+                 Text="{DynamicResource Text.Notifications_Heading}" />
+      <!-- Rescans, so a finding fixed in a file manager goes without leaving the page. -->
+      <Button Grid.Column="1" Classes="iconButton" VerticalAlignment="Top" Margin="16,0,0,0"
+              Command="{Binding RefreshCommand}"
+              ToolTip.Tip="{DynamicResource Text.Notifications_Refresh}"
+              AutomationProperties.Name="{DynamicResource Text.Notifications_Refresh}">
+        <Path Data="{StaticResource Icon.refresh}" />
+      </Button>
+    </Grid>
+
+    <ScrollViewer Classes="besideMargin">
+      <StackPanel Spacing="24" Margin="0,0,0,16">
+
+        <!-- What the last scan found: back on every scan until fixed, so no Dismiss and no badge. -->
+        <StackPanel Spacing="10" IsVisible="{Binding HasFindings}">
+          <StackPanel Spacing="2">
+            <TextBlock Classes="subheading" Text="{DynamicResource Text.Notifications_Findings_Heading}" />
+            <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                       Text="{DynamicResource Text.Notifications_Findings_Body}" />
+          </StackPanel>
+
+          <ItemsControl ItemsSource="{Binding Findings}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:ModsFolderFindingViewModel">
+                <Border Classes="card" Padding="14" Margin="0,0,0,8">
+                  <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding Title}"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource XxsmTextBrush}"
+                               TextWrapping="Wrap" />
+                    <SelectableTextBlock Grid.Row="1" Grid.Column="0" Text="{Binding Message}"
+                                         Margin="0,4,0,0" FontSize="12"
+                                         Foreground="{DynamicResource XxsmMutedBrush}"
+                                         TextWrapping="Wrap" />
+                    <Button Grid.Row="0" Grid.RowSpan="2" Grid.Column="1"
+                            Classes.destructive="{Binding IsDestructive}"
+                            Margin="12,0,0,0" VerticalAlignment="Top"
+                            Command="{Binding ActionCommand}"
+                            IsVisible="{Binding HasAction}"
+                            Content="{Binding ActionText}" />
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+
+        <!-- What XXSM did this session. -->
+        <StackPanel Spacing="10">
+          <Grid ColumnDefinitions="*,Auto">
+            <StackPanel Grid.Column="0" Spacing="2">
+              <TextBlock Classes="subheading" Text="{DynamicResource Text.Notifications_Activity_Heading}" />
+              <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                         Text="{DynamicResource Text.Notifications_Activity_Body}" />
+            </StackPanel>
+            <Button Grid.Column="1" VerticalAlignment="Top" Margin="16,0,0,0"
+                    Command="{Binding ClearAllCommand}"
+                    IsVisible="{Binding HasNotifications}"
+                    Content="{DynamicResource Text.Notifications_Clear}" />
+          </Grid>
+
+          <TextBlock Classes="muted" IsVisible="{Binding !HasNotifications}"
+                     Text="{DynamicResource Text.Notifications_Empty}" />
+
+          <ItemsControl ItemsSource="{Binding Notifications}" IsVisible="{Binding HasNotifications}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="svc:Notification">
+                <Border Classes="card" Padding="14" Margin="0,0,0,8">
+                  <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto" RowDefinitions="Auto,Auto">
+
+                    <!-- Severity is a word, not only a colour. -->
+                    <StackPanel Grid.Row="0" Grid.Column="0" Grid.RowSpan="2"
+                                Width="64" Margin="0,2,12,0" VerticalAlignment="Top">
+                      <TextBlock FontSize="11" IsVisible="{Binding IsInformation}"
+                                 Foreground="{DynamicResource XxsmMutedBrush}"
+                                 Text="{DynamicResource Text.Notifications_Severity_Information}" />
+                      <TextBlock FontSize="11" IsVisible="{Binding IsWarning}"
+                                 Foreground="{DynamicResource XxsmWarnBrush}"
+                                 Text="{DynamicResource Text.Notifications_Severity_Warning}" />
+                      <TextBlock FontSize="11" IsVisible="{Binding IsError}"
+                                 Foreground="{DynamicResource XxsmErrorBrush}"
+                                 Text="{DynamicResource Text.Notifications_Severity_Error}" />
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Title}"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource XxsmTextBrush}"
+                               TextWrapping="Wrap" />
+
+                    <SelectableTextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Message}"
+                                         Margin="0,4,0,0"
+                                         FontSize="12"
+                                         Foreground="{DynamicResource XxsmMutedBrush}"
+                                         TextWrapping="Wrap" />
+
+                    <!-- What the notice offers to do, such as undoing a sort run. -->
+                    <Button Grid.Row="0" Grid.Column="2" Grid.RowSpan="2" Classes="accent"
+                            Margin="10,0,6,0" VerticalAlignment="Top"
+                            Command="{Binding ActionCommand}"
+                            IsVisible="{Binding HasAction}"
+                            Content="{Binding ActionText}" />
+
+                    <Button Grid.Row="0" Grid.Column="3" Grid.RowSpan="2"
+                            Margin="10,0,6,0" VerticalAlignment="Top"
+                            Command="{Binding RetryCommand}"
+                            IsVisible="{Binding RetryCommand, Converter={x:Static ObjectConverters.IsNotNull}}"
+                            Content="{DynamicResource Text.Notifications_Retry}" />
+
+                    <Button Grid.Row="0" Grid.Column="4" Grid.RowSpan="2" VerticalAlignment="Top"
+                            Command="{Binding $parent[ItemsControl].((pages:NotificationsPageViewModel)DataContext).DismissCommand}"
+                            CommandParameter="{Binding}"
+                            Content="{DynamicResource Text.Notifications_Dismiss}" />
+
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+
+      </StackPanel>
+    </ScrollViewer>
+
+  </DockPanel>
+
+  <!-- Dims the page behind an open window. One window at a time: they never stack. -->
+  <Border Classes="scrim" IsVisible="{Binding IsAnyPanelOpen}" />
+
+  <panels:EmptyFoldersReviewView DataContext="{Binding EmptyFolders}" />
+  <panels:FolderRenameView DataContext="{Binding Rename}" />
+
+  </Panel>
+
+</UserControl>

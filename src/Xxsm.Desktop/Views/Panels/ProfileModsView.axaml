@@ -1,0 +1,161 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Xxsm.Desktop.ViewModels"
+             xmlns:controls="clr-namespace:Xxsm.Desktop.Controls"
+             x:Class="Xxsm.Desktop.Views.Panels.ProfileModsView"
+             x:DataType="vm:ProfileModsViewModel">
+
+  <UserControl.Resources>
+    <!-- A mod as a tile: picture, name and a line under it, a little wider than a character's. -->
+    <DataTemplate x:Key="ModTile" x:DataType="vm:ModTileViewModel">
+      <Button Classes="tile modTile" Classes.picked="{Binding IsPicked}" Classes.missing="{Binding IsMissing}"
+              Command="{Binding OpenCommand}"
+              ToolTip.Tip="{Binding Detail}"
+              AutomationProperties.Name="{Binding Name}">
+        <Panel>
+          <StackPanel>
+            <Panel Height="150">
+              <Border Classes="tilePortrait" Background="{DynamicResource XxsmBadgeBrush}" ClipToBounds="True">
+                <Panel>
+                  <TextBlock Text="{Binding Initial}" IsVisible="{Binding !HasPicture}"
+                             FontSize="40" FontWeight="Light" Foreground="{DynamicResource XxsmMutedBrush}"
+                             HorizontalAlignment="Center" VerticalAlignment="Center" />
+                  <Image Source="{Binding Picture}" IsVisible="{Binding HasPicture}" Stretch="UniformToFill" />
+                </Panel>
+              </Border>
+              <Border Classes="statusPill" Margin="6" HorizontalAlignment="Left" VerticalAlignment="Bottom"
+                      IsVisible="{Binding IsMissing}">
+                <TextBlock Foreground="{DynamicResource XxsmWarnBrush}" Text="{DynamicResource Text.ProfileMods_MissingBadge}" />
+              </Border>
+            </Panel>
+            <!-- A fixed height, so tiles with and without an added date line up. -->
+            <StackPanel Margin="10,8,10,10" Spacing="3" Height="52">
+              <TextBlock FontSize="13" Foreground="{DynamicResource XxsmTextBrush}"
+                         TextTrimming="CharacterEllipsis" Text="{Binding Name}" />
+              <TextBlock Classes="muted" FontSize="11" TextTrimming="CharacterEllipsis"
+                         IsVisible="{Binding IsPresent}" Text="{Binding Detail}" />
+              <TextBlock Classes="muted" FontSize="11" IsVisible="{Binding HasAddedText}" Text="{Binding AddedText}" />
+            </StackPanel>
+          </StackPanel>
+
+          <!-- In a profile: the tile's menu. The tile itself goes to the mod. -->
+          <Button Classes="pin tileMenu" IsVisible="{Binding IsMember}"
+                  HorizontalAlignment="Right" VerticalAlignment="Top" Margin="6"
+                  ToolTip.Tip="{DynamicResource Text.ProfileMods_More}"
+                  AutomationProperties.Name="{DynamicResource Text.ProfileMods_More}">
+            <Path Classes="pinIcon" Data="{StaticResource Icon.more}" />
+            <Button.Flyout>
+              <MenuFlyout>
+                <MenuItem Header="{DynamicResource Text.ProfileMods_GoTo}"
+                          IsVisible="{Binding IsPresent}"
+                          Command="{Binding GoToCommand}" />
+                <MenuItem Header="{DynamicResource Text.ProfileMods_FindReplacement}"
+                          IsVisible="{Binding IsMissing}"
+                          Command="{Binding ReplaceCommand}" />
+                <MenuItem Classes="destructive" Header="{DynamicResource Text.ProfileMods_Remove}"
+                          Command="{Binding RemoveCommand}" />
+              </MenuFlyout>
+            </Button.Flyout>
+          </Button>
+
+          <!-- In the picker: a tick on what is chosen. -->
+          <Border Classes="pickMark" IsVisible="{Binding IsPicked}"
+                  HorizontalAlignment="Right" VerticalAlignment="Top" Margin="6">
+            <Path Data="{StaticResource Icon.check}" />
+          </Border>
+        </Panel>
+      </Button>
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <!-- One profile's mods. The picker takes the same place, so two panels never stack. -->
+  <Border Classes="card" Margin="24" MaxWidth="1180"
+          HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+          IsVisible="{Binding IsOpen}">
+    <Panel>
+
+      <!-- The profile's mods. -->
+      <DockPanel IsVisible="{Binding IsShowingProfile}">
+        <StackPanel DockPanel.Dock="Top" Spacing="8" Margin="0,0,0,12">
+          <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+              <TextBlock Classes="subheading" TextTrimming="CharacterEllipsis" Text="{Binding Heading}" />
+              <Border Classes="badge" VerticalAlignment="Center" IsVisible="{Binding IsReadOnly}">
+                <TextBlock Text="{DynamicResource Text.Profiles_ReadOnly}" />
+              </Border>
+              <TextBlock Classes="muted" VerticalAlignment="Center" Text="{Binding Subtitle}" />
+            </StackPanel>
+            <Button Grid.Column="1" Classes="accent"
+                    Command="{Binding AddModsCommand}"
+                    Content="{DynamicResource Text.ProfileMods_AddMods}" />
+          </Grid>
+          <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" IsVisible="{Binding CanEdit}"
+                     Text="{DynamicResource Text.ProfileMods_AddHint}" />
+          <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" IsVisible="{Binding IsReadOnly}"
+                     Text="{DynamicResource Text.ProfileMods_ReadOnlyHint}" />
+          <TextBox Text="{Binding SearchText}" IsVisible="{Binding !IsEmpty}"
+                   PlaceholderText="{DynamicResource Text.ProfileMods_Search}"
+                   AutomationProperties.Name="{DynamicResource Text.ProfileMods_Search}" />
+        </StackPanel>
+
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+          <Button Command="{Binding CloseCommand}"
+                  Content="{DynamicResource Text.ProfileMods_Close}" />
+        </StackPanel>
+
+        <Panel>
+          <TextBlock Classes="muted" TextWrapping="Wrap" IsVisible="{Binding IsEmpty}"
+                     Text="{DynamicResource Text.ProfileMods_Empty}" />
+          <TextBlock Classes="muted" TextWrapping="Wrap" IsVisible="{Binding HasNoMatches}"
+                     Text="{DynamicResource Text.ProfileMods_NoMatches}" />
+          <ScrollViewer>
+            <ItemsControl ItemsSource="{Binding Tiles}" ItemTemplate="{StaticResource ModTile}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <controls:FillingWrapPanel MinItemWidth="150" MaxItemWidth="150" ItemSpacing="12" RowSpacing="12" />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+            </ItemsControl>
+          </ScrollViewer>
+        </Panel>
+      </DockPanel>
+
+      <!-- The picker: Add mods… and Find replacement…. -->
+      <DockPanel IsVisible="{Binding IsPicking}">
+        <StackPanel DockPanel.Dock="Top" Spacing="8" Margin="0,0,0,12">
+          <TextBlock Classes="subheading" TextTrimming="CharacterEllipsis" Text="{Binding PickHeading}" />
+          <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{Binding PickBody}" />
+          <TextBox Text="{Binding PickSearchText}" IsVisible="{Binding !HasNoCandidates}"
+                   PlaceholderText="{DynamicResource Text.ProfileMods_SearchAll}"
+                   AutomationProperties.Name="{DynamicResource Text.ProfileMods_SearchAll}" />
+        </StackPanel>
+
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,12,0,0">
+          <Button Command="{Binding CancelPickCommand}"
+                  Content="{DynamicResource Text.ProfileMods_Back}" />
+          <Button Classes="accent"
+                  Command="{Binding ConfirmPickCommand}"
+                  Content="{Binding ConfirmPickText}" />
+        </StackPanel>
+
+        <Panel>
+          <TextBlock Classes="muted" TextWrapping="Wrap" IsVisible="{Binding HasNoCandidates}"
+                     Text="{DynamicResource Text.ProfileMods_NoCandidates}" />
+          <TextBlock Classes="muted" TextWrapping="Wrap" IsVisible="{Binding HasNoPickMatches}"
+                     Text="{DynamicResource Text.ProfileMods_NoMatches}" />
+          <ScrollViewer>
+            <ItemsControl ItemsSource="{Binding PickTiles}" ItemTemplate="{StaticResource ModTile}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <controls:FillingWrapPanel MinItemWidth="150" MaxItemWidth="150" ItemSpacing="12" RowSpacing="12" />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+            </ItemsControl>
+          </ScrollViewer>
+        </Panel>
+      </DockPanel>
+
+    </Panel>
+  </Border>
+
+</UserControl>

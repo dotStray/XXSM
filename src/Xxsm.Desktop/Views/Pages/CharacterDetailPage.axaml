@@ -1,0 +1,747 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Xxsm.Desktop.ViewModels"
+             xmlns:pages="clr-namespace:Xxsm.Desktop.ViewModels.Pages"
+             xmlns:conv="clr-namespace:Avalonia.Data.Converters;assembly=Avalonia.Base"
+             xmlns:panels="clr-namespace:Xxsm.Desktop.Views.Panels"
+             xmlns:controls="clr-namespace:Xxsm.Desktop.Controls"
+             x:Class="Xxsm.Desktop.Views.Pages.CharacterDetailPage"
+             x:Name="Page"
+             x:DataType="pages:CharacterDetailPageViewModel">
+
+  <!-- This tab's button width: wide enough for the page's longest label. -->
+  <UserControl.Resources>
+    <x:Double x:Key="ButtonMinWidth">120</x:Double>
+  </UserControl.Resources>
+
+  <UserControl.KeyBindings>
+    <!-- Space switches the selected mods on or off; Delete and Escape need no mouse either. -->
+    <KeyBinding Gesture="Space" Command="{Binding ToggleSelectedCommand}" />
+    <KeyBinding Gesture="Delete" Command="{Binding DeleteSelectedCommand}" />
+    <KeyBinding Gesture="Escape" Command="{Binding BackCommand}" />
+  </UserControl.KeyBindings>
+
+  <!-- The page, and the panels that cover it: siblings, so a tall panel centres over the whole window. -->
+  <!-- The whole page takes a drop. The transparent background makes its empty stretches hit-testable. -->
+  <Panel Background="Transparent" DragDrop.AllowDrop="True">
+
+  <!-- Right-click away from a mod: edit this character or one of its skins. The background takes the click. -->
+  <DockPanel Classes="page" Background="Transparent">
+    <DockPanel.ContextMenu>
+      <ContextMenu x:Name="EditMenu" ItemsSource="{Binding EditTargets}">
+        <ContextMenu.Styles>
+          <Style Selector="MenuItem" x:DataType="pages:CharacterEditTargetViewModel">
+            <Setter Property="Header" Value="{Binding Text}" />
+            <Setter Property="Command" Value="{Binding Command}" />
+          </Style>
+        </ContextMenu.Styles>
+      </ContextMenu>
+    </DockPanel.ContextMenu>
+
+    <Grid Classes="pageHeader" ColumnDefinitions="Auto,Auto,*">
+      <Button Grid.Column="0" Classes="iconButton"
+              Command="{Binding BackCommand}"
+              ToolTip.Tip="{DynamicResource Text.CharacterDetail_Back}"
+              AutomationProperties.Name="{DynamicResource Text.CharacterDetail_Back}">
+        <Path Data="{StaticResource Icon.back}" />
+      </Button>
+
+      <Border Grid.Column="1" Classes="detailPortrait" Margin="10,0,0,0">
+        <Panel>
+          <!-- The selected skin tab's picture, not always the opened character's. -->
+          <TextBlock Text="{Binding Initial}"
+                     IsVisible="{Binding !HasHeaderPortrait}"
+                     FontSize="30"
+                     FontWeight="Light"
+                     Foreground="{DynamicResource XxsmMutedBrush}"
+                     HorizontalAlignment="Center"
+                     VerticalAlignment="Center" />
+          <Image Source="{Binding HeaderPortrait}" IsVisible="{Binding HasHeaderPortrait}" Stretch="UniformToFill" />
+          <Path Classes="detailIcon" Data="{StaticResource Icon.mods}" IsVisible="{Binding IsPlace}" />
+        </Panel>
+      </Border>
+
+      <!-- The name at one end and the buttons at the other, each on its own line when the page is too narrow. -->
+      <controls:SplitRow Grid.Column="2" Gap="16" LineSpacing="10" VerticalAlignment="Center">
+      <StackPanel Margin="14,0,0,0" VerticalAlignment="Center" Spacing="3">
+        <TextBlock Classes="heading" Text="{Binding Heading}" TextTrimming="CharacterEllipsis" />
+        <TextBlock Classes="pageSubtitle" IsVisible="{Binding HasSelection}"
+                   Text="{Binding SelectionCountText}" />
+      </StackPanel>
+
+      <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+
+        <!-- The preview plans the whole folder and narrows the rows to this character. -->
+        <!-- The visible way into picking several mods; its tooltip names Ctrl-click and Shift-click. -->
+        <ToggleButton Classes="chip" VerticalAlignment="Center"
+                      IsChecked="{Binding IsSelectMode}"
+                      Content="{DynamicResource Text.CharacterDetail_Select}"
+                      ToolTip.Tip="{DynamicResource Text.CharacterDetail_Selection_Hint}" />
+
+        <Button Command="{Binding SortThisCharacterCommand}"
+                Content="{DynamicResource Text.CharacterDetail_SortHere}" />
+
+        <!-- One Add entry, with a folder and an archive behind it: they need two different system dialogs. -->
+        <Button Classes="accent"
+                Content="{DynamicResource Text.ModInstall_AddMod}">
+          <Button.Flyout>
+            <MenuFlyout>
+              <MenuItem Header="{DynamicResource Text.ModInstall_AddFromFolder}"
+                        Command="{Binding #Page.((pages:CharacterDetailPageViewModel)DataContext).AddModFromFolderCommand}" />
+              <MenuItem Header="{DynamicResource Text.ModInstall_AddFromArchive}"
+                        Command="{Binding #Page.((pages:CharacterDetailPageViewModel)DataContext).AddModFromArchiveCommand}" />
+
+              <!-- Hidden while looking mods up is switched off: an entry that always refuses is worse than none. -->
+              <MenuItem IsVisible="{Binding #Page.((pages:CharacterDetailPageViewModel)DataContext).CanAddFromGameBanana}"
+                        Command="{Binding #Page.((pages:CharacterDetailPageViewModel)DataContext).AddModFromGameBananaCommand}">
+                <MenuItem.Header>
+                  <StackPanel Spacing="1" MaxWidth="340">
+                    <TextBlock Text="{DynamicResource Text.ModInstall_AddFromGameBanana}" />
+                    <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                               Text="{DynamicResource Text.ModInstall_AddFromGameBanana_Hint}" />
+                  </StackPanel>
+                </MenuItem.Header>
+              </MenuItem>
+            </MenuFlyout>
+          </Button.Flyout>
+        </Button>
+      </StackPanel>
+      </controls:SplitRow>
+    </Grid>
+
+    <!-- Skin tabs, each with its own portrait. Opening a character lands on its own tab, not on All. -->
+    <ListBox DockPanel.Dock="Top" Classes="tabs skinTabs" Margin="0,0,0,12"
+             IsVisible="{Binding HasSkinFilters}"
+             ItemsSource="{Binding SkinFilters}"
+             SelectedItem="{Binding SelectedSkinFilter}">
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="pages:SkinFilterViewModel">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <Border Classes="skinThumb" IsVisible="{Binding !IsAll}">
+              <Panel>
+                <TextBlock Text="{Binding Initial}"
+                           IsVisible="{Binding !HasPortrait}"
+                           FontSize="13"
+                           FontWeight="Light"
+                           Foreground="{DynamicResource XxsmMutedBrush}"
+                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                <Image Source="{Binding Portrait}" IsVisible="{Binding HasPortrait}"
+                       Stretch="UniformToFill" />
+              </Panel>
+            </Border>
+            <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center" />
+          </StackPanel>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+
+    <!-- The toolbar's menus bind through #Page: a Flyout lives in its own Popup, and $parent cannot walk out of it. -->
+    <!-- The right-hand column is the detail pane's width, so the tools line up with the pane below. -->
+    <Grid x:Name="ToolsGrid" DockPanel.Dock="Top" ColumnDefinitions="*,340" Margin="0,0,0,12"
+          IsVisible="{Binding HasCharacter}">
+
+      <!-- The search box, which is not there until the magnifier is pressed. -->
+      <TextBox Grid.Column="0" Name="SearchBox" Classes="toolbarSearch" Margin="0,0,12,0"
+               IsVisible="{Binding IsSearchOpen}"
+               Text="{Binding SearchText}"
+               PlaceholderText="{DynamicResource Text.CharacterDetail_Search_Placeholder}"
+               AutomationProperties.Name="{DynamicResource Text.CharacterDetail_Search_Placeholder}" />
+
+      <Grid Grid.Column="1" ColumnDefinitions="Auto,*,Auto,*,Auto,*,Auto,*,Auto">
+
+        <Button Grid.Column="0" Classes="iconButton" Classes.on="{Binding IsSearchOpen}"
+                Click="OnSearchToggled"
+                ToolTip.Tip="{DynamicResource Text.CharacterDetail_Search_Toggle}"
+                AutomationProperties.Name="{DynamicResource Text.CharacterDetail_Search_Toggle}">
+          <Path Data="{StaticResource Icon.search}" />
+        </Button>
+
+        <!-- Show: all, enabled, disabled. The icon takes the accent while it narrows the rows. -->
+        <Button Grid.Column="2" Classes="iconButton" Classes.on="{Binding IsStatusFiltered}"
+                ToolTip.Tip="{Binding StatusFilterText}"
+                AutomationProperties.Name="{DynamicResource Text.CharacterDetail_Filter_Label}">
+          <Path Data="{StaticResource Icon.filter}" />
+          <Button.Flyout>
+            <MenuFlyout>
+              <MenuItem Header="{DynamicResource Text.CharacterDetail_Filter_All}"
+                        ToggleType="Radio" GroupName="modStatusMenu"
+                        IsChecked="{Binding #Page.((pages:CharacterDetailPageViewModel)DataContext).StatusFilter, Converter={StaticResource EnumToBoolean}, ConverterParameter={x:Static pages:ModStatusFilter.All}, Mode=OneWay}"
+                        Command="{Binding #Page.((pages:CharacterDetailPageViewModel)DataContext).SetStatusFilterCommand}"
+                        CommandParameter="{x:Static pages:ModStatusFilter.All}" />
+              <MenuItem Header="{DynamicResource Text.CharacterDetail_Filter_Enabled}"
+                        ToggleType="Radio" GroupName="modStatusMenu"
+                        IsChecked="{Binding #Page.((pages:CharacterDetailPageViewModel)DataContext).StatusFilter, Converter={StaticResource EnumToBoolean}, ConverterParameter={x:Static pages:ModStatusFilter.Enabled}, Mode=OneWay}"
+                        Command="{Binding #Page.((pages:CharacterDetailPageViewModel)DataContext).SetStatusFilterCommand}"
+                        CommandParameter="{x:Static pages:ModStatusFilter.Enabled}" />
+              <MenuItem Header="{DynamicResource Text.CharacterDetail_Filter_Disabled}"
+                        ToggleType="Radio" GroupName="modStatusMenu"
+                        IsChecked="{Binding #Page.((pages:CharacterDetailPageViewModel)DataContext).StatusFilter, Converter={StaticResource EnumToBoolean}, ConverterParameter={x:Static pages:ModStatusFilter.Disabled}, Mode=OneWay}"
+                        Command="{Binding #Page.((pages:CharacterDetailPageViewModel)DataContext).SetStatusFilterCommand}"
+                        CommandParameter="{x:Static pages:ModStatusFilter.Disabled}" />
+            </MenuFlyout>
+          </Button.Flyout>
+        </Button>
+
+        <!-- Sort by. The button names the field in force, which an icon alone cannot. -->
+        <Button Grid.Column="4" Classes="toolbarMenu"
+                ToolTip.Tip="{DynamicResource Text.CharacterDetail_Sort_Label}"
+                AutomationProperties.Name="{DynamicResource Text.CharacterDetail_Sort_Label}">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <Path Classes="menuIcon" Data="{StaticResource Icon.sort}" />
+            <TextBlock Text="{Binding SortModeText}" VerticalAlignment="Center" />
+          </StackPanel>
+          <Button.Flyout>
+            <MenuFlyout>
+              <MenuItem Header="{DynamicResource Text.CharacterDetail_Sort_Name}"
+                        ToggleType="Radio" GroupName="modSortMenu"
+                        IsChecked="{Binding #Page.((pages:CharacterDetailPageViewModel)DataContext).SortMode, Converter={StaticResource EnumToBoolean}, ConverterParameter={x:Static pages:ModSortMode.Name}, Mode=OneWay}"
+                        Command="{Binding #Page.((pages:CharacterDetailPageViewModel)DataContext).SetSortCommand}"
+                        CommandParameter="{x:Static pages:ModSortMode.Name}" />
+              <MenuItem Header="{DynamicResource Text.CharacterDetail_Sort_Status}"
+                        ToggleType="Radio" GroupName="modSortMenu"
+                        IsChecked="{Binding #Page.((pages:CharacterDetailPageViewModel)DataContext).SortMode, Converter={StaticResource EnumToBoolean}, ConverterParameter={x:Static pages:ModSortMode.Status}, Mode=OneWay}"
+                        Command="{Binding #Page.((pages:CharacterDetailPageViewModel)DataContext).SetSortCommand}"
+                        CommandParameter="{x:Static pages:ModSortMode.Status}" />
+              <MenuItem Header="{DynamicResource Text.CharacterDetail_Sort_Author}"
+                        ToggleType="Radio" GroupName="modSortMenu"
+                        IsChecked="{Binding #Page.((pages:CharacterDetailPageViewModel)DataContext).SortMode, Converter={StaticResource EnumToBoolean}, ConverterParameter={x:Static pages:ModSortMode.Author}, Mode=OneWay}"
+                        Command="{Binding #Page.((pages:CharacterDetailPageViewModel)DataContext).SetSortCommand}"
+                        CommandParameter="{x:Static pages:ModSortMode.Author}" />
+              <MenuItem Header="{DynamicResource Text.CharacterDetail_Sort_DateAdded}"
+                        ToggleType="Radio" GroupName="modSortMenu"
+                        IsChecked="{Binding #Page.((pages:CharacterDetailPageViewModel)DataContext).SortMode, Converter={StaticResource EnumToBoolean}, ConverterParameter={x:Static pages:ModSortMode.DateAdded}, Mode=OneWay}"
+                        Command="{Binding #Page.((pages:CharacterDetailPageViewModel)DataContext).SetSortCommand}"
+                        CommandParameter="{x:Static pages:ModSortMode.DateAdded}" />
+              <MenuItem Header="{DynamicResource Text.CharacterDetail_Sort_DateModified}"
+                        ToggleType="Radio" GroupName="modSortMenu"
+                        IsChecked="{Binding #Page.((pages:CharacterDetailPageViewModel)DataContext).SortMode, Converter={StaticResource EnumToBoolean}, ConverterParameter={x:Static pages:ModSortMode.DateModified}, Mode=OneWay}"
+                        Command="{Binding #Page.((pages:CharacterDetailPageViewModel)DataContext).SetSortCommand}"
+                        CommandParameter="{x:Static pages:ModSortMode.DateModified}" />
+            </MenuFlyout>
+          </Button.Flyout>
+        </Button>
+
+        <!-- Which way that sort runs: its own button, one click from anywhere. -->
+        <Button Grid.Column="6" Classes="iconButton"
+                Command="{Binding ToggleSortDirectionCommand}"
+                ToolTip.Tip="{Binding SortDirectionText}"
+                AutomationProperties.Name="{Binding SortDirectionText}">
+          <Panel>
+            <Path Data="{StaticResource Icon.ascending}" IsVisible="{Binding !SortDescending}" />
+            <Path Data="{StaticResource Icon.descending}" IsVisible="{Binding SortDescending}" />
+          </Panel>
+        </Button>
+
+        <!-- Rescans for changes made outside XXSM while the page was open. -->
+        <Button Grid.Column="8" Classes="iconButton"
+                Command="{Binding RefreshCommand}"
+                ToolTip.Tip="{DynamicResource Text.CharacterDetail_Refresh}"
+                AutomationProperties.Name="{DynamicResource Text.CharacterDetail_Refresh}">
+          <Path Data="{StaticResource Icon.refresh}" />
+        </Button>
+      </Grid>
+    </Grid>
+
+    <Panel>
+
+      <!-- Empty state: nothing filed under this character yet. -->
+      <Border Classes="card notice" IsVisible="{Binding HasNoMods}">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="subheading" Text="{DynamicResource Text.CharacterDetail_Empty_Heading}" />
+          <TextBlock Classes="muted" Text="{DynamicResource Text.CharacterDetail_Empty_Body}" />
+        </StackPanel>
+      </Border>
+
+      <!-- Empty state: a search or filter matched nothing. -->
+      <Border Classes="card notice" IsVisible="{Binding HasNoMatches}">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="subheading" Text="{DynamicResource Text.CharacterDetail_NoMatches_Heading}" />
+          <TextBlock Classes="muted" Text="{DynamicResource Text.CharacterDetail_NoMatches_Body}" />
+        </StackPanel>
+      </Border>
+
+      <!-- The detail pane's column: 340 while there is room, down to 260, or as the user dragged it. -->
+      <Grid x:Name="RowsGrid" IsVisible="{Binding HasRows}" ColumnDefinitions="*,340" RowDefinitions="*,Auto">
+
+        <!-- What the actions do when more than one mod is picked. Under the table, so it never moves a row. -->
+        <Border Grid.Row="1" Grid.Column="0" Classes="card" Margin="0,10,12,0" Padding="10,8"
+                IsVisible="{Binding IsSelectionBarVisible}">
+          <!-- The buttons scroll sideways under an arrow when the list is too narrow for them. -->
+          <Grid ColumnDefinitions="Auto,*">
+            <TextBlock Grid.Column="0" VerticalAlignment="Center" Classes="muted" FontSize="12"
+                       Text="{Binding SelectionCountText}" />
+            <controls:ScrollingLine Grid.Column="1" Classes="onCard" Margin="6,0,0,0">
+              <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Margin="6,0,0,0"
+                        IsEnabled="{Binding HasSelection}"
+                        Command="{Binding EnableSelectedCommand}"
+                        Content="{DynamicResource Text.CharacterDetail_Selection_Enable}" />
+                <Button Margin="6,0,0,0"
+                        IsEnabled="{Binding HasSelection}"
+                        Command="{Binding DisableSelectedCommand}"
+                        Content="{DynamicResource Text.CharacterDetail_Selection_Disable}" />
+                <Button Margin="6,0,0,0"
+                        IsEnabled="{Binding HasSelection}"
+                        Command="{Binding OpenMoveTargetPickerCommand}"
+                        Content="{DynamicResource Text.CharacterDetail_MoveTo}" />
+                <Button Classes="destructive" Margin="6,0,0,0"
+                        IsEnabled="{Binding HasSelection}"
+                        Command="{Binding DeleteSelectedCommand}"
+                        Content="{DynamicResource Text.CharacterDetail_Delete}" />
+                <Button Margin="12,0,0,0"
+                        IsVisible="{Binding IsSelectMode}"
+                        Command="{Binding EndSelectModeCommand}"
+                        Content="{DynamicResource Text.CharacterDetail_Selection_Done}" />
+              </StackPanel>
+            </controls:ScrollingLine>
+          </Grid>
+        </Border>
+
+        <!-- The mod grid; the DataGrid virtualizes its rows. -->
+        <!-- Where a column's cells are measured when its edge is double-clicked (DataGridColumnSizer). -->
+        <Canvas Grid.Row="0" Grid.Column="0" x:Name="MeasureHost" Width="0" Height="0"
+                HorizontalAlignment="Left" VerticalAlignment="Top"
+                ClipToBounds="True" IsHitTestVisible="False" Opacity="0" />
+
+        <DataGrid Grid.Row="0" Grid.Column="0" Margin="0,0,12,0"
+                  Name="ModsGrid"
+                  ItemsSource="{Binding Rows}"
+                  SelectionMode="Extended"
+                  CanUserResizeColumns="True"
+                  GridLinesVisibility="Horizontal"
+                  IsReadOnly="True"
+                  AutoGenerateColumns="False"
+                  SelectedItem="{Binding CurrentRow}"
+                  SelectionChanged="OnModsSelectionChanged">
+          <DataGrid.Columns>
+            <!-- Tick boxes while Select is on: a read-out of SelectedItems, changed in the code-behind. -->
+            <DataGridTemplateColumn Tag="tick" Width="40" CanUserResize="False" IsVisible="False">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate x:DataType="vm:ModRowViewModel">
+                  <!-- Never takes the click: a ToggleButton handles its press first. The panel takes it. -->
+                  <Panel Background="Transparent">
+                    <CheckBox Margin="8,0,0,0" VerticalAlignment="Center"
+                              IsHitTestVisible="False"
+                              IsChecked="{Binding IsTicked, Mode=OneWay}"
+                              AutomationProperties.Name="{DynamicResource Text.CharacterDetail_Select_Column}" />
+                  </Panel>
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+            <!-- Turns one mod on or off. IsChecked one-way on purpose: the rescan after sets it. -->
+            <DataGridTemplateColumn Header="{DynamicResource Text.CharacterDetail_Column_Status}" Tag="status" Width="88" MinWidth="60">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate x:DataType="vm:ModRowViewModel">
+                  <ToggleSwitch Classes="modSwitch"
+                                IsChecked="{Binding IsEnabled, Mode=OneWay}"
+                                OnContent="{x:Null}"
+                                OffContent="{x:Null}"
+                                Command="{Binding $parent[DataGrid].((pages:CharacterDetailPageViewModel)DataContext).ToggleOneCommand}"
+                                CommandParameter="{Binding}"
+                                ToolTip.Tip="{Binding StatusText}"
+                                AutomationProperties.Name="{Binding StatusText}" />
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <!-- The label (.xxsm/mod.json) and the folder name: two things. The skin shows under All. -->
+            <DataGridTemplateColumn Header="{DynamicResource Text.CharacterDetail_Column_Name}" Tag="name"
+                                    Width="240" MinWidth="60">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate x:DataType="vm:ModRowViewModel">
+                  <StackPanel VerticalAlignment="Center" Spacing="1">
+                    <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Classes="muted" FontSize="11"
+                               IsVisible="{Binding HasSkinName}"
+                               Text="{Binding SkinName}" TextTrimming="CharacterEllipsis" />
+                    <!-- Why a sort never offers to move it; the menu below is the way back. -->
+                    <TextBlock Classes="muted" FontSize="11"
+                               IsVisible="{Binding IsFiledByYou}"
+                               Text="{DynamicResource Text.CharacterDetail_FiledByYou}"
+                               TextTrimming="CharacterEllipsis" />
+                  </StackPanel>
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <!-- The mark an update check leaves, read from the mod's own file; beside the name. -->
+            <!-- The update mark, under the header's grey icon. 60 is the least a header can draw an icon in. -->
+            <DataGridTemplateColumn Tag="update" SortMemberPath="HasUpdate" Width="60" MinWidth="60">
+              <DataGridTemplateColumn.Header>
+                <Path Classes="updateIcon header" Data="{StaticResource Icon.update}"
+                      ToolTip.Tip="{DynamicResource Text.ModRow_Column_Update}"
+                      AutomationProperties.Name="{DynamicResource Text.ModRow_Column_Update}" />
+              </DataGridTemplateColumn.Header>
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate x:DataType="vm:ModRowViewModel">
+                  <Path Classes="updateIcon" HorizontalAlignment="Left" Margin="12,0,0,0"
+                        Data="{StaticResource Icon.update}"
+                        IsVisible="{Binding HasUpdate}"
+                        ToolTip.Tip="{Binding UpdateTip}"
+                        AutomationProperties.Name="{Binding UpdateTip}" />
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+            <!-- Template columns, so a double-click on the edge can measure them. -->
+            <DataGridTemplateColumn Header="{DynamicResource Text.CharacterDetail_Column_Folder}" Tag="folder"
+                                    SortMemberPath="FolderName" Width="200" MinWidth="60">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate x:DataType="vm:ModRowViewModel">
+                  <TextBlock Classes="cell" Text="{Binding FolderName}" />
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTemplateColumn Header="{DynamicResource Text.CharacterDetail_Column_Author}" Tag="author"
+                                    SortMemberPath="Author" Width="120" MinWidth="60">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate x:DataType="vm:ModRowViewModel">
+                  <TextBlock Classes="cell" Text="{Binding Author}" />
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+
+          </DataGrid.Columns>
+
+          <!-- Per row, so its DataContext is the row; the page view model is reached by name from the Popup. -->
+          <DataGrid.Styles>
+            <!-- A profile in the Add to / Remove from profile menus: its own name, command and state. -->
+            <Style Selector="MenuItem.profileMenu > MenuItem" x:DataType="pages:ProfileMenuItemViewModel">
+              <Setter Property="Header" Value="{Binding Text}" />
+              <Setter Property="Command" Value="{Binding Command}" />
+              <Setter Property="IsEnabled" Value="{Binding IsEnabled}" />
+            </Style>
+            <Style Selector="DataGridRow">
+              <Setter Property="ContextMenu">
+                <ContextMenu>
+                  <MenuItem Header="{DynamicResource Text.CharacterDetail_Toggle}"
+                            Command="{Binding #Page.((pages:CharacterDetailPageViewModel)DataContext).ToggleRowCommand}"
+                            CommandParameter="{Binding}" />
+                  <MenuItem Header="{DynamicResource Text.CharacterDetail_MoveTo}"
+                            Command="{Binding #Page.((pages:CharacterDetailPageViewModel)DataContext).OpenMoveTargetPickerForRowCommand}"
+                            CommandParameter="{Binding}" />
+                  <MenuItem Header="{DynamicResource Text.CharacterDetail_LetAutoSortDecide}"
+                            x:DataType="vm:ModRowViewModel"
+                            IsVisible="{Binding IsFiledByYou}"
+                            Command="{Binding #Page.((pages:CharacterDetailPageViewModel)DataContext).LetAutoSortDecideForRowCommand}"
+                            CommandParameter="{Binding}" />
+                  <!-- Put in a profile or take out, switching nothing; filled as the menu opens (PrepareRowMenu). -->
+                  <MenuItem Classes="profileMenu"
+                            Header="{DynamicResource Text.CharacterDetail_AddToProfile}"
+                            IsVisible="{Binding #Page.((pages:CharacterDetailPageViewModel)DataContext).HasProfilesToAddTo}"
+                            ItemsSource="{Binding #Page.((pages:CharacterDetailPageViewModel)DataContext).AddToProfileItems}" />
+                  <MenuItem Classes="profileMenu destructive"
+                            Header="{DynamicResource Text.CharacterDetail_RemoveFromProfile}"
+                            IsVisible="{Binding #Page.((pages:CharacterDetailPageViewModel)DataContext).HasProfilesToRemoveFrom}"
+                            ItemsSource="{Binding #Page.((pages:CharacterDetailPageViewModel)DataContext).RemoveFromProfileItems}" />
+                  <MenuItem Classes="destructive" Header="{DynamicResource Text.CharacterDetail_Delete}"
+                            Command="{Binding #Page.((pages:CharacterDetailPageViewModel)DataContext).DeleteRowCommand}"
+                            CommandParameter="{Binding}" />
+                  <!-- A tool for seeing the update mark, behind gameBanana.developerTools in the settings file. -->
+                  <MenuItem Header="{DynamicResource Text.CharacterDetail_PretendUpdate}"
+                            IsVisible="{Binding #Page.((pages:CharacterDetailPageViewModel)DataContext).CanPretendUpdate}"
+                            Command="{Binding #Page.((pages:CharacterDetailPageViewModel)DataContext).PretendUpdateForRowCommand}"
+                            CommandParameter="{Binding}" />
+                </ContextMenu>
+              </Setter>
+            </Style>
+          </DataGrid.Styles>
+        </DataGrid>
+
+        <!-- The line between list and pane: drag, double-click, or Tab and arrows. In the 12-pixel gap. -->
+        <Border x:Name="PaneHandle" Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" Classes="paneHandle"
+                Focusable="True" IsTabStop="True"
+                HorizontalAlignment="Right" Width="12" Background="Transparent" Cursor="SizeWestEast"
+                ToolTip.Tip="{DynamicResource Text.CharacterDetail_PaneHandle}"
+                AutomationProperties.Name="{DynamicResource Text.CharacterDetail_PaneHandle}">
+          <Border Classes="paneHandleLine" Width="2" HorizontalAlignment="Center" CornerRadius="1" />
+        </Border>
+
+        <!-- The detail pane: the mod's preview, its two names and its page, all editable, and its folder. -->
+        <Border Grid.Row="0" Grid.RowSpan="2" Grid.Column="1" Classes="card">
+         <Panel>
+          <DockPanel IsVisible="{Binding HasSelectedRow}">
+
+           <!-- Save and Revert at the foot of the pane. Save is disabled until something has changed. -->
+           <StackPanel DockPanel.Dock="Bottom" Margin="0,12,0,0" Spacing="6">
+             <!-- Halves of the pane, so no minimum: at the narrowest pane two minimum-width buttons would overlap. -->
+             <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+               <Button Grid.Column="0" Classes="accent" MinWidth="0"
+                       HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                       Command="{Binding SaveEditsCommand}"
+                       Content="{DynamicResource Text.CharacterDetail_Edit_Save}" />
+               <Button Grid.Column="1" MinWidth="0"
+                       HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                       IsEnabled="{Binding IsEditDirty}"
+                       Command="{Binding RevertEditsCommand}"
+                       Content="{DynamicResource Text.CharacterDetail_Edit_Revert}" />
+             </Grid>
+             <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                     Command="{Binding OpenModFolderCommand}"
+                     Content="{DynamicResource Text.CharacterDetail_Detail_OpenFolder}" />
+           </StackPanel>
+
+           <ScrollViewer x:Name="PaneScroller" Classes="besidePadding">
+            <StackPanel Spacing="10">
+            <!-- The mod's picture: the pen, a drop, or Ctrl+V; copied into the mod's .xxsm folder. -->
+            <Border Classes="modPreview imageTarget" Focusable="True" DragDrop.AllowDrop="True"
+                    AutomationProperties.Name="{DynamicResource Text.ModImage_Area}">
+              <Border.KeyBindings>
+                <KeyBinding Gesture="Ctrl+V" Command="{Binding PasteModImageCommand}" />
+              </Border.KeyBindings>
+              <Border.ContextMenu>
+                <ContextMenu>
+                  <MenuItem Header="{DynamicResource Text.ModImage_Choose}"
+                            Command="{Binding #Page.((pages:CharacterDetailPageViewModel)DataContext).ChooseModImageCommand}" />
+                  <MenuItem Header="{DynamicResource Text.ModImage_Paste}"
+                            Command="{Binding #Page.((pages:CharacterDetailPageViewModel)DataContext).PasteModImageCommand}" />
+                  <!-- Disabled while the mod shows nothing, so the menu says whether there is a picture to remove. -->
+                  <MenuItem Classes="destructive" Header="{DynamicResource Text.ModImage_Remove}"
+                            Command="{Binding #Page.((pages:CharacterDetailPageViewModel)DataContext).ClearModImageCommand}" />
+                </ContextMenu>
+              </Border.ContextMenu>
+              <Panel>
+                <TextBlock Classes="muted" FontSize="12" Margin="16,0"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           TextWrapping="Wrap" TextAlignment="Center"
+                           IsVisible="{Binding !HasPreviewImage}"
+                           Text="{DynamicResource Text.CharacterDetail_Detail_NoPreview}" />
+                <Image Source="{Binding PreviewImage}"
+                       IsVisible="{Binding HasPreviewImage}"
+                       Stretch="UniformToFill" />
+                <Button Classes="iconButton imageEdit" Margin="8"
+                        HorizontalAlignment="Right" VerticalAlignment="Top"
+                        Command="{Binding ChooseModImageCommand}"
+                        ToolTip.Tip="{DynamicResource Text.ModImage_Edit}"
+                        AutomationProperties.Name="{DynamicResource Text.ModImage_Edit}">
+                  <Path Data="{StaticResource Icon.edit}" />
+                </Button>
+              </Panel>
+            </Border>
+            <!-- Mod name writes customName and moves nothing; Mod folder name renames a folder. -->
+            <StackPanel Spacing="4">
+              <TextBlock Classes="sectionLabel" Text="{DynamicResource Text.CharacterDetail_Edit_Name}" />
+              <TextBox Text="{Binding EditName}"
+                       AutomationProperties.Name="{DynamicResource Text.CharacterDetail_Edit_Name}" />
+            </StackPanel>
+            <StackPanel Spacing="4">
+              <TextBlock Classes="sectionLabel" Text="{DynamicResource Text.CharacterDetail_Edit_FolderName}" />
+              <TextBox Text="{Binding EditFolderName}"
+                       AutomationProperties.Name="{DynamicResource Text.CharacterDetail_Edit_FolderName}" />
+              <!-- The folder name without the DISABLED_ prefix, which is XXSM's bookkeeping. -->
+              <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                         IsVisible="{Binding FolderNameNotice, Converter={x:Static conv:ObjectConverters.IsNotNull}}"
+                         Text="{Binding FolderNameNotice}" />
+            </StackPanel>
+            <StackPanel Spacing="4">
+              <TextBlock Classes="sectionLabel" Text="{DynamicResource Text.CharacterDetail_Edit_Url}" />
+              <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
+                <TextBox Grid.Column="0" Text="{Binding EditModUrl}"
+                         AutomationProperties.Name="{DynamicResource Text.CharacterDetail_Edit_Url}" />
+                <!-- Paste an address and press this; the "a mod you already have" setting decides. -->
+                <Button Grid.Column="1" Classes="iconButton"
+                        IsVisible="{Binding CanFetchModDetails}"
+                        IsEnabled="{Binding CanFetchMod}"
+                        Command="{Binding FetchModDetailsCommand}"
+                        ToolTip.Tip="{DynamicResource Text.CharacterDetail_Edit_Fetch}"
+                        AutomationProperties.Name="{DynamicResource Text.CharacterDetail_Edit_Fetch}">
+                  <Path Data="{StaticResource Icon.download}" />
+                </Button>
+                <Button Grid.Column="2" Classes="iconButton"
+                        Command="{Binding OpenModUrlCommand}"
+                        ToolTip.Tip="{DynamicResource Text.CharacterDetail_Edit_OpenUrl}"
+                        AutomationProperties.Name="{DynamicResource Text.CharacterDetail_Edit_OpenUrl}">
+                  <Path Data="{StaticResource Icon.open}" />
+                </Button>
+              </Grid>
+              <!-- Whether the mod is linked to its page, and so checked for updates. Hidden with GameBanana off. -->
+              <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                         IsVisible="{Binding ShowsUpdates}"
+                         Text="{Binding GameBananaLinkText}" />
+            </StackPanel>
+
+            <!-- A newer version on the mod's page. "It is current" is the way off the mark. -->
+            <Border Classes="inlineNotice" Padding="8">
+              <Border.IsVisible>
+                <MultiBinding Converter="{x:Static BoolConverters.And}">
+                  <Binding Path="ShowsUpdates" />
+                  <Binding Path="SelectedRow.HasUpdate" FallbackValue="{x:False}" />
+                </MultiBinding>
+              </Border.IsVisible>
+              <StackPanel Spacing="6">
+                <TextBlock FontSize="12" TextWrapping="Wrap"
+                           Text="{DynamicResource Text.CharacterDetail_Detail_Update}" />
+                <TextBlock Classes="muted" FontSize="12"
+                           IsVisible="{Binding SelectedRow.HasUpdateVersions}"
+                           Text="{Binding SelectedRow.UpdateVersions}" />
+                <WrapPanel ItemSpacing="8" LineSpacing="8">
+                  <Button Classes="accent" Command="{Binding UpdateModCommand}"
+                          Content="{DynamicResource Text.ModUpdate_Update}" />
+                  <Button Command="{Binding OpenModUrlCommand}"
+                          Content="{DynamicResource Text.Mods_Updates_Open}" />
+                  <Button Command="{Binding DismissUpdateCommand}"
+                          Content="{DynamicResource Text.CharacterDetail_Detail_Update_Dismiss}" />
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+
+            <!-- The name clash, asked in place: the suggestion is in the box above, and Save again accepts it. -->
+            <Border Classes="inlineNotice" Padding="8"
+                    IsVisible="{Binding EditNotice, Converter={x:Static conv:ObjectConverters.IsNotNull}}">
+              <TextBlock FontSize="12" TextWrapping="Wrap" Text="{Binding EditNotice}" />
+            </Border>
+
+            <!-- The rest of what the install card asks for, editable here and saved by the same Save. -->
+            <StackPanel Spacing="4">
+              <TextBlock Classes="sectionLabel" Text="{DynamicResource Text.CharacterDetail_Detail_Author}" />
+              <TextBox Text="{Binding EditAuthor}"
+                       AutomationProperties.Name="{DynamicResource Text.CharacterDetail_Detail_Author}" />
+            </StackPanel>
+            <StackPanel Spacing="4">
+              <TextBlock Classes="sectionLabel" Text="{DynamicResource Text.CharacterDetail_Detail_Version}" />
+              <TextBox Text="{Binding EditVersion}"
+                       AutomationProperties.Name="{DynamicResource Text.CharacterDetail_Detail_Version}" />
+            </StackPanel>
+            <!-- A few lines high, scrolling inside; the page link has the rest. -->
+            <StackPanel Spacing="4">
+              <TextBlock Classes="sectionLabel"
+                         Text="{DynamicResource Text.CharacterDetail_Detail_Description}" />
+              <TextBox Text="{Binding EditDescription}"
+                       AcceptsReturn="True" TextWrapping="Wrap" MinHeight="64" MaxHeight="96"
+                       AutomationProperties.Name="{DynamicResource Text.CharacterDetail_Detail_Description}" />
+              <Button Classes="cellLink" Padding="0" HorizontalAlignment="Left"
+                      IsVisible="{Binding SelectedRow.HasModUrl, FallbackValue={x:False}}"
+                      Command="{Binding OpenModUrlCommand}"
+                      Content="{DynamicResource Text.CharacterDetail_Detail_ReadRest}" />
+            </StackPanel>
+            <StackPanel Spacing="4">
+              <TextBlock Classes="sectionLabel" Text="{DynamicResource Text.CharacterDetail_Detail_Notes}" />
+              <TextBox Text="{Binding EditNotes}"
+                       AcceptsReturn="True" TextWrapping="Wrap" MinHeight="48" MaxHeight="96"
+                       AutomationProperties.Name="{DynamicResource Text.CharacterDetail_Detail_Notes}" />
+            </StackPanel>
+            <!-- The keys, saved by the same Save. Only the values typed into change in the mod's file. -->
+            <StackPanel Spacing="6" IsVisible="{Binding KeySwaps.HasBindings}">
+              <StackPanel Spacing="2">
+                <TextBlock Classes="sectionLabel" Text="{DynamicResource Text.Keys_Heading}" />
+                <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap" Text="{DynamicResource Text.Keys_Body}" />
+              </StackPanel>
+              <!-- The first two, and the rest a click away. -->
+              <ItemsControl ItemsSource="{Binding KeySwaps.ShownSections}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:KeySwapSectionViewModel">
+                    <StackPanel Spacing="4" Margin="0,4,0,6">
+                      <StackPanel Spacing="1">
+                        <TextBlock FontSize="12" Foreground="{DynamicResource XxsmTextBrush}"
+                                   TextTrimming="CharacterEllipsis" Text="{Binding Title}" />
+                        <TextBlock Classes="muted" FontSize="11" TextTrimming="CharacterEllipsis" Text="{Binding Subtitle}" />
+                      </StackPanel>
+                      <ItemsControl ItemsSource="{Binding Fields}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="vm:KeySwapFieldViewModel">
+                            <Grid ColumnDefinitions="84,*" ColumnSpacing="6" Margin="0,2">
+                              <TextBlock Grid.Column="0" Classes="muted" FontSize="12" VerticalAlignment="Center"
+                                         TextTrimming="CharacterEllipsis" Text="{Binding Label}" />
+                              <TextBox Grid.Column="1" Classes="mono" FontSize="12"
+                                       Text="{Binding Value}"
+                                       AutomationProperties.Name="{Binding Label}" />
+                            </Grid>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </StackPanel>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+              <Button HorizontalAlignment="Left"
+                      IsVisible="{Binding KeySwaps.HasMore}"
+                      Command="{Binding KeySwaps.ToggleShowAllCommand}"
+                      Content="{Binding KeySwaps.ShowAllText}" />
+            </StackPanel>
+            <StackPanel Spacing="4" IsVisible="{Binding KeySwaps.HasProblems}">
+              <ItemsControl ItemsSource="{Binding KeySwaps.Problems}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="x:String">
+                    <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap" Text="{Binding}" />
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+            <!-- Which profiles have this mod. -->
+            <StackPanel Spacing="4" IsVisible="{Binding ShowsProfiles}">
+              <TextBlock Classes="sectionLabel" Text="{DynamicResource Text.CharacterDetail_Profiles}" />
+              <TextBlock Text="{Binding SelectedRowProfilesText}" TextWrapping="Wrap" />
+            </StackPanel>
+            <StackPanel Spacing="4" IsVisible="{Binding SelectedRow.DateAddedText, Converter={x:Static conv:ObjectConverters.IsNotNull}}">
+              <TextBlock Classes="sectionLabel" Text="{DynamicResource Text.CharacterDetail_Detail_DateAdded}" />
+              <TextBlock Text="{Binding SelectedRow.DateAddedText}" TextWrapping="Wrap" />
+            </StackPanel>
+            <StackPanel Spacing="4" IsVisible="{Binding SelectedRow.DateModifiedText, Converter={x:Static conv:ObjectConverters.IsNotNull}}">
+              <TextBlock Classes="sectionLabel" Text="{DynamicResource Text.CharacterDetail_Detail_DateModified}" />
+              <TextBlock Text="{Binding SelectedRow.DateModifiedText}" TextWrapping="Wrap" />
+            </StackPanel>
+            <StackPanel Spacing="4" IsVisible="{Binding SelectedRow.HasConfigError}">
+              <TextBlock Classes="sectionLabel" Foreground="{DynamicResource XxsmErrorBrush}"
+                         Text="{DynamicResource Text.CharacterDetail_Detail_ConfigError}" />
+              <TextBlock Text="{Binding SelectedRow.ConfigError}" TextWrapping="Wrap" />
+            </StackPanel>
+            </StackPanel>
+           </ScrollViewer>
+
+          </DockPanel>
+
+          <TextBlock Classes="muted" IsVisible="{Binding !HasSelectedRow}"
+                     Text="{DynamicResource Text.CharacterDetail_Detail_NoneSelected}" />
+         </Panel>
+        </Border>
+      </Grid>
+
+    </Panel>
+
+  </DockPanel>
+
+  <Border Classes="scrim" IsVisible="{Binding IsAnyPanelOpen}" />
+
+    <!-- The confirmation for a destructive action. After the scrim on purpose: before it, the scrim covered it. -->
+    <Border Classes="card" MaxWidth="420"
+            HorizontalAlignment="Center" VerticalAlignment="Center"
+            IsVisible="{Binding PendingConfirmationMessage, Converter={x:Static conv:ObjectConverters.IsNotNull}}">
+      <StackPanel Spacing="14">
+        <TextBlock TextWrapping="Wrap" Text="{Binding PendingConfirmationMessage}" />
+        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+          <Button Command="{Binding CancelPendingCommand}"
+                  Content="{DynamicResource Text.CharacterDetail_Cancel}" />
+          <Button Classes="accent"
+                  Command="{Binding ConfirmPendingCommand}"
+                  Content="{DynamicResource Text.CharacterDetail_Confirm}" />
+        </StackPanel>
+      </StackPanel>
+    </Border>
+
+    <!-- Says what a drop will do while something is over the grid. -->
+    <Border Classes="card notice" VerticalAlignment="Top"
+            IsVisible="{Binding IsDragOver}">
+      <TextBlock Classes="muted" HorizontalAlignment="Center"
+                 Text="{DynamicResource Text.CharacterDetail_Drop_Hint}" />
+    </Border>
+
+    <!-- The "Move to…" picker, shared with the import. -->
+    <panels:CharacterPickerView DataContext="{Binding MovePicker}" />
+
+    <!-- The install confirm step, for a drop or either picker. -->
+    <panels:ModInstallView DataContext="{Binding Install}" />
+
+    <!-- Auto-sort narrowed to this character, in both directions. -->
+    <panels:SortReviewView DataContext="{Binding SortReview}" />
+
+    <!-- The Character Manager, opened from the right-click menu above. -->
+    <panels:CharacterManagerView DataContext="{Binding CharacterManager}" />
+
+    <!-- What a mod's GameBanana page says beside what the mod has. -->
+    <panels:GameBananaFillView DataContext="{Binding GameBananaFill}" />
+
+    <!-- "Update this mod?" -->
+    <panels:ModUpdateView DataContext="{Binding ModUpdate}" />
+
+  </Panel>
+
+</UserControl>

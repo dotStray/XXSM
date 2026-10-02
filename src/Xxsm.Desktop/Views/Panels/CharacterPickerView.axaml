@@ -1,0 +1,41 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Xxsm.Desktop.ViewModels"
+             x:Class="Xxsm.Desktop.Views.Panels.CharacterPickerView"
+             x:DataType="vm:CharacterPickerViewModel"
+             x:Name="Picker">
+
+  <!-- The one character picker: Move to…, and the character for an unknown import tag. Choosing is the action. -->
+  <Border Classes="card" MaxWidth="360" MaxHeight="420"
+          HorizontalAlignment="Center" VerticalAlignment="Center"
+          IsVisible="{Binding IsOpen}">
+    <DockPanel>
+      <TextBlock DockPanel.Dock="Top" Classes="subheading" Margin="0,0,0,10" TextWrapping="Wrap"
+                 Text="{Binding Heading}" />
+      <TextBox DockPanel.Dock="Top" Classes="toolbarSearch" Margin="0,0,0,10"
+               Text="{Binding SearchText}"
+               PlaceholderText="{DynamicResource Text.CharacterDetail_MoveTo_SearchPlaceholder}" />
+      <Button DockPanel.Dock="Bottom" Margin="0,10,0,0"
+              Command="{Binding CancelCommand}"
+              Content="{DynamicResource Text.CharacterDetail_Cancel}" />
+      <ScrollViewer MaxHeight="260">
+        <StackPanel>
+          <TextBlock Classes="muted" Margin="4"
+                     IsVisible="{Binding !HasTargets}"
+                     Text="{DynamicResource Text.CharacterDetail_MoveTo_Empty}" />
+          <ItemsControl ItemsSource="{Binding Targets}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:MoveTargetViewModel">
+                <Button Classes="moveTarget"
+                        Command="{Binding #Picker.((vm:CharacterPickerViewModel)DataContext).ChooseCommand}"
+                        CommandParameter="{Binding}"
+                        Content="{Binding DisplayName}" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </ScrollViewer>
+    </DockPanel>
+  </Border>
+
+</UserControl>

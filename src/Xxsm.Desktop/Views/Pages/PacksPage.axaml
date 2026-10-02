@@ -1,0 +1,250 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Xxsm.Desktop.ViewModels"
+             xmlns:pages="clr-namespace:Xxsm.Desktop.ViewModels.Pages"
+             xmlns:registry="clr-namespace:Xxsm.Packs.Registry;assembly=Xxsm.Packs"
+             xmlns:panels="clr-namespace:Xxsm.Desktop.Views.Panels"
+             x:Class="Xxsm.Desktop.Views.Pages.PacksPage"
+             x:DataType="pages:PacksPageViewModel">
+
+  <!-- This tab's button width: Install, Update, Edit in Studio and Remove… share a column. -->
+  <UserControl.Resources>
+    <x:Double x:Key="ButtonMinWidth">120</x:Double>
+  </UserControl.Resources>
+
+  <Panel>
+
+  <DockPanel Classes="page">
+
+    <Grid Classes="pageHeader" ColumnDefinitions="*,Auto">
+      <StackPanel Grid.Column="0" Spacing="3">
+        <TextBlock Classes="heading" Text="{DynamicResource Text.Packs_Heading}" />
+        <TextBlock Classes="pageSubtitle" Text="{DynamicResource Text.Packs_Intro}" />
+      </StackPanel>
+
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top" Margin="16,0,0,0">
+        <Button Command="{Binding ImportFromFileCommand}"
+                Content="{DynamicResource Text.Packs_ImportFile}" />
+        <Button Command="{Binding RefreshCommand}"
+                Content="{DynamicResource Text.Packs_Refresh}" />
+      </StackPanel>
+    </Grid>
+
+    <!-- One slot, one thing in it: a DockPanel would dock an undocked child to the left. -->
+    <Panel>
+
+      <Border Classes="card notice" IsVisible="{Binding IsEmpty}">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="subheading" Text="{DynamicResource Text.Packs_Empty_Heading}" />
+          <TextBlock Classes="muted" Text="{DynamicResource Text.Packs_Empty_Body}" />
+        </StackPanel>
+      </Border>
+
+      <ScrollViewer Classes="besideMargin" IsVisible="{Binding HasPacks}">
+        <StackPanel Spacing="12" Margin="0,0,0,16">
+
+          <ItemsControl ItemsSource="{Binding Packs}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:PackChoiceViewModel">
+                <Border Classes="card" Margin="0,0,0,12">
+                  <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto">
+
+                    <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                      <panels:GameIconView DataContext="{Binding Icon}" />
+                      <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold"
+                                 FontSize="15" VerticalAlignment="Center"
+                                 Foreground="{DynamicResource XxsmTextBrush}" />
+                      <Border Classes="badge" IsVisible="{Binding HasVersion}" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Version}" />
+                      </Border>
+                      <TextBlock Classes="muted" FontSize="12" VerticalAlignment="Center"
+                                 IsVisible="{Binding HasSize}" Text="{Binding SizeText}" />
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="1" Grid.Column="0" Margin="0,4,0,0"
+                               FontSize="12"
+                               Foreground="{DynamicResource XxsmAccentBrush}"
+                               Text="{Binding StatusText}" />
+
+                    <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,8,0,0" Spacing="3">
+                      <!-- While this pack installs: how far the download is, then checking and unpacking. -->
+                      <StackPanel Spacing="4" Margin="0,0,0,4" IsVisible="{Binding IsInstalling}">
+                        <ProgressBar Height="4" Width="280" HorizontalAlignment="Left"
+                                     Minimum="0" Maximum="100"
+                                     Value="{Binding ProgressPercent}"
+                                     IsIndeterminate="{Binding IsProgressIndeterminate}" />
+                        <TextBlock FontSize="12" Foreground="{DynamicResource XxsmTextBrush}" Text="{Binding ProgressText}" />
+                      </StackPanel>
+                      <TextBlock Classes="muted" FontSize="12"
+                                 IsVisible="{Binding Summary, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                 Text="{Binding Summary}" />
+                      <TextBlock FontSize="12" TextWrapping="Wrap"
+                                 Foreground="{DynamicResource XxsmWarnBrush}"
+                                 IsVisible="{Binding RefusalReason, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                 Text="{Binding RefusalReason}" />
+                      <TextBlock Classes="muted" FontSize="11"
+                                 IsVisible="{Binding HasSource}" Text="{Binding SourceText}" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="0" Grid.Column="1" Grid.RowSpan="3"
+                                VerticalAlignment="Top" Margin="16,0,0,0">
+                      <Button Classes="accent"
+                              IsVisible="{Binding CanInstall}"
+                              Command="{Binding $parent[ItemsControl].((pages:PacksPageViewModel)DataContext).InstallCommand}"
+                              CommandParameter="{Binding}"
+                              Content="{DynamicResource Text.Packs_Install}" />
+                      <Button IsVisible="{Binding UpdateAvailable}"
+                              Command="{Binding $parent[ItemsControl].((pages:PacksPageViewModel)DataContext).InstallCommand}"
+                              CommandParameter="{Binding}"
+                              Content="{DynamicResource Text.Packs_Update}" />
+                      <!-- While the game stays on an older version: the way back to following updates. -->
+                      <Button IsVisible="{Binding IsHeld}"
+                              Command="{Binding $parent[ItemsControl].((pages:PacksPageViewModel)DataContext).FollowUpdatesCommand}"
+                              CommandParameter="{Binding}"
+                              Content="{DynamicResource Text.Packs_FollowUpdates}"
+                              ToolTip.Tip="{DynamicResource Text.Packs_FollowUpdates_Tip}" />
+                      <!-- What the last update changed, until the next update. -->
+                      <Button IsVisible="{Binding HasWhatsNew}" Margin="0,6,0,0" HorizontalAlignment="Stretch"
+                              Command="{Binding $parent[ItemsControl].((pages:PacksPageViewModel)DataContext).OpenWhatsNewCommand}"
+                              CommandParameter="{Binding}"
+                              Content="{DynamicResource Text.Packs_WhatsNew}" />
+                      <!-- Only while Pack Studio is switched on in Settings. -->
+                      <Panel IsVisible="{Binding $parent[ItemsControl].((pages:PacksPageViewModel)DataContext).Studio.IsShown}">
+                        <Button IsVisible="{Binding IsInstalled}" Margin="0,6,0,0" HorizontalAlignment="Stretch"
+                                Command="{Binding $parent[ItemsControl].((pages:PacksPageViewModel)DataContext).EditInStudioCommand}"
+                                CommandParameter="{Binding}"
+                                Content="{DynamicResource Text.Studio_Installed_Open}" />
+                      </Panel>
+                      <!-- The withheld-changes review, reachable again here, where the update happened. -->
+                      <Button IsVisible="{Binding HasWithheldUpdates}" Margin="0,6,0,0" HorizontalAlignment="Stretch"
+                              Command="{Binding $parent[ItemsControl].((pages:PacksPageViewModel)DataContext).OpenSkippedUpdatesCommand}"
+                              CommandParameter="{Binding}"
+                              Content="{Binding WithheldUpdatesText}" />
+                      <!-- Asks first: the question offers the user's corrections too. -->
+                      <Button Classes="destructive" IsVisible="{Binding IsInstalled}" Margin="0,6,0,0" HorizontalAlignment="Stretch"
+                              Command="{Binding $parent[ItemsControl].((pages:PacksPageViewModel)DataContext).AskToRemoveCommand}"
+                              CommandParameter="{Binding}"
+                              Content="{DynamicResource Text.Packs_Remove}" />
+                    </StackPanel>
+
+                    <!-- Every installed version, when there is a choice; buttons reach the page via the control. -->
+                    <Expander Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,10,0,0"
+                              IsVisible="{Binding HasSeveralVersions}"
+                              IsExpanded="{Binding IsVersionsExpanded}"
+                              HorizontalAlignment="Stretch"
+                              HorizontalContentAlignment="Stretch"
+                              Header="{Binding VersionsHeading}">
+                      <StackPanel Spacing="8">
+                        <!-- One scope, so every row's Use column is as wide as the widest. -->
+                        <ItemsControl ItemsSource="{Binding Versions}" Grid.IsSharedSizeScope="True">
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:PackVersionViewModel">
+                              <Grid Margin="0,2">
+                                <Grid.ColumnDefinitions>
+                                  <ColumnDefinition Width="*" />
+                                  <ColumnDefinition Width="Auto" />
+                                  <ColumnDefinition Width="Auto" SharedSizeGroup="use" />
+                                  <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <!-- Wraps rather than running under the Keep box in a narrow window. -->
+                                <WrapPanel Grid.Column="0" ItemSpacing="8" LineSpacing="4" VerticalAlignment="Center">
+                                  <SelectableTextBlock Classes="mono" VerticalAlignment="Center" Text="{Binding VersionText}" />
+                                  <Border Classes="statusPill accent" IsVisible="{Binding IsInUse}" VerticalAlignment="Center">
+                                    <TextBlock Text="{DynamicResource Text.Packs_Version_InUse}" />
+                                  </Border>
+                                  <Border Classes="statusPill" IsVisible="{Binding IsNewest}" VerticalAlignment="Center">
+                                    <TextBlock Text="{DynamicResource Text.Packs_Version_Newest}" />
+                                  </Border>
+                                </WrapPanel>
+                                <!-- Never removed for being old while ticked. -->
+                                <CheckBox Grid.Column="1" Margin="12,0,4,0" VerticalAlignment="Center"
+                                          IsChecked="{Binding IsKept}"
+                                          Content="{DynamicResource Text.Packs_Version_Keep}" />
+                                <Button Grid.Column="2" Margin="8,0,0,0"
+                                        IsVisible="{Binding CanUse}"
+                                        Command="{Binding $parent[UserControl].((pages:PacksPageViewModel)DataContext).UseVersionCommand}"
+                                        CommandParameter="{Binding}"
+                                        Content="{DynamicResource Text.Packs_Version_Use}" />
+                                <Button Classes="destructive" Grid.Column="3" Margin="8,0,0,0"
+                                        Command="{Binding $parent[UserControl].((pages:PacksPageViewModel)DataContext).DeleteVersionCommand}"
+                                        CommandParameter="{Binding}"
+                                        Content="{DynamicResource Text.Packs_Version_Delete}" />
+                              </Grid>
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{Binding VersionsCleanupText}" />
+                      </StackPanel>
+                    </Expander>
+
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+
+          <!-- A source that would not answer is a notice: installed packs keep working. -->
+          <Border Classes="card" IsVisible="{Binding HasFailures}">
+            <StackPanel Spacing="10">
+              <TextBlock Classes="subheading" Foreground="{DynamicResource XxsmWarnBrush}"
+                         Text="{DynamicResource Text.Packs_Offline_Heading}" />
+              <ItemsControl ItemsSource="{Binding Failures}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="registry:RegistryFailure">
+                    <StackPanel Spacing="2" Margin="0,0,0,8">
+                      <SelectableTextBlock Classes="mono" FontSize="11" Text="{Binding Registry}" />
+                      <TextBlock Classes="muted" FontSize="12" Text="{Binding Message}" />
+                    </StackPanel>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
+
+          <TextBlock Classes="muted" FontSize="12"
+                     Text="{DynamicResource Text.Packs_Sources_Hint}" />
+
+        </StackPanel>
+      </ScrollViewer>
+
+    </Panel>
+
+  </DockPanel>
+
+  <Border Classes="scrim" IsVisible="{Binding IsAnyPanelOpen}" />
+
+  <!-- What a pack update changed. -->
+  <panels:WhatsNewView DataContext="{Binding WhatsNew}" />
+
+  <!-- What a pack update withheld from characters the user has edited. -->
+  <panels:SkippedUpdatesView DataContext="{Binding SkippedUpdates}" />
+
+  <!-- The corrections the pack now makes itself, offered for clearing. -->
+  <panels:CaughtUpCorrectionsView DataContext="{Binding CaughtUp}" />
+
+  <!-- Removing a game's pack; Undo is on the notice that follows. -->
+  <Border Classes="scrim" IsVisible="{Binding IsRemoveOpen}" />
+
+  <Border Classes="card" MaxWidth="440"
+          HorizontalAlignment="Center" VerticalAlignment="Center"
+          IsVisible="{Binding IsRemoveOpen}">
+    <StackPanel Spacing="14">
+      <TextBlock TextWrapping="Wrap" Text="{Binding RemoveQuestion}" />
+      <CheckBox IsVisible="{Binding CanRemoveCorrections}"
+                IsChecked="{Binding RemoveCorrections}"
+                AutomationProperties.Name="{Binding RemoveCorrectionsText}">
+        <TextBlock TextWrapping="Wrap" Text="{Binding RemoveCorrectionsText}" />
+      </CheckBox>
+      <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+        <Button Command="{Binding CancelRemoveCommand}"
+                Content="{DynamicResource Text.Packs_Remove_Cancel}" />
+        <Button Classes="destructive"
+                Command="{Binding ConfirmRemoveCommand}"
+                Content="{DynamicResource Text.Packs_Remove_Confirm}" />
+      </StackPanel>
+    </StackPanel>
+  </Border>
+
+  </Panel>
+
+</UserControl>

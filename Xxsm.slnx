@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Xxsm.Cli/Xxsm.Cli.csproj" />
+    <Project Path="src/Xxsm.Core/Xxsm.Core.csproj" />
+    <Project Path="src/Xxsm.Desktop/Xxsm.Desktop.csproj" />
+    <Project Path="src/Xxsm.Packs/Xxsm.Packs.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,4 @@
+#!/bin/sh
+# Starts XXSM from inside its AppImage.
+here="$(dirname "$(readlink -f "$0")")"
+exec "$here/usr/lib/xxsm/Xxsm.Desktop" "$@"

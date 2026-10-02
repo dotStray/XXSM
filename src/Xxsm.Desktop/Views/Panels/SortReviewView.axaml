@@ -1,0 +1,160 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Xxsm.Desktop.ViewModels"
+             x:Class="Xxsm.Desktop.Views.Panels.SortReviewView"
+             x:Name="Root"
+             x:DataType="vm:SortReviewViewModel">
+
+  <!-- The sort review, for the whole folder or one character: what would move, ticked, and the rest folded. -->
+  <!-- Stretch, not Center: centred, the card resized as filters changed and moved the chips from under the pointer. -->
+  <Border Classes="card" MaxWidth="720" MaxHeight="620"
+          HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+          IsVisible="{Binding IsOpen}">
+    <DockPanel>
+
+      <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,12">
+        <TextBlock Classes="subheading" Text="{Binding Heading}" />
+        <TextBlock Classes="muted" Text="{Binding SummaryText}" IsVisible="{Binding !IsPlanning}" />
+        <TextBlock Classes="muted" Text="{DynamicResource Text.SortReview_Planning}"
+                   IsVisible="{Binding IsPlanning}" />
+
+        <!-- How each mod was identified; by name is the one to check. Select all, none and Move act on what shows. -->
+        <WrapPanel Margin="0,8,0,0" ItemSpacing="6" LineSpacing="6" IsVisible="{Binding HasMoves}">
+          <ToggleButton Classes="chip"
+                        IsChecked="{Binding IsAllFilter, Mode=OneWay}"
+                        Command="{Binding ShowOnlyCommand}"
+                        CommandParameter="{x:Static vm:SortReviewFilter.All}"
+                        Content="{Binding FilterAllText}" />
+          <ToggleButton Classes="chip"
+                        IsEnabled="{Binding HasHashMoves}"
+                        IsChecked="{Binding IsHashFilter, Mode=OneWay}"
+                        Command="{Binding ShowOnlyCommand}"
+                        CommandParameter="{x:Static vm:SortReviewFilter.Hash}"
+                        Content="{Binding FilterHashText}" />
+          <ToggleButton Classes="chip"
+                        IsEnabled="{Binding HasNameMoves}"
+                        IsChecked="{Binding IsNameFilter, Mode=OneWay}"
+                        Command="{Binding ShowOnlyCommand}"
+                        CommandParameter="{x:Static vm:SortReviewFilter.Name}"
+                        Content="{Binding FilterNameText}" />
+          <ToggleButton Classes="chip"
+                        IsEnabled="{Binding HasOthersMoves}"
+                        IsChecked="{Binding IsOthersFilter, Mode=OneWay}"
+                        Command="{Binding ShowOnlyCommand}"
+                        CommandParameter="{x:Static vm:SortReviewFilter.Others}"
+                        Content="{Binding FilterOthersText}" />
+        </WrapPanel>
+      </StackPanel>
+
+      <!-- The buttons stay docked to the bottom, so a long list never pushes them off. -->
+      <Grid DockPanel.Dock="Bottom" ColumnDefinitions="Auto,Auto,*,Auto,Auto" Margin="0,12,0,0">
+        <Button Grid.Column="0"
+                IsVisible="{Binding HasMoves}"
+                Command="{Binding SelectAllCommand}"
+                Content="{DynamicResource Text.SortReview_SelectAll}" />
+        <Button Grid.Column="1" Margin="8,0,0,0"
+                IsVisible="{Binding HasMoves}"
+                Command="{Binding SelectNoneCommand}"
+                Content="{DynamicResource Text.SortReview_SelectNone}" />
+        <Button Grid.Column="3"
+                Command="{Binding CloseCommand}"
+                Content="{DynamicResource Text.SortReview_Cancel}" />
+        <Button Grid.Column="4" Classes="accent" Margin="8,0,0,0"
+                IsVisible="{Binding HasMoves}"
+                IsEnabled="{Binding CanApply}"
+                Command="{Binding ApplyCommand}"
+                Content="{Binding ApplyText}" />
+      </Grid>
+
+      <!-- What an untick means, said before the button; just above the buttons. -->
+      <StackPanel DockPanel.Dock="Bottom" Spacing="2" Margin="0,10,0,0">
+        <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                   IsVisible="{Binding KeepNoteText, Converter={x:Static ObjectConverters.IsNotNull}}"
+                   Text="{Binding KeepNoteText}" />
+        <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                   IsVisible="{Binding UnsortedNoteText, Converter={x:Static ObjectConverters.IsNotNull}}"
+                   Text="{Binding UnsortedNoteText}" />
+      </StackPanel>
+
+      <Panel>
+
+        <!-- Nothing to do. Distinct from "no mods": every one was already filed right. -->
+        <StackPanel Spacing="8" VerticalAlignment="Center" IsVisible="{Binding IsEmpty}">
+          <TextBlock Classes="subheading" HorizontalAlignment="Center"
+                     Text="{DynamicResource Text.SortReview_Empty_Heading}" />
+          <TextBlock Classes="muted" HorizontalAlignment="Center" TextWrapping="Wrap"
+                     Text="{DynamicResource Text.SortReview_Empty_Body}" />
+        </StackPanel>
+
+        <ScrollViewer IsVisible="{Binding HasMoves}">
+          <StackPanel Spacing="2">
+
+            <ItemsControl ItemsSource="{Binding ShownMoves}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:SortRowViewModel">
+                  <Grid ColumnDefinitions="Auto,*" Margin="0,4">
+
+                    <!-- Applying moves only the rows still ticked. -->
+                    <CheckBox Grid.Column="0" VerticalAlignment="Top" Margin="0,2,8,0"
+                              IsChecked="{Binding IsSelected}"
+                              AutomationProperties.Name="{Binding Name}" />
+
+                    <StackPanel Grid.Column="1" Spacing="2">
+                      <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"
+                                 Foreground="{DynamicResource XxsmTextBrush}" />
+
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Classes="muted" FontSize="12" Text="{Binding FromText}" />
+                        <TextBlock Classes="muted" FontSize="12" Text="→" />
+                        <TextBlock FontSize="12" Foreground="{DynamicResource XxsmAccentBrush}"
+                                   Text="{Binding ToText}" />
+                      </StackPanel>
+
+                      <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                                 Text="{Binding Reason}" />
+
+                      <!-- VariantIsUncertain: a name picked the outfit, or the default was used. -->
+                      <TextBlock FontSize="11"
+                                 Foreground="{DynamicResource XxsmWarnBrush}"
+                                 IsVisible="{Binding IsUncertain}"
+                                 Text="{Binding CertaintyText}" />
+                    </StackPanel>
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- Everything staying put, behind one line; the chevron says it opens. -->
+            <Button Classes="moveTarget" Margin="0,10,0,0"
+                    IsVisible="{Binding HasUnchanged}"
+                    Command="{Binding ToggleUnchangedCommand}"
+                    AutomationProperties.Name="{Binding UnchangedText}">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Path Classes="disclosure" Classes.open="{Binding IsUnchangedExpanded}"
+                      Data="{StaticResource Icon.chevronDown}" />
+                <TextBlock Classes="muted" VerticalAlignment="Center" Text="{Binding UnchangedText}" />
+              </StackPanel>
+            </Button>
+
+            <ItemsControl ItemsSource="{Binding Unchanged}" Margin="24,0,0,0"
+                          IsVisible="{Binding IsUnchangedExpanded}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:SortRowViewModel">
+                  <StackPanel Spacing="1" Margin="0,4">
+                    <TextBlock FontSize="12" Text="{Binding Name}" TextTrimming="CharacterEllipsis"
+                               Foreground="{DynamicResource XxsmTextBrush}" />
+                    <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                               Text="{Binding Reason}" />
+                  </StackPanel>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+          </StackPanel>
+        </ScrollViewer>
+
+      </Panel>
+    </DockPanel>
+  </Border>
+
+</UserControl>

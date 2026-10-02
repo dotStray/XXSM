@@ -1,0 +1,164 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{json,jsonc,yml,yaml,md,csproj,props,targets,axaml,xaml,xml}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.{cs,csx}]
+indent_size = 4
+max_line_length = 120
+
+##############################
+# C# language + style rules
+##############################
+[*.cs]
+
+# --- using directives ---
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+csharp_using_directive_placement = outside_namespace:warning
+
+# --- namespaces ---
+csharp_style_namespace_declarations = file_scoped:warning
+
+# --- var ---
+csharp_style_var_for_built_in_types = false:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = false:suggestion
+
+# --- expression-bodied members ---
+csharp_style_expression_bodied_methods = when_on_single_line:silent
+csharp_style_expression_bodied_constructors = when_on_single_line:silent
+csharp_style_expression_bodied_properties = when_on_single_line:silent
+csharp_style_expression_bodied_accessors = when_on_single_line:silent
+csharp_style_expression_bodied_lambdas = when_on_single_line:silent
+csharp_style_expression_bodied_local_functions = when_on_single_line:silent
+
+# --- modern C# ---
+csharp_prefer_braces = true:warning
+csharp_style_prefer_pattern_matching = true:suggestion
+csharp_style_prefer_switch_expression = true:suggestion
+csharp_style_prefer_not_pattern = true:suggestion
+csharp_style_prefer_range_operator = true:suggestion
+csharp_style_prefer_index_operator = true:suggestion
+csharp_style_throw_expression = true:suggestion
+csharp_style_prefer_null_check_over_type_check = true:suggestion
+csharp_style_conditional_delegate_call = true:suggestion
+csharp_prefer_simple_using_statement = true:suggestion
+csharp_style_prefer_primary_constructors = true:silent
+csharp_style_prefer_top_level_statements = false:silent
+
+dotnet_style_object_initializer = true:suggestion
+dotnet_style_collection_initializer = true:suggestion
+dotnet_style_prefer_collection_expression = when_types_loosely_match:suggestion
+dotnet_style_coalesce_expression = true:suggestion
+dotnet_style_null_propagation = true:suggestion
+dotnet_style_prefer_conditional_expression_over_assignment = true:silent
+dotnet_style_prefer_conditional_expression_over_return = true:silent
+dotnet_style_readonly_field = true:warning
+dotnet_style_qualification_for_field = false:warning
+dotnet_style_qualification_for_property = false:warning
+dotnet_style_qualification_for_method = false:warning
+dotnet_style_qualification_for_event = false:warning
+dotnet_style_predefined_type_for_locals_parameters_members = true:warning
+dotnet_style_predefined_type_for_member_access = true:warning
+dotnet_style_require_accessibility_modifiers = for_non_interface_members:warning
+
+# --- formatting ---
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+csharp_new_line_before_members_in_object_initializers = true
+csharp_new_line_before_members_in_anonymous_types = true
+csharp_new_line_between_query_expression_clauses = true
+csharp_indent_case_contents = true
+csharp_indent_switch_labels = true
+csharp_indent_labels = one_less_than_current
+csharp_space_after_cast = false
+csharp_space_after_keywords_in_control_flow_statements = true
+csharp_space_between_method_declaration_parameter_list_parentheses = false
+csharp_space_between_method_call_parameter_list_parentheses = false
+csharp_space_between_parentheses = false
+csharp_space_before_colon_in_inheritance_clause = true
+csharp_space_after_colon_in_inheritance_clause = true
+csharp_space_around_binary_operators = before_and_after
+csharp_preserve_single_line_statements = false
+csharp_preserve_single_line_blocks = true
+
+##############################
+# Naming
+##############################
+dotnet_naming_rule.interfaces_start_with_i.severity = warning
+dotnet_naming_rule.interfaces_start_with_i.symbols = interface_symbols
+dotnet_naming_rule.interfaces_start_with_i.style = prefix_i_pascal
+dotnet_naming_symbols.interface_symbols.applicable_kinds = interface
+dotnet_naming_symbols.interface_symbols.applicable_accessibilities = *
+dotnet_naming_style.prefix_i_pascal.required_prefix = I
+dotnet_naming_style.prefix_i_pascal.capitalization = pascal_case
+
+dotnet_naming_rule.types_are_pascal.severity = warning
+dotnet_naming_rule.types_are_pascal.symbols = type_symbols
+dotnet_naming_rule.types_are_pascal.style = pascal
+dotnet_naming_symbols.type_symbols.applicable_kinds = class,struct,enum,delegate,type_parameter
+dotnet_naming_symbols.type_symbols.applicable_accessibilities = *
+dotnet_naming_style.pascal.capitalization = pascal_case
+
+dotnet_naming_rule.members_are_pascal.severity = warning
+dotnet_naming_rule.members_are_pascal.symbols = member_symbols
+dotnet_naming_rule.members_are_pascal.style = pascal
+dotnet_naming_symbols.member_symbols.applicable_kinds = property,method,event
+dotnet_naming_symbols.member_symbols.applicable_accessibilities = public,internal,protected,protected_internal,private_protected
+
+# Static readonly fields are PascalCase by .NET convention. This rule must precede the
+# private-field rule below, because the first matching rule wins.
+dotnet_naming_rule.static_readonly_fields_are_pascal.severity = warning
+dotnet_naming_rule.static_readonly_fields_are_pascal.symbols = static_readonly_field_symbols
+dotnet_naming_rule.static_readonly_fields_are_pascal.style = pascal
+dotnet_naming_symbols.static_readonly_field_symbols.applicable_kinds = field
+dotnet_naming_symbols.static_readonly_field_symbols.applicable_accessibilities = *
+dotnet_naming_symbols.static_readonly_field_symbols.required_modifiers = static,readonly
+
+dotnet_naming_rule.private_fields_underscore.severity = warning
+dotnet_naming_rule.private_fields_underscore.symbols = private_field_symbols
+dotnet_naming_rule.private_fields_underscore.style = underscore_camel
+dotnet_naming_symbols.private_field_symbols.applicable_kinds = field
+dotnet_naming_symbols.private_field_symbols.applicable_accessibilities = private
+dotnet_naming_style.underscore_camel.required_prefix = _
+dotnet_naming_style.underscore_camel.capitalization = camel_case
+
+dotnet_naming_rule.constants_are_pascal.severity = warning
+dotnet_naming_rule.constants_are_pascal.symbols = constant_symbols
+dotnet_naming_rule.constants_are_pascal.style = pascal
+dotnet_naming_symbols.constant_symbols.applicable_kinds = field
+dotnet_naming_symbols.constant_symbols.required_modifiers = const
+
+##############################
+# Analyzer severities
+##############################
+[*.cs]
+# Namespace must match folder structure - we follow it, enforce it.
+dotnet_diagnostic.IDE0130.severity = warning
+# Remove unnecessary usings.
+dotnet_diagnostic.IDE0005.severity = warning
+# "Use 'System.Threading.Lock'": informational, not a build break.
+dotnet_diagnostic.IDE0330.severity = suggestion
+
+# CA1848 (LoggerMessage delegates) - Serilog, not MEL. Not applicable.
+dotnet_diagnostic.CA1848.severity = none
+# CA1031 (do not catch general exception types) - I/O boundaries catch and rethrow with context.
+dotnet_diagnostic.CA1031.severity = none
+# CA1303 (literals as localised strings) - the interface's text is in Strings.resx; the CLI is English.
+dotnet_diagnostic.CA1303.severity = none
+# CA1416 platform-compat: Unix-only APIs are guarded at runtime and documented.
+dotnet_diagnostic.CA1416.severity = warning

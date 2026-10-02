@@ -1,0 +1,125 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Xxsm.Desktop.ViewModels"
+             x:Class="Xxsm.Desktop.Views.Panels.ModImportView"
+             x:DataType="vm:ModImportViewModel">
+
+  <!-- Bringing in what JASM or XX-Mod-Manager knew: writes each mod's details, moves nothing. -->
+  <Border Classes="card" MaxWidth="640" MaxHeight="660"
+          HorizontalAlignment="Stretch" VerticalAlignment="Center"
+          IsVisible="{Binding IsPanelVisible}">
+    <DockPanel>
+
+      <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,12">
+        <TextBlock Classes="subheading" TextWrapping="Wrap" Text="{Binding Heading}" />
+        <TextBlock Classes="muted" TextWrapping="Wrap" Text="{DynamicResource Text.Import_Body}" />
+      </StackPanel>
+
+      <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right"
+                  Spacing="8" Margin="0,12,0,0">
+        <Button Command="{Binding CloseCommand}"
+                Content="{DynamicResource Text.Import_Cancel}" />
+        <Button Classes="accent" IsEnabled="{Binding CanApply}"
+                Command="{Binding ApplyCommand}"
+                Content="{Binding ApplyText}" />
+      </StackPanel>
+
+      <ScrollViewer>
+        <StackPanel Spacing="16">
+
+          <TextBlock Classes="muted" TextWrapping="Wrap" IsVisible="{Binding IsPlanning}"
+                     Text="{DynamicResource Text.Import_Planning}" />
+
+          <TextBlock Classes="muted" TextWrapping="Wrap" IsVisible="{Binding ShowNothing}"
+                     Text="{DynamicResource Text.Import_Nothing}" />
+
+          <StackPanel Spacing="4" IsVisible="{Binding ShowFills}">
+            <TextBlock Classes="sectionLabel" Text="{DynamicResource Text.Import_Fills_Label}" />
+            <ItemsControl ItemsSource="{Binding Fills}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="x:String">
+                  <TextBlock Foreground="{DynamicResource XxsmTextBrush}" Text="{Binding}" />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+
+          <!-- A tag the pack does not know: the picker, or the Character Manager with the tag typed in. -->
+          <StackPanel Spacing="8" IsVisible="{Binding HasTags}">
+            <StackPanel Spacing="2">
+              <TextBlock Classes="sectionLabel" Text="{DynamicResource Text.Import_Tags_Heading}" />
+              <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{DynamicResource Text.Import_Tags_Body}" />
+            </StackPanel>
+            <ItemsControl ItemsSource="{Binding Tags}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:ImportTagViewModel">
+                  <Border Classes="inlineNotice" Padding="10" Margin="0,0,0,6">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                      <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                        <TextBlock Foreground="{DynamicResource XxsmTextBrush}" TextTrimming="CharacterEllipsis" Text="{Binding Tag}" />
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                          <TextBlock Classes="muted" FontSize="12" Text="{Binding CountText}" />
+                          <TextBlock Classes="muted" FontSize="12" IsVisible="{Binding IsChosen}" Text="→" />
+                          <TextBlock FontSize="12" Foreground="{DynamicResource XxsmOkBrush}"
+                                     IsVisible="{Binding IsChosen}" Text="{Binding ChosenName}" />
+                        </StackPanel>
+                      </StackPanel>
+                      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                        <Button Command="{Binding ChooseCommand}"
+                                Content="{DynamicResource Text.Import_Tag_Choose}" />
+                        <Button IsVisible="{Binding !IsChosen}"
+                                Command="{Binding NewCommand}"
+                                Content="{DynamicResource Text.Import_Tag_New}" />
+                        <Button IsVisible="{Binding IsChosen}"
+                                Command="{Binding ForgetCommand}"
+                                Content="{DynamicResource Text.Import_Tag_Forget}" />
+                      </StackPanel>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+
+          <!-- Where the tag and the hashes disagree; the tag wins unless unticked. -->
+          <StackPanel Spacing="8" IsVisible="{Binding HasDisagreements}">
+            <StackPanel Spacing="2">
+              <TextBlock Classes="sectionLabel" Text="{DynamicResource Text.Import_Disagree_Heading}" />
+              <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{DynamicResource Text.Import_Disagree_Body}" />
+            </StackPanel>
+            <ItemsControl ItemsSource="{Binding Disagreements}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:ImportDisagreementViewModel">
+                  <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8" Margin="0,3">
+                    <CheckBox Grid.Column="0" VerticalAlignment="Top" Margin="0,1,0,0"
+                              IsChecked="{Binding FollowTag}"
+                              AutomationProperties.Name="{Binding ModName}" />
+                    <StackPanel Grid.Column="1" Spacing="1">
+                      <TextBlock Foreground="{DynamicResource XxsmTextBrush}" TextTrimming="CharacterEllipsis" Text="{Binding ModName}" />
+                      <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{Binding Detail}" />
+                    </StackPanel>
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+
+          <StackPanel Spacing="4" IsVisible="{Binding HasProblems}">
+            <TextBlock Classes="sectionLabel" Foreground="{DynamicResource XxsmWarnBrush}"
+                       Text="{DynamicResource Text.Import_Problems_Heading}" />
+            <ItemsControl ItemsSource="{Binding Problems}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="x:String">
+                  <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{Binding}" />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+
+        </StackPanel>
+      </ScrollViewer>
+
+    </DockPanel>
+  </Border>
+
+</UserControl>

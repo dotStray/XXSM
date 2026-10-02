@@ -1,0 +1,62 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Xxsm.Desktop.ViewModels"
+             x:Class="Xxsm.Desktop.Views.Panels.RandomiserView"
+             x:DataType="vm:RandomiserViewModel">
+
+  <!-- The randomiser: every row ticked, untick what stays, nothing switched until the button. -->
+  <Border Classes="card" MaxWidth="620" MaxHeight="620"
+          HorizontalAlignment="Stretch" VerticalAlignment="Center"
+          IsVisible="{Binding IsOpen}">
+    <DockPanel>
+
+      <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,12">
+        <TextBlock Classes="subheading" Text="{DynamicResource Text.Randomiser_Heading}" />
+        <TextBlock Classes="muted" TextWrapping="Wrap" Text="{DynamicResource Text.Randomiser_Body}" />
+      </StackPanel>
+
+      <Grid DockPanel.Dock="Bottom" ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8" Margin="0,12,0,0">
+        <Button Grid.Column="0" IsEnabled="{Binding HasRows}"
+                Command="{Binding ChooseAllAgainCommand}"
+                Content="{DynamicResource Text.Randomiser_ChooseAllAgain}" />
+        <Button Grid.Column="2"
+                Command="{Binding CloseCommand}"
+                Content="{DynamicResource Text.Randomiser_Cancel}" />
+        <Button Grid.Column="3" Classes="accent" IsEnabled="{Binding CanApply}"
+                Command="{Binding ApplyCommand}"
+                Content="{Binding ApplyText}" />
+      </Grid>
+
+      <Panel>
+        <TextBlock Classes="muted" TextWrapping="Wrap" IsVisible="{Binding !HasRows}"
+                   Text="{DynamicResource Text.Randomiser_None}" />
+
+        <ScrollViewer IsVisible="{Binding HasRows}">
+          <ItemsControl ItemsSource="{Binding Rows}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:RandomiserRowViewModel">
+                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8" Margin="0,4">
+                  <CheckBox Grid.Column="0" VerticalAlignment="Top" Margin="0,2,0,0"
+                            IsChecked="{Binding IsSelected}"
+                            AutomationProperties.Name="{Binding CharacterName}" />
+                  <StackPanel Grid.Column="1" Spacing="2">
+                    <TextBlock Classes="muted" FontSize="12" Text="{Binding CharacterName}" />
+                    <TextBlock Foreground="{DynamicResource XxsmTextBrush}" TextTrimming="CharacterEllipsis"
+                               Text="{Binding ChosenName}" />
+                    <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap" Text="{Binding Detail}" />
+                  </StackPanel>
+                  <Button Grid.Column="2" VerticalAlignment="Center"
+                          IsVisible="{Binding CanChooseAgain}"
+                          Command="{Binding ChooseAgainCommand}"
+                          Content="{DynamicResource Text.Randomiser_ChooseAgain}" />
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+      </Panel>
+
+    </DockPanel>
+  </Border>
+
+</UserControl>

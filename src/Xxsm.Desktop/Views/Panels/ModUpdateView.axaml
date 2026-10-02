@@ -1,0 +1,133 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:paths="clr-namespace:Xxsm.Desktop.Converters"
+             xmlns:vm="clr-namespace:Xxsm.Desktop.ViewModels"
+             xmlns:panels="clr-namespace:Xxsm.Desktop.Views.Panels"
+             x:Class="Xxsm.Desktop.Views.Panels.ModUpdateView"
+             x:DataType="vm:ModUpdateViewModel"
+             IsVisible="{Binding IsOpen}">
+
+  <!-- "Update this mod?": every file it adds, replaces and removes, nothing replaced until Update. Its own scrim. -->
+  <Panel>
+    <Border Classes="scrim" />
+
+    <Border Classes="card" Width="640" MaxHeight="640"
+            HorizontalAlignment="Center" VerticalAlignment="Center">
+      <DockPanel>
+
+        <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,12">
+          <TextBlock Classes="subheading" TextWrapping="Wrap" Text="{Binding TitleText}" />
+          <StackPanel Orientation="Horizontal" Spacing="10" IsVisible="{Binding HasSource}">
+            <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource XxsmTextBrush}"
+                       IsVisible="{Binding VersionText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                       Text="{Binding VersionText}" />
+            <TextBlock Classes="muted" FontSize="12" VerticalAlignment="Center"
+                       IsVisible="{Binding PageDateText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                       Text="{Binding PageDateText}" />
+          </StackPanel>
+          <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                     IsVisible="{Binding FileText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                     Text="{Binding FileText}" />
+        </StackPanel>
+
+        <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto,Auto" Margin="0,12,0,0">
+          <Button Grid.Column="0" HorizontalAlignment="Left"
+                  IsVisible="{Binding CanChooseAnotherFile}"
+                  Command="{Binding ChooseAnotherFileCommand}"
+                  Content="{DynamicResource Text.ModUpdate_ChooseAnother}" />
+          <Button Grid.Column="1"
+                  Command="{Binding CloseCommand}"
+                  Content="{DynamicResource Text.ModUpdate_Cancel}" />
+          <Button Grid.Column="2" Classes="accent" Margin="8,0,0,0"
+                  IsVisible="{Binding HasPlan}"
+                  IsEnabled="{Binding CanUpdate}"
+                  Command="{Binding UpdateCommand}"
+                  Content="{DynamicResource Text.ModUpdate_Update}" />
+          <Button Grid.Column="2" Classes="accent" Margin="8,0,0,0"
+                  IsVisible="{Binding IsChoosingFile}"
+                  IsEnabled="{Binding CanContinue}"
+                  Command="{Binding ContinueCommand}"
+                  Content="{DynamicResource Text.ModUpdate_Continue}" />
+        </Grid>
+
+        <StackPanel DockPanel.Dock="Top" Spacing="8" Margin="0,0,0,10">
+          <!-- Reading and downloading. -->
+          <StackPanel Spacing="6" IsVisible="{Binding IsPreparing}">
+            <TextBlock Classes="muted" FontSize="12" Text="{Binding ProgressText}" />
+            <ProgressBar Height="6" Minimum="0" Maximum="100"
+                         Value="{Binding ProgressPercent, FallbackValue=0}"
+                         IsIndeterminate="{Binding ProgressPercent, Converter={x:Static ObjectConverters.IsNull}}"
+                         AutomationProperties.Name="{Binding ProgressText}" />
+          </StackPanel>
+
+          <!-- What went wrong, in the site's or the system's words; a browser when it wants one. -->
+          <Border Classes="inlineNotice" Padding="10" IsVisible="{Binding HasProblem}">
+            <StackPanel Spacing="8">
+              <TextBlock FontSize="12" TextWrapping="Wrap" Text="{Binding Problem}" />
+              <Button HorizontalAlignment="Left" IsVisible="{Binding IsBlocked}"
+                      Command="{Binding OpenPageCommand}"
+                      Content="{DynamicResource Text.GameBanana_Prompt_OpenPage}" />
+            </StackPanel>
+          </Border>
+
+          <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                     IsVisible="{Binding FileNote, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                     Text="{Binding FileNote}" />
+
+          <Border Classes="inlineNotice" Padding="10"
+                  IsVisible="{Binding EditWarning, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+            <TextBlock FontSize="12" TextWrapping="Wrap" Foreground="{DynamicResource XxsmWarnBrush}"
+                       Text="{Binding EditWarning}" />
+          </Border>
+        </StackPanel>
+
+        <StackPanel DockPanel.Dock="Bottom" Spacing="4" Margin="0,10,0,0" IsVisible="{Binding HasPlan}">
+          <TextBlock Classes="muted" FontSize="12"
+                     IsVisible="{Binding UnchangedText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                     Text="{Binding UnchangedText}" />
+          <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                     Text="{DynamicResource Text.ModUpdate_Trash}" />
+        </StackPanel>
+
+        <Panel>
+          <Panel IsVisible="{Binding IsChoosingFile}">
+            <panels:GameBananaFileChooserView DataContext="{Binding FileChooser}" />
+          </Panel>
+
+          <TextBlock Classes="muted" TextWrapping="Wrap" VerticalAlignment="Top"
+                     IsVisible="{Binding IsIdentical}"
+                     Text="{DynamicResource Text.ModUpdate_Identical}" />
+
+          <ScrollViewer IsVisible="{Binding HasPlan}">
+            <ItemsControl ItemsSource="{Binding Changes}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:ModUpdateChangeRowViewModel">
+                  <!-- Added in green, removed in red, word and path alike; replaced in the text colour. -->
+                  <Grid ColumnDefinitions="84,*,Auto" ColumnSpacing="10" Margin="0,0,0,6">
+                    <TextBlock Grid.Column="0" FontSize="12" FontWeight="SemiBold"
+                               Classes="change"
+                               Classes.added="{Binding IsAdded}"
+                               Classes.removed="{Binding IsRemoved}"
+                               Text="{Binding KindText}" />
+                    <TextBlock Grid.Column="1" FontSize="12" TextTrimming="CharacterEllipsis"
+                               Classes="change"
+                               Classes.added="{Binding IsAdded}"
+                               Classes.removed="{Binding IsRemoved}"
+                               ToolTip.Tip="{Binding Path, Converter={x:Static paths:PathConverters.Display}}"
+                               Text="{Binding Path, Converter={x:Static paths:PathConverters.Display}}" />
+                    <TextBlock Grid.Column="2" FontSize="11" FontWeight="SemiBold"
+                               Foreground="{DynamicResource XxsmWarnBrush}"
+                               IsVisible="{Binding MayBeEdited}"
+                               Text="{DynamicResource Text.ModUpdate_Edited}" />
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </Panel>
+
+      </DockPanel>
+    </Border>
+  </Panel>
+
+</UserControl>

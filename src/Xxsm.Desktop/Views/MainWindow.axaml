@@ -1,0 +1,193 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:panels="clr-namespace:Xxsm.Desktop.Views.Panels"
+        xmlns:vm="clr-namespace:Xxsm.Desktop.ViewModels"
+        xmlns:firstRun="clr-namespace:Xxsm.Desktop.Views"
+        x:Class="Xxsm.Desktop.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="{Binding Title}"
+        Icon="/Assets/xxsm.ico"
+        Width="1100" Height="720"
+        MinWidth="600" MinHeight="480"
+        Background="{DynamicResource XxsmPageBrush}"
+        WindowStartupLocation="CenterScreen">
+
+  <Panel>
+
+    <!-- The shell, hidden rather than unloaded during setup. The menu sits beside the page, or over it. -->
+    <Panel IsVisible="{Binding !IsFirstRun}">
+
+      <DockPanel x:Name="PageArea" Classes="pageArea" Classes.menuBeside="{Binding IsMenuBeside}"
+                 LastChildFill="True">
+
+        <!-- The one place anything long-running is announced, above every page. -->
+        <Border DockPanel.Dock="Top"
+                Background="{DynamicResource XxsmBadgeBrush}"
+                IsVisible="{Binding IsWorking}"
+                Padding="24,8">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <ProgressBar IsIndeterminate="True" Width="90" Height="3"
+                         VerticalAlignment="Center" />
+            <TextBlock FontSize="12" VerticalAlignment="Center"
+                       Foreground="{DynamicResource XxsmTextBrush}"
+                       Text="{Binding WorkingMessage}" />
+          </StackPanel>
+        </Border>
+
+        <!-- A hidden download: a line that follows the user from page to page, with Show and Cancel. -->
+        <Border DockPanel.Dock="Top"
+                Background="{DynamicResource XxsmBadgeBrush}"
+                BorderBrush="{DynamicResource XxsmBorderBrush}"
+                BorderThickness="0,0,0,1"
+                IsVisible="{Binding Downloads.HasActive}"
+                Padding="24,8">
+          <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="10"
+                DataContext="{Binding Downloads.Active}"
+                x:DataType="vm:DownloadRowViewModel">
+
+            <ProgressBar Grid.Column="0" Width="90" Height="4" VerticalAlignment="Center"
+                         Minimum="0" Maximum="100"
+                         Value="{Binding Percent}"
+                         IsIndeterminate="{Binding IsIndeterminate}"
+                         AutomationProperties.Name="{Binding DisplayName}" />
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10"
+                        VerticalAlignment="Center">
+              <TextBlock FontSize="12" TextTrimming="CharacterEllipsis" MaxWidth="280"
+                         Foreground="{DynamicResource XxsmTextBrush}"
+                         Text="{Binding DisplayName}" />
+              <TextBlock Classes="muted" FontSize="12" Text="{Binding ProgressText}" />
+              <TextBlock Classes="muted" FontSize="12"
+                         IsVisible="{Binding HasRate}" Text="{Binding RateText}" />
+              <TextBlock Classes="muted" FontSize="12"
+                         IsVisible="{Binding HasRemaining}" Text="{Binding RemainingText}" />
+            </StackPanel>
+
+            <Button Grid.Column="2"
+                    Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ShowDownloadCommand}"
+                    Content="{DynamicResource Text.Downloads_Show}" />
+            <Button Grid.Column="3"
+                    Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Downloads.CancelActiveCommand}"
+                    Content="{DynamicResource Text.Downloads_Cancel}" />
+          </Grid>
+        </Border>
+
+        <ContentControl x:Name="PageHost" Content="{Binding CurrentPage}" />
+
+      </DockPanel>
+
+      <!-- While the menu is hidden: ☰ and each page's icon, so a page is one press away. -->
+      <Border Classes="menuStrip" IsVisible="{Binding !IsMenuOpen}">
+        <DockPanel>
+          <Button DockPanel.Dock="Top" Classes="iconButton menuToggle"
+                  Command="{Binding ToggleMenuCommand}"
+                  ToolTip.Tip="{Binding MenuToggleText}"
+                  AutomationProperties.Name="{Binding MenuToggleText}">
+            <Path Data="{StaticResource Icon.menu}" />
+          </Button>
+          <!-- The game, as its icon: the menu opens with the game list dropped down. -->
+          <Button DockPanel.Dock="Top" Classes="iconButton menuGame"
+                  IsVisible="{Binding HasGames}"
+                  Command="{Binding ChooseGameCommand}"
+                  ToolTip.Tip="{Binding SelectedGame.DisplayName, FallbackValue=''}"
+                  AutomationProperties.Name="{DynamicResource Text.Shell_Game_Label}">
+            <panels:GameIconView DataContext="{Binding SelectedGame.Icon, FallbackValue={x:Null}}" Width="22" Height="22" />
+          </Button>
+          <ListBox x:Name="RailIcons" Classes="railIcons"
+                   ItemsSource="{Binding NavigationItems}"
+                   SelectedItem="{Binding SelectedNavigationItem}">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:NavigationItemViewModel">
+                <Panel ToolTip.Tip="{Binding Label}" AutomationProperties.Name="{Binding Label}">
+                  <Path Classes="navIcon" HorizontalAlignment="Center"
+                        Data="{Binding Icon, Converter={StaticResource IconKey}}" />
+                  <!-- The count the full menu shows, as a dot: there is no room for the number. -->
+                  <Border Classes="badgeDot" IsVisible="{Binding HasBadge}"
+                          HorizontalAlignment="Right" VerticalAlignment="Top" />
+                </Panel>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </DockPanel>
+      </Border>
+
+      <!-- The page dimmed under the menu; a press here closes the menu and does nothing else. -->
+      <Border x:Name="MenuScrim" Classes="scrim" IsVisible="{Binding IsMenuOver}" />
+
+      <Border Classes="menu" Classes.over="{Binding IsMenuOver}" IsVisible="{Binding IsMenuOpen}">
+          <DockPanel LastChildFill="True">
+
+            <!-- Where the strip has it, so hiding and showing the menu never moves the button. -->
+            <Button DockPanel.Dock="Top" Classes="iconButton menuToggle"
+                    Command="{Binding ToggleMenuCommand}"
+                    ToolTip.Tip="{Binding MenuToggleText}"
+                    AutomationProperties.Name="{Binding MenuToggleText}">
+              <Path Data="{StaticResource Icon.menu}" />
+            </Button>
+
+            <StackPanel DockPanel.Dock="Top" Margin="12,4,12,10" Spacing="6">
+              <TextBlock Classes="sectionLabel" Text="{DynamicResource Text.Shell_Game_Label}" />
+
+              <ComboBox ItemsSource="{Binding Games}"
+                        SelectedItem="{Binding SelectedGame}"
+                        IsDropDownOpen="{Binding IsGameListOpen, Mode=TwoWay}"
+                        IsVisible="{Binding HasGames}"
+                        HorizontalAlignment="Stretch"
+                        AutomationProperties.Name="{DynamicResource Text.Shell_Game_Label}">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate x:DataType="vm:GameOptionViewModel">
+                    <!-- A long name ends in "…" rather than running under the arrow; the tooltip has it whole. -->
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6" ToolTip.Tip="{Binding DisplayName}">
+                      <panels:GameIconView DataContext="{Binding Icon}" Width="16" Height="16" />
+                      <TextBlock Grid.Column="1" Text="{Binding DisplayName}" VerticalAlignment="Center"
+                                 TextTrimming="CharacterEllipsis" />
+                    </Grid>
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+
+              <!-- With no pack installed, the selector's space becomes the way to get one. -->
+              <StackPanel IsVisible="{Binding !HasGames}" Spacing="6">
+                <TextBlock Classes="muted" FontSize="12"
+                           Text="{DynamicResource Text.Shell_Game_None}" />
+                <Button Classes="accent" HorizontalAlignment="Stretch"
+                        Command="{Binding ShowPacksCommand}"
+                        Content="{DynamicResource Text.Shell_ManagePacks}" />
+              </StackPanel>
+            </StackPanel>
+
+            <StackPanel DockPanel.Dock="Bottom" Margin="14,10,14,12" Spacing="2">
+              <TextBlock Classes="muted" FontSize="11" Text="{Binding VersionText}" />
+            </StackPanel>
+
+            <!-- Pressing the entry already selected goes back to its first screen (MainWindow.axaml.cs). -->
+            <ListBox x:Name="Rail" Classes="rail"
+                     ItemsSource="{Binding NavigationItems}"
+                     SelectedItem="{Binding SelectedNavigationItem}"
+                     AutomationProperties.Name="{DynamicResource Text.Nav_Characters}">
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:NavigationItemViewModel">
+                  <Grid ColumnDefinitions="Auto,*,Auto">
+                    <Path Grid.Column="0" Classes="navIcon"
+                          Data="{Binding Icon, Converter={StaticResource IconKey}}" />
+                    <TextBlock Grid.Column="1" Margin="10,0,0,0" Text="{Binding Label}"
+                               VerticalAlignment="Center" />
+                    <Border Grid.Column="2" Classes="badge" IsVisible="{Binding HasBadge}">
+                      <TextBlock Text="{Binding BadgeCount}" />
+                    </Border>
+                  </Grid>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+
+          </DockPanel>
+      </Border>
+
+    </Panel>
+
+    <!-- Setup. Occupies the whole window: there is nothing useful behind it yet. -->
+    <firstRun:FirstRunView DataContext="{Binding FirstRun}" IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsFirstRun}" />
+
+  </Panel>
+
+</Window>

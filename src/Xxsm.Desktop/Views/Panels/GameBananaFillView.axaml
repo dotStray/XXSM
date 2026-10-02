@@ -1,0 +1,87 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Xxsm.Desktop.ViewModels"
+             x:Class="Xxsm.Desktop.Views.Panels.GameBananaFillView"
+             x:DataType="vm:GameBananaFillViewModel"
+             x:Name="Root"
+             IsVisible="{Binding IsOpen}">
+
+  <!-- What the mod's page says beside what the mod has, a tick box each; nothing the user wrote starts ticked. -->
+  <Panel>
+    <Border Classes="scrim" />
+
+    <Border Classes="card" Width="640" MaxHeight="620"
+            HorizontalAlignment="Center" VerticalAlignment="Center">
+      <DockPanel>
+
+        <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,12">
+          <TextBlock Classes="subheading" Text="{DynamicResource Text.GameBanana_Fill_Heading}" />
+          <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                     Text="{DynamicResource Text.GameBanana_Fill_Subheading}" />
+          <StackPanel Orientation="Horizontal" Spacing="8"
+                      IsVisible="{Binding ModName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+            <TextBlock Classes="muted" FontSize="12" VerticalAlignment="Center"
+                       TextTrimming="CharacterEllipsis" Text="{Binding ModName}" />
+            <Button Classes="cellLink" Padding="0" VerticalAlignment="Center"
+                    Command="{Binding OpenPageCommand}"
+                    Content="{DynamicResource Text.Mods_Updates_Open}" />
+          </StackPanel>
+        </StackPanel>
+
+        <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto,Auto" Margin="0,12,0,0">
+          <Button Grid.Column="1"
+                  Command="{Binding CloseCommand}"
+                  Content="{DynamicResource Text.GameBanana_Fill_Cancel}" />
+          <Button Grid.Column="2" Classes="accent" Margin="8,0,0,0"
+                  IsVisible="{Binding HasRows}"
+                  Command="{Binding ApplyCommand}"
+                  Content="{DynamicResource Text.GameBanana_Fill_Apply}" />
+        </Grid>
+
+        <Panel>
+          <TextBlock Classes="muted" TextWrapping="Wrap" VerticalAlignment="Center"
+                     IsVisible="{Binding Note, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                     Text="{Binding Note}" />
+
+          <ScrollViewer IsVisible="{Binding HasRows}">
+            <StackPanel Spacing="4">
+
+              <Grid ColumnDefinitions="Auto,110,*,*" ColumnSpacing="8" Margin="0,0,0,4">
+                <TextBlock Grid.Column="1" Classes="sectionLabel"
+                           Text="{DynamicResource Text.GameBanana_Fill_Column_Field}" />
+                <TextBlock Grid.Column="2" Classes="sectionLabel"
+                           Text="{DynamicResource Text.GameBanana_Fill_Column_Current}" />
+                <TextBlock Grid.Column="3" Classes="sectionLabel"
+                           Text="{DynamicResource Text.GameBanana_Fill_Column_Proposed}" />
+              </Grid>
+
+              <ItemsControl ItemsSource="{Binding Rows}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:GameBananaFillRowViewModel">
+                    <Grid ColumnDefinitions="Auto,110,*,*" ColumnSpacing="8" Margin="0,0,0,8">
+                      <CheckBox Grid.Column="0" IsChecked="{Binding IsTaken}"
+                                AutomationProperties.Name="{Binding FieldLabel}" />
+                      <TextBlock Grid.Column="1" VerticalAlignment="Center"
+                                 Foreground="{DynamicResource XxsmTextBrush}"
+                                 Text="{Binding FieldLabel}" />
+                      <TextBlock Grid.Column="2" Classes="muted" FontSize="12"
+                                 VerticalAlignment="Center" TextWrapping="Wrap"
+                                 Text="{Binding CurrentText}" />
+                      <TextBlock Grid.Column="3" FontSize="12" VerticalAlignment="Center"
+                                 TextWrapping="Wrap"
+                                 Foreground="{DynamicResource XxsmTextBrush}"
+                                 Text="{Binding ProposedText}" />
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+
+            </StackPanel>
+          </ScrollViewer>
+        </Panel>
+
+      </DockPanel>
+    </Border>
+  </Panel>
+
+</UserControl>

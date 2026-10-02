@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>xxsm</AssemblyName>
+    <RootNamespace>Xxsm.Cli</RootNamespace>
+    <RollForward>Major</RollForward>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Xxsm.Core/Xxsm.Core.csproj" />
+    <ProjectReference Include="../Xxsm.Packs/Xxsm.Packs.csproj" />
+  </ItemGroup>
+
+</Project>

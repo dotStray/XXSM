@@ -1,0 +1,1028 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:Xxsm.Desktop.Controls">
+
+  <!-- The shared look, as selector classes; every colour comes from App.axaml's theme dictionaries. -->
+
+  <!-- Buttons: words centred, at least ButtonMinWidth wide (a tab may set its own). First, so later styles win. -->
+  <Style Selector="Button">
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="MinWidth" Value="{DynamicResource ButtonMinWidth}" />
+  </Style>
+
+  <Style Selector="Button.tile, Button.pin, Button.iconButton, Button.toolbarMenu, Button.cellLink, Button.moveTarget, Button.lineArrow, Button.textLink">
+    <Setter Property="MinWidth" Value="0" />
+  </Style>
+
+  <!-- Type -->
+
+  <Style Selector="TextBlock.heading">
+    <Setter Property="FontSize" Value="22" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource XxsmTextBrush}" />
+  </Style>
+
+  <Style Selector="TextBlock.subheading">
+    <Setter Property="FontSize" Value="15" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource XxsmTextBrush}" />
+  </Style>
+
+  <Style Selector="TextBlock.muted">
+    <Setter Property="Foreground" Value="{DynamicResource XxsmMutedBrush}" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+
+  <!-- The one line of explanation under a page's title. -->
+  <Style Selector="TextBlock.pageSubtitle">
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Foreground" Value="{DynamicResource XxsmMutedBrush}" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+    <Setter Property="MaxWidth" Value="680" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+  </Style>
+
+  <Style Selector="TextBlock.sectionLabel">
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource XxsmMutedBrush}" />
+  </Style>
+
+  <Style Selector="TextBlock.mono">
+    <Setter Property="FontFamily" Value="monospace" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+
+  <Style Selector="SelectableTextBlock.mono">
+    <Setter Property="FontFamily" Value="monospace" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+    <Setter Property="Foreground" Value="{DynamicResource XxsmMutedBrush}" />
+  </Style>
+
+  <!-- The line between the mod list and the detail pane: invisible until the pointer is over it. -->
+  <Style Selector="Border.paneHandleLine">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector="Border.paneHandle:pointerover Border.paneHandleLine">
+    <Setter Property="Background" Value="{DynamicResource XxsmBorderBrush}" />
+  </Style>
+  <!-- With the keyboard focus, the line is drawn in the accent colour. -->
+  <Style Selector="Border.paneHandle:focus-visible Border.paneHandleLine">
+    <Setter Property="Background" Value="{DynamicResource XxsmAccentBrush}" />
+  </Style>
+
+  <!-- A page's scroll bar sits in its right margin, beside the content. Tied to the frame's 20 below. -->
+  <Style Selector="ScrollViewer.besideMargin">
+    <Setter Property="Margin" Value="0,0,-20,0" />
+    <Setter Property="Padding" Value="0,0,20,0" />
+  </Style>
+  <!-- The same inside a card: the bar sits in the card's padding. Tied to Border.card's Padding below. -->
+  <Style Selector="ScrollViewer.besidePadding">
+    <Setter Property="Margin" Value="0,0,-16,0" />
+    <Setter Property="Padding" Value="0,0,16,0" />
+  </Style>
+
+  <!-- Buttons that throw something away: `destructive` has red words; `danger` turns red under the pointer. -->
+  <Style Selector="Button.destructive, Button.danger">
+    <Setter Property="Foreground" Value="{DynamicResource XxsmErrorBrush}" />
+  </Style>
+  <Style Selector="Button.destructive:pointerover:not(:disabled) /template/ ContentPresenter, Button.destructive:pressed:not(:disabled) /template/ ContentPresenter">
+    <Setter Property="Foreground" Value="{DynamicResource XxsmErrorBrush}" />
+  </Style>
+  <Style Selector="Button.danger:pointerover:not(:disabled) /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource XxsmErrorFillBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource XxsmErrorFillBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource XxsmOnErrorBrush}" />
+  </Style>
+  <Style Selector="Button.danger:pressed:not(:disabled) /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource XxsmErrorPressedBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource XxsmErrorPressedBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource XxsmOnErrorBrush}" />
+  </Style>
+  <!-- Reset and restart: `danger solid` is red even at rest. -->
+  <Style Selector="Button.danger.solid">
+    <Setter Property="Background" Value="{DynamicResource XxsmErrorFillBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource XxsmErrorFillBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource XxsmOnErrorBrush}" />
+  </Style>
+  <Style Selector="Button.danger.solid:pointerover:not(:disabled) /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource XxsmErrorPressedBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource XxsmErrorPressedBrush}" />
+  </Style>
+  <!-- A Delete or Remove in a right-click menu has red words too; profile names in a menu do not. -->
+  <Style Selector="MenuItem.destructive:not(:disabled)">
+    <Setter Property="Foreground" Value="{DynamicResource XxsmErrorBrush}" />
+  </Style>
+  <Style Selector="MenuItem.destructive:not(:disabled) /template/ ContentPresenter#PART_HeaderPresenter">
+    <Setter Property="Foreground" Value="{DynamicResource XxsmErrorBrush}" />
+  </Style>
+  <!-- An icon has no words, so a destructive icon button draws its icon red. -->
+  <Style Selector="Button.iconButton.destructive:not(:disabled) Path">
+    <Setter Property="Stroke" Value="{DynamicResource XxsmErrorBrush}" />
+  </Style>
+
+  <!-- The page frame -->
+
+  <!-- One margin and one header gap on every page. 20 at the sides: ScrollViewer.besideMargin reaches into it. -->
+  <Style Selector="DockPanel.page">
+    <Setter Property="Margin" Value="20,20,20,0" />
+    <Setter Property="LastChildFill" Value="True" />
+  </Style>
+
+  <!-- The title band, as wide as the page's content column (narrowed with the form on Settings). -->
+  <Style Selector="Grid.pageHeader">
+    <Setter Property="DockPanel.Dock" Value="Top" />
+    <Setter Property="Margin" Value="0,0,0,18" />
+  </Style>
+
+  <!-- Cards -->
+
+  <Style Selector="Border.card">
+    <Setter Property="Background" Value="{DynamicResource XxsmSurfaceBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource XxsmBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="16" />
+  </Style>
+
+  <!-- What a page says when it has nothing to show, centred. -->
+  <Style Selector="Border.notice">
+    <Setter Property="MaxWidth" Value="560" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Top" />
+    <Setter Property="Margin" Value="0,32,0,0" />
+    <Setter Property="Padding" Value="24" />
+  </Style>
+
+  <Style Selector="Border.badge">
+    <Setter Property="Background" Value="{DynamicResource XxsmBadgeBrush}" />
+    <Setter Property="CornerRadius" Value="9" />
+    <Setter Property="Padding" Value="6,1" />
+  </Style>
+
+  <Style Selector="Border.badge > TextBlock">
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="Foreground" Value="{DynamicResource XxsmTextBrush}" />
+  </Style>
+
+  <!-- A word about the character on its tile's picture, on its own solid ground like the pin. -->
+  <Style Selector="Border.statusPill">
+    <Setter Property="Background" Value="{DynamicResource XxsmSurfaceBrush}" />
+    <Setter Property="CornerRadius" Value="9" />
+    <Setter Property="Padding" Value="6,1" />
+    <Setter Property="Opacity" Value="0.94" />
+  </Style>
+
+  <Style Selector="Border.statusPill > TextBlock">
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="Foreground" Value="{DynamicResource XxsmMutedBrush}" />
+  </Style>
+
+  <Style Selector="Border.statusPill.accent > TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource XxsmAccentBrush}" />
+  </Style>
+
+  <!-- A hidden character, while hidden ones are shown: its picture fades, its words do not. -->
+  <Style Selector="Button.tile.hidden Border.tilePortrait">
+    <Setter Property="Opacity" Value="0.4" />
+  </Style>
+
+  <!-- The character tile -->
+
+  <!-- A Button, so a tile looks pressable and takes focus, Space and Enter. FillingWrapPanel sets its width. -->
+  <Style Selector="Button.tile">
+    <!-- A tile fills the column the panel gave it; Fluent's Button would size itself to its content. -->
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="VerticalAlignment" Value="Stretch" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Stretch" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="ClipToBounds" Value="True" />
+  </Style>
+
+  <Style Selector="Button.tile /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource XxsmSurfaceBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource XxsmBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="8" />
+  </Style>
+
+  <Style Selector="Button.tile:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource XxsmSurfaceBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource XxsmAccentBrush}" />
+  </Style>
+
+  <Style Selector="Button.tile:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource XxsmBadgeBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource XxsmAccentBrush}" />
+  </Style>
+
+  <!-- The rail -->
+
+  <!-- Setup's pack list: an installed pack says so in green. -->
+  <Style Selector="TextBlock.muted.installed">
+    <Setter Property="Foreground" Value="{DynamicResource XxsmOkBrush}" />
+  </Style>
+
+  <!-- The menu and its ☰: the page starts after the menu, or after ☰'s width when the menu is hidden. -->
+  <Style Selector="DockPanel.pageArea">
+    <Setter Property="Margin" Value="48,0,0,0" />
+  </Style>
+
+  <!-- The strip of page icons while the menu is hidden. -->
+  <Style Selector="Border.menuStrip">
+    <Setter Property="Width" Value="48" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="Background" Value="{DynamicResource XxsmRailBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource XxsmBorderBrush}" />
+    <Setter Property="BorderThickness" Value="0,0,1,0" />
+  </Style>
+
+  <Style Selector="Button.menuGame">
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="Margin" Value="6,8,0,0" />
+  </Style>
+
+  <Style Selector="ListBox.railIcons">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Padding" Value="4,8" />
+  </Style>
+
+  <Style Selector="ListBox.railIcons ListBoxItem">
+    <Setter Property="Padding" Value="0,9" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Margin" Value="0,1" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+  </Style>
+
+  <Style Selector="ListBox.railIcons ListBoxItem:selected Path.navIcon">
+    <Setter Property="Stroke" Value="{DynamicResource XxsmTextBrush}" />
+  </Style>
+
+  <Style Selector="Border.badgeDot">
+    <Setter Property="Width" Value="8" />
+    <Setter Property="Height" Value="8" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Margin" Value="0,-2,6,0" />
+    <Setter Property="Background" Value="{DynamicResource XxsmAccentBrush}" />
+  </Style>
+
+  <Style Selector="DockPanel.pageArea.menuBeside">
+    <Setter Property="Margin" Value="196,0,0,0" />
+  </Style>
+
+  <Style Selector="Border.menu">
+    <Setter Property="Width" Value="196" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="Background" Value="{DynamicResource XxsmRailBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource XxsmBorderBrush}" />
+    <Setter Property="BorderThickness" Value="0,0,1,0" />
+  </Style>
+
+  <!-- Over the page it casts a shadow, so it reads as lifted off the page rather than part of it. -->
+  <Style Selector="Border.menu.over">
+    <Setter Property="BoxShadow" Value="4 0 18 0 #40000000" />
+  </Style>
+
+  <!-- Studio's Problems panel drawn over the table's right-hand side in a narrow page. -->
+  <Style Selector="DockPanel.studioTable.problemsOver">
+    <Setter Property="Grid.ColumnSpan" Value="2" />
+  </Style>
+
+  <Style Selector="Border.problemsPanel.over">
+    <Setter Property="BoxShadow" Value="-4 0 18 0 #40000000" />
+  </Style>
+
+  <!-- The folded panel's arrow keeps its place under the open panel, drawn as nothing. -->
+  <Style Selector="Panel.problemsArrow.covered">
+    <Setter Property="Opacity" Value="0" />
+    <Setter Property="IsHitTestVisible" Value="False" />
+  </Style>
+
+  <Style Selector="Button.menuToggle">
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="VerticalAlignment" Value="Top" />
+    <Setter Property="Margin" Value="6,8,0,0" />
+  </Style>
+
+  <Style Selector="ListBox.rail">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Padding" Value="8" />
+  </Style>
+
+  <Style Selector="ListBox.rail ListBoxItem">
+    <Setter Property="Padding" Value="10,8" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Margin" Value="0,1" />
+  </Style>
+
+  <Style Selector="Path.navIcon">
+    <Setter Property="Width" Value="20" />
+    <Setter Property="Height" Value="20" />
+    <Setter Property="Stretch" Value="Uniform" />
+    <Setter Property="Stroke" Value="{DynamicResource XxsmMutedBrush}" />
+    <Setter Property="StrokeThickness" Value="1.5" />
+    <Setter Property="StrokeLineCap" Value="Round" />
+    <Setter Property="StrokeJoin" Value="Round" />
+  </Style>
+
+  <!-- The selected entry's icon takes the text colour, so the word and the mark agree. -->
+  <Style Selector="ListBox.rail ListBoxItem:selected Path.navIcon">
+    <Setter Property="Stroke" Value="{DynamicResource XxsmTextBrush}" />
+  </Style>
+
+  <!-- Small parts -->
+
+  <!-- A tile's mod count: muted with none on, green with mods on, yellow with two on for one character. -->
+  <Style Selector="Border.modCount">
+    <Setter Property="MinWidth" Value="20" />
+    <Setter Property="Height" Value="20" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="Padding" Value="5,0" />
+    <Setter Property="BorderThickness" Value="1.6" />
+    <Setter Property="BorderBrush" Value="{DynamicResource XxsmMutedBrush}" />
+  </Style>
+
+  <Style Selector="Border.modCount > TextBlock">
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Foreground" Value="{DynamicResource XxsmMutedBrush}" />
+  </Style>
+
+  <Style Selector="Border.modCount.on">
+    <Setter Property="BorderBrush" Value="{DynamicResource XxsmOkBrush}" />
+  </Style>
+
+  <Style Selector="Border.modCount.on > TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource XxsmOkBrush}" />
+  </Style>
+
+  <Style Selector="Border.modCount.clash">
+    <Setter Property="BorderBrush" Value="{DynamicResource XxsmWarnBrush}" />
+  </Style>
+
+  <Style Selector="Border.modCount.clash > TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource XxsmWarnBrush}" />
+  </Style>
+
+  <!-- The mod grid's switch. MinWidth cleared: Fluent reserves room for On/Off labels even when they are null. -->
+  <Style Selector="ToggleSwitch.modSwitch">
+    <Setter Property="MinWidth" Value="0" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+
+  <!-- A mod's preview: a fixed height so the pane does not jump, cropped by UniformToFill and a clip. -->
+  <Style Selector="Border.modPreview">
+    <Setter Property="Height" Value="170" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="ClipToBounds" Value="True" />
+    <Setter Property="Background" Value="{DynamicResource XxsmBadgeBrush}" />
+  </Style>
+
+  <!-- The character editor's picture: the grid tile's 132px, so what is set here is what the grid shows. -->
+  <Style Selector="Border.editorPortrait">
+    <Setter Property="Width" Value="132" />
+    <Setter Property="Height" Value="132" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="ClipToBounds" Value="True" />
+    <Setter Property="Background" Value="{DynamicResource XxsmBadgeBrush}" />
+  </Style>
+
+  <!-- The pen over a mod's picture carries its own solid ground, as it sits on a screenshot of any colour. -->
+  <Style Selector="Button.imageEdit">
+    <Setter Property="Background" Value="{DynamicResource XxsmSurfaceBrush}" />
+    <Setter Property="Opacity" Value="0.92" />
+  </Style>
+
+  <!-- A mod's picture area takes focus on a click, so Ctrl+V has somewhere to land. -->
+  <Style Selector="Border.imageTarget:focus-visible">
+    <Setter Property="BorderBrush" Value="{DynamicResource XxsmAccentBrush}" />
+    <Setter Property="BorderThickness" Value="2" />
+  </Style>
+
+  <!-- A tile's pin: shown on hover, and always when the character is pinned. -->
+  <Style Selector="Button.pin">
+    <Setter Property="Width" Value="26" />
+    <Setter Property="Height" Value="26" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="CornerRadius" Value="13" />
+    <Setter Property="Background" Value="{DynamicResource XxsmSurfaceBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource XxsmBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="Opacity" Value="0" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+
+  <Style Selector="Button.tile:pointerover Button.pin">
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+
+  <Style Selector="Button.pin.pinned">
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+
+  <!-- Height only, no Width: a Uniform Shape in a wider box is drawn at its left, not centred. -->
+  <!-- A mod's tile in a profile or the picker. Its menu always shows: it is the only way to Remove. -->
+  <Style Selector="Button.tile Button.tileMenu">
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+
+  <!-- A picked tile in the picker: the accent border, and a tick in the corner. -->
+  <Style Selector="Button.tile.picked /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="BorderBrush" Value="{DynamicResource XxsmAccentBrush}" />
+    <Setter Property="BorderThickness" Value="2" />
+  </Style>
+
+  <Style Selector="Border.pickMark">
+    <Setter Property="Width" Value="26" />
+    <Setter Property="Height" Value="26" />
+    <Setter Property="CornerRadius" Value="13" />
+    <Setter Property="Background" Value="{DynamicResource XxsmAccentBrush}" />
+  </Style>
+
+  <Style Selector="Border.pickMark > Path">
+    <Setter Property="MaxWidth" Value="14" />
+    <Setter Property="Height" Value="14" />
+    <Setter Property="Stretch" Value="Uniform" />
+    <Setter Property="Stroke" Value="White" />
+    <Setter Property="StrokeThickness" Value="2.2" />
+    <Setter Property="StrokeLineCap" Value="Round" />
+    <Setter Property="StrokeJoin" Value="Round" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <!-- A mod that has gone: its picture faded. -->
+  <Style Selector="Button.tile.missing Border.tilePortrait">
+    <Setter Property="Opacity" Value="0.45" />
+  </Style>
+
+  <Style Selector="Path.pinIcon">
+    <Setter Property="MaxWidth" Value="13" />
+    <Setter Property="Height" Value="13" />
+    <Setter Property="Stretch" Value="Uniform" />
+    <Setter Property="Stroke" Value="{DynamicResource XxsmMutedBrush}" />
+    <Setter Property="StrokeThickness" Value="1.5" />
+    <Setter Property="StrokeLineCap" Value="Round" />
+    <Setter Property="StrokeJoin" Value="Round" />
+  </Style>
+
+  <Style Selector="Button.pin.pinned Path.pinIcon">
+    <Setter Property="Stroke" Value="{DynamicResource XxsmAccentBrush}" />
+    <Setter Property="Fill" Value="{DynamicResource XxsmAccentBrush}" />
+  </Style>
+
+  <!-- The Unsorted tile's stand-in for a portrait, and its page header's. Height and MaxWidth, so it centres. -->
+  <Style Selector="Path.tileIcon">
+    <Setter Property="MaxWidth" Value="44" />
+    <Setter Property="Height" Value="44" />
+    <Setter Property="Stretch" Value="Uniform" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Stroke" Value="{DynamicResource XxsmMutedBrush}" />
+    <Setter Property="StrokeThickness" Value="2" />
+    <Setter Property="StrokeLineCap" Value="Round" />
+    <Setter Property="StrokeJoin" Value="Round" />
+  </Style>
+
+  <Style Selector="Path.detailIcon">
+    <Setter Property="MaxWidth" Value="28" />
+    <Setter Property="Height" Value="28" />
+    <Setter Property="Stretch" Value="Uniform" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Stroke" Value="{DynamicResource XxsmMutedBrush}" />
+    <Setter Property="StrokeThickness" Value="1.8" />
+    <Setter Property="StrokeLineCap" Value="Round" />
+    <Setter Property="StrokeJoin" Value="Round" />
+  </Style>
+
+  <!-- The grid and detail toolbars' parts: search box, filter chips, sort and status groups. -->
+  <Style Selector="TextBox.toolbarSearch">
+    <Setter Property="MinWidth" Value="220" />
+  </Style>
+
+  <Style Selector="ToggleButton.chip">
+    <Setter Property="Padding" Value="10,4" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="Background" Value="{DynamicResource XxsmSurfaceBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource XxsmBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="FontSize" Value="12" />
+  </Style>
+
+  <!-- The arrows at the ends of a filter line that does not fit: each shows only while chips are out of sight. -->
+  <!-- A row that scrolls sideways with an arrow at each end (Controls/ScrollingLine.cs). -->
+  <Style Selector="controls|ScrollingLine">
+    <Setter Property="Template">
+      <ControlTemplate TargetType="controls:ScrollingLine">
+        <Panel>
+          <ScrollViewer Name="PART_Line" Classes="scrollingLine"
+                        HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled">
+            <ContentPresenter Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}" />
+          </ScrollViewer>
+          <Border Name="PART_BackEdge" Classes="lineEdge back" IsVisible="False">
+            <Button Name="PART_Back" Classes="lineArrow"
+                    ToolTip.Tip="{DynamicResource Text.ScrollLine_Back}"
+                    AutomationProperties.Name="{DynamicResource Text.ScrollLine_Back}">
+              <Path Data="{StaticResource Icon.chevronLeft}" />
+            </Button>
+          </Border>
+          <Border Name="PART_ForwardEdge" Classes="lineEdge forward" IsVisible="False">
+            <Button Name="PART_Forward" Classes="lineArrow"
+                    ToolTip.Tip="{DynamicResource Text.ScrollLine_Forward}"
+                    AutomationProperties.Name="{DynamicResource Text.ScrollLine_Forward}">
+              <Path Data="{StaticResource Icon.chevronRight}" />
+            </Button>
+          </Border>
+        </Panel>
+      </ControlTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="Border.lineEdge">
+    <Setter Property="Width" Value="44" />
+    <Setter Property="VerticalAlignment" Value="Stretch" />
+  </Style>
+
+  <Style Selector="Border.lineEdge.back">
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="Background" Value="{DynamicResource XxsmPageFadeBackBrush}" />
+  </Style>
+
+  <Style Selector="Border.lineEdge.forward">
+    <Setter Property="HorizontalAlignment" Value="Right" />
+    <Setter Property="Background" Value="{DynamicResource XxsmPageFadeForwardBrush}" />
+  </Style>
+
+  <Style Selector="Border.lineEdge.back > Button">
+    <Setter Property="HorizontalAlignment" Value="Left" />
+  </Style>
+
+  <Style Selector="Border.lineEdge.forward > Button">
+    <Setter Property="HorizontalAlignment" Value="Right" />
+  </Style>
+
+  <Style Selector="Button.lineArrow">
+    <Setter Property="Width" Value="26" />
+    <Setter Property="Height" Value="26" />
+    <Setter Property="VerticalAlignment" Value="Top" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="CornerRadius" Value="13" />
+    <Setter Property="Background" Value="{DynamicResource XxsmSurfaceBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource XxsmBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+
+  <Style Selector="Button.lineArrow:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource XxsmBadgeBrush}" />
+  </Style>
+
+  <Style Selector="Button.lineArrow Path">
+    <Setter Property="MaxWidth" Value="12" />
+    <Setter Property="Height" Value="12" />
+    <Setter Property="Stretch" Value="Uniform" />
+    <Setter Property="Stroke" Value="{DynamicResource XxsmTextBrush}" />
+    <Setter Property="StrokeThickness" Value="2" />
+    <Setter Property="StrokeLineCap" Value="Round" />
+    <Setter Property="StrokeJoin" Value="Round" />
+  </Style>
+
+  <!-- On a card. After lineEdge and lineArrow on purpose: a later style of the same weight wins. -->
+  <Style Selector="controls|ScrollingLine.onCard /template/ Border.lineEdge.back">
+    <Setter Property="Background" Value="{DynamicResource XxsmCardFadeBackBrush}" />
+  </Style>
+  <Style Selector="controls|ScrollingLine.onCard /template/ Border.lineEdge.forward">
+    <Setter Property="Background" Value="{DynamicResource XxsmCardFadeForwardBrush}" />
+  </Style>
+  <Style Selector="controls|ScrollingLine.onCard /template/ Button.lineArrow">
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <!-- A checked ToggleButton's text colour back: Fluent's white vanishes on the light theme's pale fill. -->
+  <Style Selector="ToggleButton.chip:checked /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource XxsmBadgeBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource XxsmTextBrush}" />
+  </Style>
+
+  <Style Selector="ToggleButton.chip:checked">
+    <Setter Property="BorderBrush" Value="{DynamicResource XxsmAccentBrush}" />
+  </Style>
+
+  <!-- The character page header's portrait: larger than a tile's, the same stand-in when there is none. -->
+  <Style Selector="Border.detailPortrait">
+    <Setter Property="Width" Value="96" />
+    <Setter Property="Height" Value="96" />
+    <Setter Property="CornerRadius" Value="10" />
+    <Setter Property="ClipToBounds" Value="True" />
+    <Setter Property="Background" Value="{DynamicResource XxsmBadgeBrush}" />
+  </Style>
+
+  <!-- A count on an icon, like a notification: amber for warnings, red for errors. -->
+  <Style Selector="Border.countBubble">
+    <Setter Property="MinWidth" Value="18" />
+    <Setter Property="Height" Value="18" />
+    <Setter Property="Padding" Value="5,0" />
+    <Setter Property="CornerRadius" Value="9" />
+    <Setter Property="Background" Value="{DynamicResource XxsmWarnBrush}" />
+  </Style>
+
+  <Style Selector="Border.countBubble.error">
+    <Setter Property="Background" Value="{DynamicResource XxsmErrorBrush}" />
+  </Style>
+
+  <Style Selector="Border.countBubble TextBlock">
+    <Setter Property="FontSize" Value="10" />
+    <Setter Property="FontWeight" Value="Bold" />
+    <Setter Property="Foreground" Value="White" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <!-- A game's icon beside its name (GameIconView). -->
+  <Style Selector="Border.gameIcon">
+    <Setter Property="CornerRadius" Value="5" />
+    <Setter Property="ClipToBounds" Value="True" />
+    <Setter Property="Background" Value="{DynamicResource XxsmBadgeBrush}" />
+  </Style>
+
+  <Style Selector="TextBlock.gameIconInitial">
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Foreground" Value="{DynamicResource XxsmMutedBrush}" />
+  </Style>
+
+  <!-- A character's picture in Studio's table: a small rounded square, its initial when it has none. -->
+  <Style Selector="Border.studioPicture">
+    <Setter Property="Width" Value="40" />
+    <Setter Property="Height" Value="40" />
+    <Setter Property="Margin" Value="0,3" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="ClipToBounds" Value="True" />
+    <Setter Property="Background" Value="{DynamicResource XxsmBadgeBrush}" />
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+
+  <Style Selector="TextBlock.studioPictureInitial">
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="FontSize" Value="16" />
+    <Setter Property="Foreground" Value="{DynamicResource XxsmMutedBrush}" />
+  </Style>
+
+  <!-- The handle beside each attribute in Game settings: hold and drag it up or down. -->
+  <Style Selector="Border.dragHandle">
+    <Setter Property="Width" Value="32" />
+    <Setter Property="Height" Value="32" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Cursor" Value="SizeNorthSouth" />
+  </Style>
+
+  <Style Selector="Border.dragHandle:pointerover, Border.dragHandle:focus">
+    <Setter Property="Background" Value="{DynamicResource XxsmBadgeBrush}" />
+  </Style>
+
+  <Style Selector="Border.dragHandle Path">
+    <Setter Property="Width" Value="16" />
+    <Setter Property="Height" Value="16" />
+    <Setter Property="Stretch" Value="Uniform" />
+    <Setter Property="Stroke" Value="{DynamicResource XxsmMutedBrush}" />
+    <Setter Property="StrokeThickness" Value="1.8" />
+    <Setter Property="StrokeLineCap" Value="Round" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <!-- The attribute row being dragged, so it is clear what is moving. -->
+  <Style Selector="Grid.attributeRow.dragging">
+    <Setter Property="Opacity" Value="0.6" />
+  </Style>
+
+  <!-- A row of buttons that wraps when narrow. Margins, not spacing: a WrapPanel has none. -->
+  <Style Selector="WrapPanel.buttonRow > :is(Button)">
+    <Setter Property="Margin" Value="0,0,8,6" />
+  </Style>
+
+  <Style Selector="WrapPanel.buttonRow > :is(ToggleButton)">
+    <Setter Property="Margin" Value="0,0,8,6" />
+  </Style>
+
+  <!-- A borderless, icon-only button: the detail view's back arrow. -->
+  <Style Selector="Button.iconButton">
+    <Setter Property="Width" Value="36" />
+    <Setter Property="Height" Value="36" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="CornerRadius" Value="18" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+
+  <Style Selector="Button.iconButton:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource XxsmBadgeBrush}" />
+  </Style>
+
+  <!-- MaxWidth, not Width: a Uniform Shape narrower than its box is drawn at its left, not centred. -->
+  <Style Selector="Button.iconButton Path">
+    <Setter Property="MaxWidth" Value="18" />
+    <Setter Property="Height" Value="18" />
+    <Setter Property="Stretch" Value="Uniform" />
+    <Setter Property="Stroke" Value="{DynamicResource XxsmTextBrush}" />
+    <Setter Property="StrokeThickness" Value="1.8" />
+    <Setter Property="StrokeLineCap" Value="Round" />
+    <Setter Property="StrokeJoin" Value="Round" />
+  </Style>
+
+  <!-- An icon button that is doing something: the search box open, or a filter narrowing the rows. -->
+  <!-- A smaller icon button, for a line of small text: Studio's Undo and Redo, its game settings. -->
+  <Style Selector="Button.iconButton.small">
+    <Setter Property="Width" Value="28" />
+    <Setter Property="Height" Value="28" />
+    <Setter Property="CornerRadius" Value="14" />
+  </Style>
+
+  <Style Selector="Button.iconButton.small Path">
+    <Setter Property="MaxWidth" Value="16" />
+    <Setter Property="Height" Value="16" />
+  </Style>
+
+  <!-- An icon has no words to grey out, so a button that cannot be pressed fades its icon. -->
+  <Style Selector="Button.iconButton:disabled Path">
+    <Setter Property="Opacity" Value="0.35" />
+  </Style>
+
+  <!-- And no disc behind it: Fluent paints a disabled button's background grey. -->
+  <Style Selector="Button.iconButton:disabled /template/ ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <Style Selector="Button.iconButton.on Path">
+    <Setter Property="Stroke" Value="{DynamicResource XxsmAccentBrush}" />
+  </Style>
+
+  <!-- A toolbar button that opens a menu and names its setting: chip-sized, as it carries a word. -->
+  <Style Selector="Button.toolbarMenu">
+    <Setter Property="Padding" Value="10,6" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="{DynamicResource XxsmBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Cursor" Value="Hand" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <Style Selector="Button.toolbarMenu:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource XxsmBadgeBrush}" />
+  </Style>
+
+  <Style Selector="Path.menuIcon">
+    <Setter Property="MaxWidth" Value="14" />
+    <Setter Property="Height" Value="14" />
+    <Setter Property="Stretch" Value="Uniform" />
+    <Setter Property="Stroke" Value="{DynamicResource XxsmMutedBrush}" />
+    <Setter Property="StrokeThickness" Value="1.8" />
+    <Setter Property="StrokeLineCap" Value="Round" />
+    <Setter Property="StrokeJoin" Value="Round" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <!-- The skin selector: a horizontal tab strip sharing the rail's selected-item treatment. -->
+  <Style Selector="ListBox.tabs">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="ItemsPanel">
+      <ItemsPanelTemplate>
+        <WrapPanel Orientation="Horizontal" />
+      </ItemsPanelTemplate>
+    </Setter>
+  </Style>
+
+  <Style Selector="ListBox.tabs ListBoxItem">
+    <Setter Property="Padding" Value="10,5" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Margin" Value="0,0,4,0" />
+    <Setter Property="FontSize" Value="12" />
+  </Style>
+
+  <Style Selector="ListBox.tabs ListBoxItem:selected /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource XxsmBadgeBrush}" />
+  </Style>
+
+  <!-- The mark for a newer version on GameBanana. Height and MaxWidth, so it centres; grey in the column header. -->
+  <Style Selector="Path.updateIcon">
+    <Setter Property="MaxWidth" Value="15" />
+    <Setter Property="Height" Value="15" />
+    <Setter Property="Stretch" Value="Uniform" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Stroke" Value="{DynamicResource XxsmWarnBrush}" />
+    <Setter Property="StrokeThickness" Value="1.8" />
+    <Setter Property="StrokeLineCap" Value="Round" />
+    <Setter Property="StrokeJoin" Value="Round" />
+  </Style>
+
+  <Style Selector="Path.updateIcon.header">
+    <Setter Property="Stroke" Value="{DynamicResource XxsmMutedBrush}" />
+  </Style>
+
+  <!-- A file an update changes: added green, removed red, replaced in the text colour; the word says which too. -->
+  <Style Selector="TextBlock.change">
+    <Setter Property="Foreground" Value="{DynamicResource XxsmTextBrush}" />
+  </Style>
+
+  <Style Selector="TextBlock.change.added">
+    <Setter Property="Foreground" Value="{DynamicResource XxsmOkBrush}" />
+  </Style>
+
+  <Style Selector="TextBlock.change.removed">
+    <Setter Property="Foreground" Value="{DynamicResource XxsmErrorBrush}" />
+  </Style>
+
+  <!-- A page's files to choose between: the chosen one outlined in the accent. -->
+  <Style Selector="ListBox.fileChoices">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Padding" Value="0" />
+  </Style>
+
+  <Style Selector="ListBox.fileChoices ListBoxItem">
+    <Setter Property="Padding" Value="12,10" />
+    <Setter Property="Margin" Value="0,0,0,6" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="BorderBrush" Value="{DynamicResource XxsmBorderBrush}" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+  </Style>
+
+  <Style Selector="ListBox.fileChoices ListBoxItem:selected">
+    <Setter Property="BorderBrush" Value="{DynamicResource XxsmAccentBrush}" />
+  </Style>
+
+  <Style Selector="ListBox.fileChoices ListBoxItem:selected /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource XxsmBadgeBrush}" />
+  </Style>
+
+  <!-- A skin tab's own portrait, small enough that the strip still reads as tabs. -->
+  <Style Selector="Border.skinThumb">
+    <Setter Property="Width" Value="22" />
+    <Setter Property="Height" Value="22" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="ClipToBounds" Value="True" />
+    <Setter Property="Background" Value="{DynamicResource XxsmBadgeBrush}" />
+  </Style>
+
+  <!-- A note inside a card, such as the detail pane's name-clash suggestion; Border.notice is page-wide. -->
+  <!-- What a Problems panel button opened a panel for: an accent outline. -->
+  <Style Selector="Border.fixTarget">
+    <Setter Property="BorderBrush" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="2" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Padding" Value="4" />
+  </Style>
+
+  <Style Selector="Border.fixTarget.on">
+    <Setter Property="BorderBrush" Value="{DynamicResource XxsmAccentBrush}" />
+  </Style>
+
+  <!-- The drop area in the add-a-picture question. -->
+  <Style Selector="Border.dropArea">
+    <Setter Property="Background" Value="{DynamicResource XxsmBadgeBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource XxsmAccentBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="16" />
+    <Setter Property="MinHeight" Value="120" />
+  </Style>
+
+  <Style Selector="Border.inlineNotice">
+    <Setter Property="Background" Value="{DynamicResource XxsmBadgeBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource XxsmAccentBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="6" />
+  </Style>
+
+  <!-- The chevron on a collapsed section. Height and MaxWidth, never Width: a narrow glyph would sit left. -->
+  <Style Selector="Path.disclosure">
+    <Setter Property="Height" Value="12" />
+    <Setter Property="MaxWidth" Value="12" />
+    <Setter Property="Stretch" Value="Uniform" />
+    <Setter Property="Stroke" Value="{DynamicResource XxsmMutedBrush}" />
+    <Setter Property="StrokeThickness" Value="1.8" />
+    <Setter Property="StrokeLineCap" Value="Round" />
+    <Setter Property="StrokeJoin" Value="Round" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="RenderTransformOrigin" Value="50%,50%" />
+  </Style>
+
+  <Style Selector="Path.disclosure.open">
+    <Setter Property="RenderTransform" Value="rotate(180deg)" />
+  </Style>
+
+  <!-- Behind an overlay panel: dims the page and, having a Background, stops presses reaching the grid below. -->
+  <Style Selector="Border.scrim">
+    <Setter Property="Background" Value="{DynamicResource XxsmScrimBrush}" />
+    <Setter Property="IsHitTestVisible" Value="True" />
+  </Style>
+
+  <!-- A candidate row in the "Move to…" picker. -->
+  <!-- A Studio table cell drawn by a template, lined up with the grid's own text cells. -->
+  <!-- A column dragged narrower than its heading ends the heading in "…", as a cell does. -->
+  <Style Selector="DataGridColumnHeader TextBlock">
+    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+  </Style>
+
+  <Style Selector="TextBlock.cell">
+    <Setter Property="Margin" Value="12,0" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+  </Style>
+
+  <!-- A whole cell that can be pressed and still reads as text: the Problems cell, which filters the panel. -->
+  <!-- A link in running text: accent-coloured and underlined, no box. -->
+  <Style Selector="Button.textLink">
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="FontSize" Value="12" />
+    <Setter Property="Foreground" Value="{DynamicResource XxsmAccentBrush}" />
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+  <Style Selector="Button.textLink /template/ ContentPresenter">
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource XxsmAccentBrush}" />
+  </Style>
+  <Style Selector="Button.textLink:pointerover /template/ ContentPresenter, Button.textLink:pressed /template/ ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="TextElement.Foreground" Value="{DynamicResource XxsmAccentBrush}" />
+  </Style>
+  <Style Selector="Button.textLink TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource XxsmAccentBrush}" />
+  </Style>
+
+  <Style Selector="Button.cellLink">
+    <Setter Property="Padding" Value="8,0" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="VerticalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+
+  <Style Selector="Button.cellLink:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource XxsmBadgeBrush}" />
+  </Style>
+
+  <Style Selector="Button.cellLink:pointerover TextBlock">
+    <Setter Property="TextDecorations" Value="Underline" />
+  </Style>
+
+  <!-- ...and its editor, filling the cell as the grid's own text editor does. -->
+  <Style Selector="AutoCompleteBox.cell">
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="VerticalAlignment" Value="Stretch" />
+    <Setter Property="FilterMode" Value="Contains" />
+    <Setter Property="MinimumPrefixLength" Value="0" />
+    <Setter Property="MaxDropDownHeight" Value="320" />
+  </Style>
+
+  <Style Selector="TextBox.cell">
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="VerticalAlignment" Value="Stretch" />
+  </Style>
+
+  <Style Selector="Button.moveTarget">
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Left" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="10,7" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Cursor" Value="Hand" />
+  </Style>
+
+  <Style Selector="Button.moveTarget:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource XxsmBadgeBrush}" />
+  </Style>
+
+</Styles>

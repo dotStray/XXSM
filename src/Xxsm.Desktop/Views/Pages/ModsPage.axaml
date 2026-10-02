@@ -1,0 +1,366 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:paths="clr-namespace:Xxsm.Desktop.Converters"
+             xmlns:vm="clr-namespace:Xxsm.Desktop.ViewModels"
+             xmlns:pages="clr-namespace:Xxsm.Desktop.ViewModels.Pages"
+             xmlns:controls="clr-namespace:Xxsm.Desktop.Controls"
+             xmlns:panels="clr-namespace:Xxsm.Desktop.Views.Panels"
+             x:Class="Xxsm.Desktop.Views.Pages.ModsPage"
+             x:DataType="pages:ModsPageViewModel">
+
+  <Panel>
+
+  <DockPanel Classes="page">
+
+    <Grid Classes="pageHeader" ColumnDefinitions="*,Auto">
+      <StackPanel Grid.Column="0" Spacing="3">
+        <TextBlock Classes="heading" Text="{DynamicResource Text.Mods_Heading}" />
+        <TextBlock Classes="pageSubtitle" Text="{DynamicResource Text.Mods_Subtitle}" />
+      </StackPanel>
+
+      <!-- An icon, as on every other page with a refresh; the word is the tooltip. -->
+      <Button Grid.Column="1" Classes="iconButton" VerticalAlignment="Top" Margin="16,0,0,0"
+              Command="{Binding RefreshCommand}"
+              IsVisible="{Binding HasFolder}"
+              ToolTip.Tip="{DynamicResource Text.Mods_Refresh}"
+              AutomationProperties.Name="{DynamicResource Text.Mods_Refresh}">
+        <Path Data="{StaticResource Icon.refresh}" />
+      </Button>
+    </Grid>
+
+    <!-- One slot, one thing in it: a DockPanel would dock an undocked child to the left. -->
+    <Panel>
+
+      <!-- Nothing chosen yet: the button sets the Mods folder. -->
+      <Border Classes="card notice" IsVisible="{Binding !HasFolder}">
+        <StackPanel Spacing="12">
+          <TextBlock Classes="subheading" Text="{DynamicResource Text.Mods_NoFolder_Heading}" />
+          <TextBlock Classes="muted" Text="{DynamicResource Text.Mods_NoFolder_Body}" />
+          <Button Classes="accent" HorizontalAlignment="Left"
+                  Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ShowSettingsCommand}"
+                  Content="{DynamicResource Text.Mods_NoFolder_Action}" />
+        </StackPanel>
+      </Border>
+
+      <ScrollViewer Classes="besideMargin" IsVisible="{Binding HasFolder}">
+        <StackPanel Spacing="16" Margin="0,0,0,16">
+
+          <!-- Where it is, and whether XXSM will notice a change to it. -->
+          <Border Classes="card">
+            <StackPanel Spacing="8">
+              <TextBlock Classes="sectionLabel" Text="{DynamicResource Text.Mods_Folder_Label}" />
+              <SelectableTextBlock Classes="mono" FontSize="12" Text="{Binding Folder, Converter={x:Static paths:PathConverters.Display}}" />
+
+              <TextBlock Classes="muted" FontSize="12" IsVisible="{Binding IsWatching}"
+                         Text="{DynamicResource Text.Mods_Watching}" />
+
+              <TextBlock Classes="muted" FontSize="12" Foreground="{DynamicResource XxsmWarnBrush}"
+                         IsVisible="{Binding WatchProblem, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                         Text="{Binding WatchProblem}" />
+            </StackPanel>
+          </Border>
+
+          <controls:FillingWrapPanel MinItemWidth="150" ItemSpacing="12" RowSpacing="12" FillShortRow="True"
+                                     IsVisible="{Binding HasInventory}">
+
+            <Border Classes="card" Padding="14">
+              <StackPanel Spacing="2">
+                <TextBlock FontSize="26" Foreground="{DynamicResource XxsmTextBrush}"
+                           Text="{Binding ModCount}" />
+                <TextBlock Classes="muted" FontSize="12" Text="{DynamicResource Text.Mods_Stat_Total}" />
+              </StackPanel>
+            </Border>
+
+            <Border Classes="card" Padding="14">
+              <StackPanel Spacing="2">
+                <TextBlock FontSize="26" Foreground="{DynamicResource XxsmOkBrush}"
+                           Text="{Binding EnabledModCount}" />
+                <TextBlock Classes="muted" FontSize="12" Text="{DynamicResource Text.Mods_Stat_Enabled}" />
+              </StackPanel>
+            </Border>
+
+            <Border Classes="card" Padding="14">
+              <StackPanel Spacing="2">
+                <TextBlock FontSize="26" Foreground="{DynamicResource XxsmTextBrush}"
+                           Text="{Binding VariantFolderCount}" />
+                <TextBlock Classes="muted" FontSize="12"
+                           Text="{DynamicResource Text.Mods_Stat_Characters}" />
+              </StackPanel>
+            </Border>
+
+            <Border Classes="card" Padding="14">
+              <StackPanel Spacing="2">
+                <TextBlock FontSize="26" Foreground="{DynamicResource XxsmWarnBrush}"
+                           Text="{Binding UnfiledModCount}" />
+                <TextBlock Classes="muted" FontSize="12"
+                           Text="{DynamicResource Text.Mods_Stat_Unfiled}" />
+              </StackPanel>
+            </Border>
+
+          </controls:FillingWrapPanel>
+
+          <!-- What is newer on GameBanana. Each row has the page to fetch it from and a way to say it is current. -->
+          <!-- Not drawn while GameBanana is off; a site that is down leaves the marks where they are. -->
+          <Border Classes="card">
+            <Border.IsVisible>
+              <MultiBinding Converter="{x:Static BoolConverters.And}">
+                <Binding Path="HasInventory" />
+                <Binding Path="GameBananaEnabled" />
+              </MultiBinding>
+            </Border.IsVisible>
+            <StackPanel Spacing="10">
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0" Classes="subheading" VerticalAlignment="Center"
+                           Text="{DynamicResource Text.Mods_Updates_Heading}" />
+                <Button Grid.Column="1"
+                        IsEnabled="{Binding !IsCheckingUpdates}"
+                        Command="{Binding CheckForUpdatesCommand}"
+                        Content="{DynamicResource Text.Settings_GameBanana_CheckNow}" />
+              </Grid>
+
+              <StackPanel Spacing="10">
+
+                <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                           IsVisible="{Binding !HasLinkedMods}"
+                           Text="{DynamicResource Text.Mods_Updates_NoneLinked}" />
+
+                <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                           IsVisible="{Binding ShowNothingWaiting}"
+                           Text="{Binding UpdatesNoneText}" />
+
+                <ItemsControl ItemsSource="{Binding Updates}" IsVisible="{Binding HasUpdates}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:ModUpdateRowViewModel">
+                      <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="8" Margin="0,0,0,8">
+                        <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                          <TextBlock Foreground="{DynamicResource XxsmTextBrush}"
+                                     TextTrimming="CharacterEllipsis"
+                                     Text="{Binding DisplayName}" />
+                          <TextBlock Classes="muted" FontSize="12"
+                                     IsVisible="{Binding HasVersionChange}"
+                                     Text="{Binding VersionChange}" />
+                        </StackPanel>
+                        <Button Grid.Column="1" VerticalAlignment="Center" Classes="accent"
+                                Command="{Binding UpdateCommand}"
+                                Content="{DynamicResource Text.ModUpdate_Update}" />
+                        <Button Grid.Column="2" VerticalAlignment="Center"
+                                Command="{Binding GoToCommand}"
+                                Content="{DynamicResource Text.GameBanana_Already_GoTo}" />
+                        <Button Grid.Column="3" VerticalAlignment="Center"
+                                Command="{Binding OpenPageCommand}"
+                                Content="{DynamicResource Text.Mods_Updates_Open}" />
+                        <Button Grid.Column="4" VerticalAlignment="Center"
+                                Command="{Binding DismissCommand}"
+                                Content="{DynamicResource Text.Mods_Updates_Dismiss}" />
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+              </StackPanel>
+            </StackPanel>
+          </Border>
+
+          <!-- What has been downloaded, kept after the install card closes; and the way to take one off. -->
+          <Border Classes="card">
+            <Border.IsVisible>
+              <MultiBinding Converter="{x:Static BoolConverters.And}">
+                <Binding Path="GameBananaEnabled" />
+                <Binding Path="Downloads.HasRows" />
+              </MultiBinding>
+            </Border.IsVisible>
+            <StackPanel Spacing="10">
+              <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Grid.Column="0" Spacing="3" VerticalAlignment="Center">
+                  <TextBlock Classes="subheading" Text="{DynamicResource Text.Downloads_Heading}" />
+                  <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                             Text="{DynamicResource Text.Downloads_Body}" />
+                </StackPanel>
+                <Button Grid.Column="1" VerticalAlignment="Top"
+                        IsVisible="{Binding Downloads.HasFinished}"
+                        Command="{Binding Downloads.ClearFinishedCommand}"
+                        Content="{DynamicResource Text.Downloads_Clear}" />
+              </Grid>
+
+              <ItemsControl ItemsSource="{Binding Downloads.ShownRows}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:DownloadRowViewModel">
+                    <Border Classes="inlineNotice" Padding="10" Margin="0,0,0,8">
+                      <StackPanel Spacing="6">
+
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                          <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                            <TextBlock TextTrimming="CharacterEllipsis"
+                                       Foreground="{DynamicResource XxsmTextBrush}"
+                                       Text="{Binding DisplayName}" />
+                            <TextBlock Classes="muted" FontSize="12"
+                                       IsVisible="{Binding HasSubtitle}"
+                                       Text="{Binding Subtitle}" />
+                          </StackPanel>
+                          <TextBlock Grid.Column="1" Classes="muted" FontSize="12"
+                                     VerticalAlignment="Center" Text="{Binding StateText}" />
+                        </Grid>
+
+                        <!-- Only while it is running. -->
+                        <StackPanel Spacing="6" IsVisible="{Binding IsRunning}">
+                          <ProgressBar Height="6" Minimum="0" Maximum="100"
+                                       Value="{Binding Percent}"
+                                       IsIndeterminate="{Binding IsIndeterminate}"
+                                       AutomationProperties.Name="{Binding DisplayName}" />
+                          <StackPanel Orientation="Horizontal" Spacing="12">
+                            <TextBlock Classes="muted" FontSize="12" Text="{Binding ProgressText}" />
+                            <TextBlock Classes="muted" FontSize="12"
+                                       IsVisible="{Binding HasRate}" Text="{Binding RateText}" />
+                            <TextBlock Classes="muted" FontSize="12"
+                                       IsVisible="{Binding HasRemaining}" Text="{Binding RemainingText}" />
+                          </StackPanel>
+                        </StackPanel>
+
+                        <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                                   IsVisible="{Binding HasError}" Text="{Binding Error}" />
+
+                        <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                                   IsVisible="{Binding IsForAnotherGame}"
+                                   Text="{DynamicResource Text.Downloads_OtherGame}" />
+
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                          <Button IsVisible="{Binding IsRunning}"
+                                  Command="{Binding $parent[ItemsControl].((pages:ModsPageViewModel)DataContext).Downloads.ShowCommand}"
+                                  CommandParameter="{Binding}"
+                                  Content="{DynamicResource Text.Downloads_Show}" />
+                          <Button IsVisible="{Binding IsRunning}"
+                                  Command="{Binding $parent[ItemsControl].((pages:ModsPageViewModel)DataContext).Downloads.CancelCommand}"
+                                  CommandParameter="{Binding}"
+                                  Content="{DynamicResource Text.Downloads_Cancel}" />
+                          <Button Classes="accent" IsVisible="{Binding CanInstall}"
+                                  Command="{Binding $parent[ItemsControl].((pages:ModsPageViewModel)DataContext).Downloads.InstallCommand}"
+                                  CommandParameter="{Binding}"
+                                  Content="{DynamicResource Text.Downloads_Install}" />
+                          <Button IsVisible="{Binding CanRetry}"
+                                  Command="{Binding $parent[ItemsControl].((pages:ModsPageViewModel)DataContext).Downloads.RetryCommand}"
+                                  CommandParameter="{Binding}"
+                                  Content="{DynamicResource Text.Downloads_Retry}" />
+                          <Button IsVisible="{Binding HasPage}"
+                                  Command="{Binding $parent[ItemsControl].((pages:ModsPageViewModel)DataContext).Downloads.OpenPageCommand}"
+                                  CommandParameter="{Binding}"
+                                  Content="{DynamicResource Text.Mods_Updates_Open}" />
+                          <Button Classes="destructive" IsVisible="{Binding !IsRunning}"
+                                  Command="{Binding $parent[ItemsControl].((pages:ModsPageViewModel)DataContext).Downloads.RemoveCommand}"
+                                  CommandParameter="{Binding}"
+                                  Content="{DynamicResource Text.Downloads_Remove}" />
+                        </StackPanel>
+
+                      </StackPanel>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+
+              <!-- The newest few; the rest is one click away rather than pushing the page down. -->
+              <Button HorizontalAlignment="Left"
+                      IsVisible="{Binding Downloads.HasMore}"
+                      Command="{Binding Downloads.ToggleShowAllCommand}"
+                      Content="{Binding Downloads.ShowAllText}" />
+            </StackPanel>
+          </Border>
+
+          <!-- What JASM or XX-Mod-Manager knew; only when there is something to bring in. -->
+          <Border Classes="card">
+            <Border.IsVisible>
+              <MultiBinding Converter="{x:Static BoolConverters.And}">
+                <Binding Path="HasInventory" />
+                <Binding Path="Import.IsAvailable" />
+              </MultiBinding>
+            </Border.IsVisible>
+            <StackPanel Spacing="10">
+              <TextBlock Classes="subheading" Text="{DynamicResource Text.Mods_Import_Heading}" />
+              <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{Binding Import.AvailableText}" />
+              <Button Classes="accent" HorizontalAlignment="Left"
+                      Command="{Binding OpenImportCommand}"
+                      Content="{DynamicResource Text.Mods_Import_Start}" />
+            </StackPanel>
+          </Border>
+
+          <!-- Auto-sort, through its review. -->
+          <Border Classes="card" IsVisible="{Binding HasInventory}">
+            <StackPanel Spacing="10">
+              <TextBlock Classes="subheading" Text="{DynamicResource Text.Mods_Sort_Heading}" />
+              <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                         Text="{DynamicResource Text.Mods_Sort_Body}" />
+              <Button Classes="accent" HorizontalAlignment="Left"
+                      Command="{Binding SortAllCommand}"
+                      Content="{DynamicResource Text.Mods_Sort_Start}" />
+            </StackPanel>
+          </Border>
+
+          <!-- The randomiser: it opens on a choice to look at, not on a run. -->
+          <Border Classes="card" IsVisible="{Binding HasInventory}">
+            <StackPanel Spacing="10">
+              <TextBlock Classes="subheading" Text="{DynamicResource Text.Mods_Randomise_Heading}" />
+              <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                         Text="{DynamicResource Text.Mods_Randomise_Body}" />
+              <Button HorizontalAlignment="Left"
+                      Command="{Binding OpenRandomiserCommand}"
+                      Content="{DynamicResource Text.Mods_Randomise_Start}" />
+            </StackPanel>
+          </Border>
+
+          <!-- Every mod off at once: the apply panel over a profile of nothing. -->
+          <Border Classes="card" IsVisible="{Binding HasInventory}">
+            <StackPanel Spacing="10">
+              <TextBlock Classes="subheading" Text="{DynamicResource Text.Mods_AllOff_Heading}" />
+              <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                         Text="{DynamicResource Text.Mods_AllOff_Body}" />
+              <Button HorizontalAlignment="Left"
+                      Command="{Binding OpenAllOffCommand}"
+                      Content="{DynamicResource Text.Mods_AllOff_Start}" />
+            </StackPanel>
+          </Border>
+
+          <!-- Export. -->
+          <Border Classes="card" IsVisible="{Binding HasInventory}">
+            <StackPanel Spacing="10">
+              <TextBlock Classes="subheading" Text="{DynamicResource Text.Mods_Export_Heading}" />
+              <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                         Text="{DynamicResource Text.Mods_Export_Body}" />
+              <Button HorizontalAlignment="Left"
+                      Command="{Binding OpenExportCommand}"
+                      Content="{DynamicResource Text.Mods_Export_Start}" />
+            </StackPanel>
+          </Border>
+
+        </StackPanel>
+      </ScrollViewer>
+
+    </Panel>
+
+  </DockPanel>
+
+  <Border Classes="scrim" IsVisible="{Binding IsAnyPanelOpen}" />
+
+  <!-- The sort review, over the whole Mods folder. -->
+  <panels:SortReviewView DataContext="{Binding SortReview}" />
+
+  <!-- The install confirm step: a finished download is installed from here too. -->
+  <panels:ModInstallView DataContext="{Binding Install}" />
+
+  <!-- "Update this mod?" -->
+  <panels:ModUpdateView DataContext="{Binding Update}" />
+
+  <!-- The randomiser. -->
+  <panels:RandomiserView DataContext="{Binding Randomiser}" />
+
+  <!-- Export. -->
+  <panels:ModExportView DataContext="{Binding Export}" />
+
+  <!-- "Switch every mod off?" -->
+  <panels:ProfileApplyView DataContext="{Binding AllOff}" />
+
+  <!-- Bringing in what another mod manager knew, its character picker, and the Character Manager. Later is on top. -->
+  <panels:ModImportView DataContext="{Binding Import}" />
+  <panels:CharacterPickerView DataContext="{Binding Import.Picker}" />
+  <panels:CharacterManagerView DataContext="{Binding CharacterManager}" />
+
+  </Panel>
+
+</UserControl>

@@ -1,0 +1,57 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Xxsm.Desktop.ViewModels"
+             x:Class="Xxsm.Desktop.Views.Panels.EmptyFoldersReviewView"
+             x:DataType="vm:EmptyFoldersReviewViewModel">
+
+  <!-- Deleting character folders with no mods: every row ticked, untick what stays, nothing goes until the button. -->
+  <Border Classes="card" MaxWidth="560" MaxHeight="560"
+          HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+          IsVisible="{Binding IsOpen}">
+    <DockPanel>
+
+      <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,12">
+        <TextBlock Classes="subheading" Text="{DynamicResource Text.EmptyFolders_Heading}" />
+        <TextBlock Classes="muted" TextWrapping="Wrap" Text="{DynamicResource Text.EmptyFolders_Body}" />
+      </StackPanel>
+
+      <Grid DockPanel.Dock="Bottom" ColumnDefinitions="Auto,Auto,*,Auto,Auto" Margin="0,12,0,0">
+        <Button Grid.Column="0"
+                Command="{Binding SelectAllCommand}"
+                Content="{DynamicResource Text.EmptyFolders_SelectAll}" />
+        <Button Grid.Column="1" Margin="8,0,0,0"
+                Command="{Binding SelectNoneCommand}"
+                Content="{DynamicResource Text.EmptyFolders_SelectNone}" />
+        <Button Grid.Column="3"
+                Command="{Binding CloseCommand}"
+                Content="{DynamicResource Text.EmptyFolders_Cancel}" />
+        <Button Grid.Column="4" Classes="accent" Margin="8,0,0,0"
+                IsEnabled="{Binding CanApply}"
+                Command="{Binding ApplyCommand}"
+                Content="{Binding ApplyText}" />
+      </Grid>
+
+      <ScrollViewer>
+        <ItemsControl ItemsSource="{Binding Rows}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:EmptyFolderRowViewModel">
+              <Grid ColumnDefinitions="Auto,*" Margin="0,4">
+                <CheckBox Grid.Column="0" VerticalAlignment="Top" Margin="0,2,8,0"
+                          IsChecked="{Binding IsSelected}"
+                          AutomationProperties.Name="{Binding Name}" />
+                <StackPanel Grid.Column="1" Spacing="2">
+                  <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"
+                             Foreground="{DynamicResource XxsmTextBrush}" />
+                  <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                             Text="{Binding DetailText}" />
+                </StackPanel>
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+
+    </DockPanel>
+  </Border>
+
+</UserControl>
