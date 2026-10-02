@@ -1,6 +1,4 @@
 using Serilog;
-using SharpCompress.Archives;
-using SharpCompress.Common;
 using Xxsm.Core.Diagnostics;
 using Xxsm.Core.Io;
 using Xxsm.Core.Mods;

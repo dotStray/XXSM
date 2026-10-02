@@ -1,7 +1,5 @@
 using System.Text.Json;
 using Serilog;
-using SharpCompress.Archives;
-using SharpCompress.Common;
 using Xxsm.Core;
 using Xxsm.Core.Archives;
 using Xxsm.Core.Diagnostics;
