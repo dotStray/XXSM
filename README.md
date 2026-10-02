@@ -1,4 +1,15 @@
-# XXSM
+<h1 align="center">XXSM</h1>
+
+<p align="center">
+  <a href="#features">Features</a> •
+  <a href="#download">Download</a> •
+  <a href="#hotkeys">Hotkeys</a> •
+  <a href="#requirements">Requirements</a> •
+  <a href="#limitations-and-acknowledgements">Limitations</a> •
+  <a href="#building-from-source">Building from source</a> •
+  <a href="#making-your-own-game-pack">Game Packs</a> •
+  <a href="#licence">Licence</a>
+</p>
 
 XXSM is a mod manager for the games [XXMI](https://github.com/SpectrumQT/XXMI-Launcher) loads mods into. Made with
 Avalonia, for Linux first, and on Windows too.
@@ -13,27 +24,16 @@ The app's game data (characters, portraits and hashes) is pulled from a separate
 
 This app was vibe coded: written with AI assistance.
 
-**Remember to make backups ⚠️**
-
-Logs are written to `~/.local/state/xxsm/logs` on Linux, and `%LOCALAPPDATA%\xxsm\logs` on Windows.
-
 ## Features
-- A grid of characters, each with its own mods. Pin your favourites to the top.
-- Automatically sort mods into their character's folder, by the hashes in their INI files. Shows what it would move
-  before moving anything.
-- Turn mods on and off, one at a time or with saved profiles
-- Drag and drop folders and archives (zip, 7z, rar) directly into the app
-- Install from a GameBanana link, with the name, author, description and picture filled in for you
-- Check GameBanana for newer versions of your mods
-- Move mods between characters
-- Edit a mod's key bindings
-- Export (copy) your mods to another folder
-- Turn on one random mod per character
-- Import what JASM or XX-Mod-Manager already knows about your mods
-- Fix a character yourself, or add one the pack doesn't have yet. Pack updates leave your changes alone.
-- Pack Studio: make a Game Pack for a game nobody has made one for yet
-- Nothing is ever deleted outright. Removed mods go to the trash and can be put back.
-- A command line, `xxsm`, for everything the window does, when built from source (see the warning below)
+- **Characters** — a grid of characters with their mods; pin your favourites
+- **Auto-sort** — files mods under the right character by their INI hashes, and shows the moves first
+- **On and off** — one mod at a time, or with saved profiles
+- **Install** — drop in folders or archives (zip, 7z, rar), or paste a GameBanana link
+- **Updates** — checks GameBanana for newer versions of your mods
+- **Tools** — move, export and randomise mods, edit key bindings, import from JASM and XX-Mod-Manager
+- **Characters of your own** — fix a character, or add one the pack doesn't have yet
+- **Safe** — nothing is deleted outright: removed mods go to the trash and can be put back
+- **Pack Studio** — make a Game Pack for a game nobody has made one for yet
 
 ## Hotkeys
 - "F5" - Refresh the page, wherever it has a refresh button
@@ -51,8 +51,6 @@ Get the latest version from the [Releases](https://github.com/dotStray/XXSM/rele
   `chmod +x` in a terminal), then open it.
 - **Windows:** download the `.exe` and double-click it. See the warning below.
 
-The downloads are the app itself; the command line is not included in them. To use it, build from source (below).
-
 **Windows warning ⚠️**
 
 Windows may show "Windows protected your PC" when you first run XXSM, and some antivirus programs may flag it. That's
@@ -64,8 +62,8 @@ because the app isn't code-signed: Microsoft charges a yearly fee for signing, w
 - XXMI, to actually load the mods into the game. XXSM only manages the files; it does not start the game or XXMI.
 
 ### Limitations and Acknowledgements
-- **The command line (`xxsm`) is entirely untested by me.** I'm not technical, so I've only ever used the app's
-  window. The command line is there, but use it at your own risk.
+- There is also a command line, `xxsm`, only when built from source. **It is entirely untested by me**: I'm not
+  technical and have only ever used the app's window, so use it at your own risk.
 - There may be bugs. Make backups.
 - Settings are stored in `~/.config/xxsm`, and packs and your character edits in `~/.local/share/xxsm`. On Windows,
   they are in `%APPDATA%\xxsm` and `%LOCALAPPDATA%\xxsm`.
