@@ -11,6 +11,12 @@ using Xxsm.Packs.GameBanana;
 
 namespace Xxsm.Desktop.ViewModels;
 
+/// <summary>One line of the new version's INI that becomes the user's value.</summary>
+/// <param name="Name">The INI, section and line: <c>mod.ini [KeyHat] key</c>.</param>
+/// <param name="From">The new version's own value.</param>
+/// <param name="To">The user's value, which it becomes.</param>
+public sealed record ModUpdateIniLine(string Name, string From, string To);
+
 /// <summary>One file an update changes, as the confirmation lists it.</summary>
 /// <param name="change">The change.</param>
 /// <param name="kindText">What happens to it, in words.</param>
@@ -117,9 +123,19 @@ public sealed partial class ModUpdateViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _hasIniChanges;
 
-    /// <summary>Whether those changes are made again in the new version. On unless unticked.</summary>
+    /// <summary>Whether those changes are made again in the new version. On unless deselected.</summary>
     [ObservableProperty]
     private bool _keepIniChanges = true;
+
+    /// <summary>The lines not carried because the new version does not have them, in words; null when none.</summary>
+    [ObservableProperty]
+    private string? _iniMissingText;
+
+    /// <summary>Each line of the new version's INI that becomes the user's value: the author's, then theirs.</summary>
+    public ObservableCollection<ModUpdateIniLine> IniReplaced { get; } = [];
+
+    /// <summary>Whether a line of the new version's INI becomes the user's value.</summary>
+    public bool HasIniReplaced => IniReplaced.Count > 0;
 
     /// <summary>Whether the page is being read or the file downloaded and compared.</summary>
     [ObservableProperty]
@@ -394,6 +410,9 @@ public sealed partial class ModUpdateViewModel : ObservableObject, IDisposable
         UnchangedText = null;
         HasIniChanges = false;
         KeepIniChanges = true;
+        IniReplaced.Clear();
+        IniMissingText = null;
+        OnPropertyChanged(nameof(HasIniReplaced));
     }
 
     private async Task PrepareAsync(long? fileId)
@@ -500,11 +519,31 @@ public sealed partial class ModUpdateViewModel : ObservableObject, IDisposable
         {
             var changes = await _iniOriginals.ReadAsync(plan.ModFolder, CancellationToken.None).ConfigureAwait(true);
 
-            if (ReferenceEquals(_plan, plan))
+            if (!ReferenceEquals(_plan, plan) || !(changes.HasKeyChanges || changes.HasDefaultChanges))
             {
-                HasIniChanges = changes.HasKeyChanges || changes.HasDefaultChanges;
-                EditWarning = HasIniChanges ? null : EditWarning;
+                return;
             }
+
+            var preview = await _iniOriginals.PreviewCarryAsync(plan.ModFolder, plan.Root.Path, CancellationToken.None).ConfigureAwait(true);
+
+            if (!ReferenceEquals(_plan, plan))
+            {
+                return;
+            }
+
+            HasIniChanges = true;
+            EditWarning = null;
+
+            foreach (var item in preview.Replaced)
+            {
+                IniReplaced.Add(new ModUpdateIniLine(
+                    $"{item.File} [{item.Change.Section}] {item.Change.Name}", item.NewAuthorValue ?? string.Empty, item.Change.Current));
+            }
+
+            IniMissingText = preview.Missing.Count > 0
+                ? _text.Format(nameof(Strings.ModUpdate_Carried_Missing), string.Join(", ", preview.Missing.Select(item => $"[{item.Change.Section}] {item.Change.Name} = {item.Change.Current}")))
+                : null;
+            OnPropertyChanged(nameof(HasIniReplaced));
         }
         catch (ModOperationException)
         {

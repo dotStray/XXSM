@@ -95,18 +95,21 @@ public sealed record IniCarried(string File, IniChange Change, string? NewAuthor
 /// <summary>What became of the user's key and default changes when a mod was replaced by a new version.</summary>
 /// <param name="Applied">Carried to the new version, whose author had kept the old value.</param>
 /// <param name="Clashed">Carried to the new version, over a value its author changed.</param>
+/// <param name="Replaced">Of those carried, each line whose value in the new version differs from the user's: what the
+/// new version's INI gives up for theirs.</param>
 /// <param name="Missing">Not carried: the new version has no such INI, section or setting.</param>
 /// <param name="OtherChangesLeft">INIs with other changes, made by hand, which were not carried.</param>
 /// <param name="Problems">What could not be read or written, each as a sentence.</param>
 public sealed record IniCarryReport(
     IReadOnlyList<IniCarried> Applied,
     IReadOnlyList<IniCarried> Clashed,
+    IReadOnlyList<IniCarried> Replaced,
     IReadOnlyList<IniCarried> Missing,
     IReadOnlyList<string> OtherChangesLeft,
     IReadOnlyList<string> Problems)
 {
     /// <summary>A report of nothing: the old version had no changes.</summary>
-    public static IniCarryReport None { get; } = new([], [], [], [], []);
+    public static IniCarryReport None { get; } = new([], [], [], [], [], []);
 
     /// <summary>Whether there was nothing to carry and nothing went wrong.</summary>
     public bool IsEmpty => Applied.Count == 0 && Clashed.Count == 0 && Missing.Count == 0 && OtherChangesLeft.Count == 0 && Problems.Count == 0;
@@ -160,6 +163,13 @@ public interface IIniOriginalsService
     /// <returns>What was carried, what clashed with the new author's values, and what was not there to carry to.</returns>
     /// <exception cref="ModOperationException">Either folder does not exist, or an INI could not be written.</exception>
     Task<IniCarryReport> CarryAsync(string fromModFolder, string toModFolder, CancellationToken cancellationToken = default);
+
+    /// <summary>What <see cref="CarryAsync"/> would do, writing nothing.</summary>
+    /// <param name="fromModFolder">The old version, with its kept originals.</param>
+    /// <param name="toModFolder">The new version, read only.</param>
+    /// <param name="cancellationToken">Cancels the read.</param>
+    /// <exception cref="ModOperationException">Either folder does not exist.</exception>
+    Task<IniCarryReport> PreviewCarryAsync(string fromModFolder, string toModFolder, CancellationToken cancellationToken = default);
 }
 
 /// <summary>The default <see cref="IIniOriginalsService"/>.</summary>
@@ -347,7 +357,14 @@ public sealed class IniOriginalsService(
     }
 
     /// <inheritdoc />
-    public async Task<IniCarryReport> CarryAsync(string fromModFolder, string toModFolder, CancellationToken cancellationToken = default)
+    public Task<IniCarryReport> CarryAsync(string fromModFolder, string toModFolder, CancellationToken cancellationToken = default) =>
+        CarryAsync(fromModFolder, toModFolder, write: true, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<IniCarryReport> PreviewCarryAsync(string fromModFolder, string toModFolder, CancellationToken cancellationToken = default) =>
+        CarryAsync(fromModFolder, toModFolder, write: false, cancellationToken);
+
+    private async Task<IniCarryReport> CarryAsync(string fromModFolder, string toModFolder, bool write, CancellationToken cancellationToken)
     {
         var from = ModInis.Root(fromModFolder);
         var to = ModInis.Root(toModFolder);
@@ -355,6 +372,7 @@ public sealed class IniOriginalsService(
         var analyses = await AnalyseAsync(from, problems, cancellationToken).ConfigureAwait(false);
         var applied = new List<IniCarried>();
         var clashed = new List<IniCarried>();
+        var replaced = new List<IniCarried>();
         var missing = new List<IniCarried>();
         var otherLeft = new List<string>();
         var planned = new List<(string Path, IniDocument Document, List<IniEdit> Edits)>();
@@ -406,11 +424,14 @@ public sealed class IniOriginalsService(
                 }
 
                 var carried = new IniCarried(file, change, found.Value);
-                (Same(change.Kind, found.Value, change.Original) ? applied : clashed).Add(carried);
+                // A clash is only a new author value that is neither the old one nor the user's.
+                var clash = !Same(change.Kind, found.Value, change.Original) && !Same(change.Kind, found.Value, change.Current);
+                (clash ? clashed : applied).Add(carried);
 
                 if (!Same(change.Kind, found.Value, change.Current))
                 {
                     edits.Add(new IniEdit(found.Line, change.Current));
+                    replaced.Add(carried);
                 }
             }
 
@@ -422,7 +443,7 @@ public sealed class IniOriginalsService(
 
         cancellationToken.ThrowIfCancellationRequested();
 
-        foreach (var (path, document, edits) in planned)
+        foreach (var (path, document, edits) in write ? planned : [])
         {
             var bytes = IniEditor.Apply(document, edits);
             ModInis.KeepOriginal(to, path, _logger);
@@ -430,7 +451,7 @@ public sealed class IniOriginalsService(
             _logger.Information("Carried {Count} key and default changes from {From} to {Path}", edits.Count, from, path);
         }
 
-        return new IniCarryReport(applied, clashed, missing, otherLeft, problems);
+        return new IniCarryReport(applied, clashed, replaced, missing, otherLeft, problems);
     }
 
     /// <summary>The folder holding a mod's kept originals.</summary>

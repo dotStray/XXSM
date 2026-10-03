@@ -1553,11 +1553,11 @@
     <comment>The sort review's button when nothing is ticked but some unticked mods are under a character. {0} is how many.</comment>
   </data>
   <data name="SortReview_KeepNote" xml:space="preserve">
-    <value>Unticked under a character, kept in place and not offered again: {0}.</value>
+    <value>Not selected under a character, kept in place and not offered again: {0}.</value>
     <comment>Above the sort review's buttons. {0} is how many.</comment>
   </data>
   <data name="SortReview_UnsortedNote" xml:space="preserve">
-    <value>Unticked while loose or in Others, left in place this time and offered again next time: {0}.</value>
+    <value>Not selected while loose or in Others, left in place this time and offered again next time: {0}.</value>
     <comment>Above the sort review's buttons. {0} is how many.</comment>
   </data>
   <data name="SortReview_Kept" xml:space="preserve">
@@ -1745,7 +1745,7 @@
     <comment>Summary line. {0} is how many characters, {1} the pack version.</comment>
   </data>
   <data name="SkippedUpdates_Body" xml:space="preserve">
-    <value>A character you have edited is locked, so a pack update contributes nothing to it — not its name, not its portrait, not its hashes. Tick anything you would rather take from the pack after all.</value>
+    <value>A character you have edited is locked, so a pack update contributes nothing to it — not its name, not its portrait, not its hashes. Select anything you would rather take from the pack after all.</value>
     <comment>Explanation at the top of the Skipped updates panel.</comment>
   </data>
   <data name="SkippedUpdates_WasPack" xml:space="preserve">
@@ -2069,7 +2069,7 @@
     <comment>Heading of the window listing empty character folders.</comment>
   </data>
   <data name="EmptyFolders_Body" xml:space="preserve">
-    <value>Each ticked folder goes to the trash, and the notice afterwards can put them back. Untick any you want to keep.</value>
+    <value>Each selected folder goes to the trash, and the notice afterwards can put them back. Deselect any you want to keep.</value>
     <comment>Line under that heading.</comment>
   </data>
   <data name="EmptyFolders_Nothing" xml:space="preserve">
@@ -2339,7 +2339,7 @@
     <comment>{0} game name, {1} pack version, {2} a counted 'characters'.</comment>
   </data>
   <data name="CaughtUp_Body" xml:space="preserve">
-    <value>These characters already look the way you corrected them, straight from the pack. Clearing a correction changes nothing you can see, and lets the pack's future updates reach that character again. Untick any you want to keep.</value>
+    <value>These characters already look the way you corrected them, straight from the pack. Clearing a correction changes nothing you can see, and lets the pack's future updates reach that character again. Deselect any you want to keep.</value>
     <comment>Explanation in the offer to clear corrections a pack now makes itself.</comment>
   </data>
   <data name="CaughtUp_Keep" xml:space="preserve">
@@ -2351,7 +2351,7 @@
     <comment>Button clearing the ticked corrections. {0} a counted 'characters'.</comment>
   </data>
   <data name="CaughtUp_ClearNone" xml:space="preserve">
-    <value>Nothing ticked</value>
+    <value>Nothing selected</value>
     <comment>The clear button when nothing is ticked.</comment>
   </data>
   <data name="CaughtUp_Cleared" xml:space="preserve">
@@ -2611,7 +2611,7 @@
     <comment>Tick box beside Add character in Pack Studio. Ticked adds a row with just the name; unticked opens the full character editor.</comment>
   </data>
   <data name="Studio_FastAdd_Tip" xml:space="preserve">
-    <value>Ticked: Add character adds the name as a new row. Unticked: it opens the character editor, with the picture and hashes, and adds the character when you press Create.</value>
+    <value>Selected: Add character adds the name as a new row. Not selected: it opens the character editor, with the picture and hashes, and adds the character when you press Create.</value>
     <comment>Tooltip on the Fast add tick box.</comment>
   </data>
   <data name="Studio_Add" xml:space="preserve">
@@ -2856,7 +2856,7 @@
     <value>Import an assets repository</value>
   </data>
   <data name="Studio_Import_Assets_Intro" xml:space="preserve">
-    <value>Choose the zip you downloaded, or the folder it unpacked to. Every character in it is listed with the outfit link it guessed; untick a link that is wrong. Nothing is added until you press Add to draft.</value>
+    <value>Choose the zip you downloaded, or the folder it unpacked to. Every character in it is listed with the outfit link it guessed; deselect a link that is wrong. Nothing is added until you press Add to draft.</value>
   </data>
   <data name="Studio_Import_Mods_Heading" xml:space="preserve">
     <value>Import from a Mods folder</value>
@@ -2922,7 +2922,7 @@
     <comment>Busy message while an import is applied.</comment>
   </data>
   <data name="Studio_Import_Summary" xml:space="preserve">
-    <value>{0} found, {1} ticked</value>
+    <value>{0} found, {1} selected</value>
     <comment>Import panel. {0} and {1} are counts of items.</comment>
   </data>
   <data name="Studio_Import_SelectAll" xml:space="preserve">
@@ -3567,7 +3567,7 @@
     <comment>Heading of the panel comparing the page with the mod.</comment>
   </data>
   <data name="GameBanana_Fill_Subheading" xml:space="preserve">
-    <value>Tick what to take. Nothing you wrote is replaced unless you say so.</value>
+    <value>Select what to take. Nothing you wrote is replaced unless you say so.</value>
     <comment>Second line of that panel.</comment>
   </data>
   <data name="GameBanana_Fill_Column_Field" xml:space="preserve">
@@ -3587,7 +3587,7 @@
     <comment>Stands in for a field the mod has nothing in.</comment>
   </data>
   <data name="GameBanana_Fill_Apply" xml:space="preserve">
-    <value>Take the ticked</value>
+    <value>Take the selected</value>
     <comment>Writes the ticked fields into the mod.</comment>
   </data>
   <data name="GameBanana_Fill_Cancel" xml:space="preserve">
@@ -3783,15 +3783,15 @@
     <comment>Closes the update panel without changing anything.</comment>
   </data>
   <data name="ModUpdate_KeepIniChanges" xml:space="preserve">
-    <value>Keep my key and default changes</value>
+    <value>Keep my key and toggles changes</value>
     <comment>Tick box in "Update this mod?", shown when the installed version has key or default changes made in XXSM.</comment>
   </data>
-  <data name="ModUpdate_KeepIniChanges_Hint" xml:space="preserve">
-    <value>They are made again in the new version's INIs. Where its author changed the same line, yours is kept. Unticked, the new version stays as its author made it.</value>
-    <comment>Under ModUpdate_KeepIniChanges.</comment>
+  <data name="ModUpdate_IniReplaced" xml:space="preserve">
+    <value>In the new version's INI, these become yours:</value>
+    <comment>Over the list under ModUpdate_KeepIniChanges: each line of the new version's INI that changes to the user's value, as "author's → yours".</comment>
   </data>
   <data name="ModUpdate_Carried" xml:space="preserve">
-    <value>Your key and default changes were made again.</value>
+    <value>Your key and toggles changes were made again.</value>
     <comment>Added to the update notice when changes were carried to the new version.</comment>
   </data>
   <data name="ModUpdate_Carried_Clashed" xml:space="preserve">
@@ -4207,7 +4207,7 @@
     <comment>Heading of the randomiser panel, and the title of its notice.</comment>
   </data>
   <data name="Randomiser_Body" xml:space="preserve">
-    <value>One mod per character is switched on, chosen at random from all of that character's mods, and the rest of that character's mods are switched off. Untick a character to leave it as it is. You can undo it from its notice.</value>
+    <value>One mod per character is switched on, chosen at random from all of that character's mods, and the rest of that character's mods are switched off. Deselect a character to leave it as it is. You can undo it from its notice.</value>
     <comment>Under the randomiser's heading.</comment>
   </data>
   <data name="Randomiser_ChooseAgain" xml:space="preserve">
@@ -4335,11 +4335,11 @@
     <comment>Tick box, shown when some mods have INIs changed in XXSM: the copy gets each author's INI as shipped, kept before XXSM's first change. The Mods folder is not changed.</comment>
   </data>
   <data name="Export_ChangedInis" xml:space="preserve">
-    <value>INIs changed in XXSM (keys or defaults): {0}. Your Mods folder keeps the changes either way.</value>
+    <value>INIs changed in XXSM (keys or toggles): {0}. Your Mods folder keeps the changes either way.</value>
     <comment>Under Export_UseOriginals. {0} is a count of mods, e.g. "2 mods".</comment>
   </data>
   <data name="Export_LosesOriginals" xml:space="preserve">
-    <value>Without XXSM's details, the copies keep these changes but not the authors' originals, so there is no way back to them. Tick "Use the authors' original INIs in the copy" to copy the authors' files instead.</value>
+    <value>Without XXSM's details, the copies keep these changes but not the authors' originals, so there is no way back to them. Select "Use the authors' original INIs in the copy" to copy the authors' files instead.</value>
     <comment>Warning, shown when XXSM's details are left out, some mods have INIs changed in XXSM, and the originals are not chosen.</comment>
   </data>
   <data name="Export_OneFolder" xml:space="preserve">
@@ -4407,7 +4407,7 @@
     <comment>Heading of the Mods page's card and of its panel listing mods whose INIs XXSM changed (keys or defaults).</comment>
   </data>
   <data name="ChangedInis_Card_Body" xml:space="preserve">
-    <value>Key and default changes you made in XXSM are kept apart from each author's own INI, so you can always put the author's back.</value>
+    <value>Key and toggles changes you made in XXSM are kept apart from each author's own INI, so you can always put the author's back.</value>
     <comment>Body of the Mods page's card.</comment>
   </data>
   <data name="ChangedInis_Start" xml:space="preserve">
@@ -4583,7 +4583,7 @@
     <comment>Label over mods whose tag and hashes name different characters.</comment>
   </data>
   <data name="Import_Disagree_Body" xml:space="preserve">
-    <value>Ticked, a mod is filed where its tag says. Untick one to let its hashes decide.</value>
+    <value>Selected, a mod is filed where its tag says. Deselect one to let its hashes decide.</value>
     <comment>Under the disagreements label.</comment>
   </data>
   <data name="Import_Disagree_Row" xml:space="preserve">

@@ -80,8 +80,8 @@
                        Text="{Binding EditWarning}" />
           </Border>
 
-          <!-- Only when the installed version has key or default changes made in XXSM. -->
-          <StackPanel Spacing="2">
+          <!-- Only when the installed version has key or toggles changes made in XXSM; selected, the lines they replace. -->
+          <StackPanel Spacing="6">
             <StackPanel.IsVisible>
               <MultiBinding Converter="{x:Static BoolConverters.And}">
                 <Binding Path="HasPlan" />
@@ -89,8 +89,44 @@
               </MultiBinding>
             </StackPanel.IsVisible>
             <CheckBox IsChecked="{Binding KeepIniChanges}" Content="{DynamicResource Text.ModUpdate_KeepIniChanges}" />
-            <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Margin="28,0,0,0"
-                       Text="{DynamicResource Text.ModUpdate_KeepIniChanges_Hint}" />
+            <Border Classes="inlineNotice" Padding="8">
+              <Border.IsVisible>
+                <MultiBinding Converter="{x:Static BoolConverters.And}">
+                  <Binding Path="KeepIniChanges" />
+                  <Binding Path="HasIniReplaced" />
+                </MultiBinding>
+              </Border.IsVisible>
+              <StackPanel Spacing="6">
+                <TextBlock FontSize="12" TextWrapping="Wrap" Text="{DynamicResource Text.ModUpdate_IniReplaced}" />
+                <!-- About eight lines, then it scrolls: unbounded, a long list pushed Update out of the panel. -->
+                <ScrollViewer MaxHeight="150">
+                  <ItemsControl ItemsSource="{Binding IniReplaced}" Margin="0,0,12,0">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:ModUpdateIniLine">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,1">
+                          <TextBlock Grid.Column="0" Classes="mono" FontSize="12" TextTrimming="CharacterEllipsis"
+                                     Text="{Binding Name}" />
+                          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                            <TextBlock Classes="mono muted" FontSize="12" Text="{Binding From}" />
+                            <TextBlock Classes="muted" FontSize="12" Text="→" />
+                            <TextBlock Classes="mono" FontSize="12" Text="{Binding To}" />
+                          </StackPanel>
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </ScrollViewer>
+              </StackPanel>
+            </Border>
+            <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" MaxLines="3" TextTrimming="CharacterEllipsis"
+                       Text="{Binding IniMissingText}">
+              <TextBlock.IsVisible>
+                <MultiBinding Converter="{x:Static BoolConverters.And}">
+                  <Binding Path="KeepIniChanges" />
+                  <Binding Path="IniMissingText" Converter="{x:Static StringConverters.IsNotNullOrEmpty}" />
+                </MultiBinding>
+              </TextBlock.IsVisible>
+            </TextBlock>
           </StackPanel>
         </StackPanel>
 
