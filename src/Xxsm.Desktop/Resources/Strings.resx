@@ -1440,6 +1440,10 @@
     <value>To Others ({0})</value>
     <comment>Sort review chip: only mods nothing identified, going to the Others folder. {0} is how many.</comment>
   </data>
+  <data name="SortReview_Unchanged_One" xml:space="preserve">
+    <value>{0} staying where it is</value>
+    <comment>Header of the collapsed section in the sort review when one mod stays. {0} is "1 mod".</comment>
+  </data>
   <data name="SortReview_Unchanged" xml:space="preserve">
     <value>{0} staying where they are</value>
     <comment>Header of the collapsed section in the sort review.</comment>
@@ -1487,6 +1491,10 @@
   <data name="SortReview_Empty_Heading" xml:space="preserve">
     <value>Nothing to move</value>
     <comment>Title shown when a sort preview finds nothing to do.</comment>
+  </data>
+  <data name="SortReview_Empty_Unidentified" xml:space="preserve">
+    <value>Nothing could be identified well enough to move. Each mod below says why; Move to… files one by hand.</value>
+    <comment>Body under "Nothing to move" when a mod stays where it is because the sort could not identify it.</comment>
   </data>
   <data name="SortReview_Empty_Body" xml:space="preserve">
     <value>Every mod XXSM looked at is already filed where it belongs.</value>

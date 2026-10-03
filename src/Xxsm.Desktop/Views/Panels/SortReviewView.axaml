@@ -79,15 +79,21 @@
       <Panel>
 
         <!-- Nothing to do. Distinct from "no mods": every one was already filed right. -->
-        <StackPanel Spacing="8" VerticalAlignment="Center" IsVisible="{Binding IsEmpty}">
+        <StackPanel Spacing="8" VerticalAlignment="Center" IsVisible="{Binding IsEmptyWithNothingListed}">
           <TextBlock Classes="subheading" HorizontalAlignment="Center"
                      Text="{DynamicResource Text.SortReview_Empty_Heading}" />
           <TextBlock Classes="muted" HorizontalAlignment="Center" TextWrapping="Wrap"
                      Text="{DynamicResource Text.SortReview_Empty_Body}" />
         </StackPanel>
 
-        <ScrollViewer IsVisible="{Binding HasMoves}">
+        <ScrollViewer IsVisible="{Binding HasRows}">
           <StackPanel Spacing="2">
+
+            <!-- Nothing moves, but something stays put: say so, with why, above the list of what stays. -->
+            <StackPanel Spacing="4" Margin="0,0,0,6" IsVisible="{Binding IsEmpty}">
+              <TextBlock Classes="subheading" Text="{DynamicResource Text.SortReview_Empty_Heading}" />
+              <TextBlock Classes="muted" TextWrapping="Wrap" Text="{Binding EmptyBodyText}" />
+            </StackPanel>
 
             <ItemsControl ItemsSource="{Binding ShownMoves}">
               <ItemsControl.ItemTemplate>

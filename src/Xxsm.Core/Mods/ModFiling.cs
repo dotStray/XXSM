@@ -18,7 +18,10 @@ public sealed class ModFiling(IModConfigStore configs, IModFileOperations files,
         ArgumentException.ThrowIfNullOrWhiteSpace(variantInternalName);
 
         await _configs
-            .UpdateAsync(modFolder, config => config with { VariantOverride = variantInternalName }, cancellationToken)
+            .UpdateAsync(
+                modFolder,
+                config => config with { VariantOverride = variantInternalName, LetAutoSortDecide = null },
+                cancellationToken)
             .ConfigureAwait(false);
 
         _logger.Information("Remembered {Mod} as filed by hand under {Variant}", modFolder, variantInternalName);
@@ -48,6 +51,26 @@ public sealed class ModFiling(IModConfigStore configs, IModFileOperations files,
 
         _logger.Information("Forgot that {Mod} was filed by hand under {Variant}", modFolder, was);
         return true;
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> LetAutoSortDecideAsync(string modFolder, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(modFolder);
+
+        if (!PathComparer.TryResolveExisting(modFolder, out var resolved) || !Directory.Exists(resolved))
+        {
+            throw new ModOperationException($"There is no mod folder at '{PathDisplay.Show(modFolder)}'.", modFolder);
+        }
+
+        var was = (await _configs.ReadAsync(resolved, cancellationToken).ConfigureAwait(false))?.VariantOverride;
+
+        await _configs
+            .UpdateAsync(resolved, config => config with { VariantOverride = null, LetAutoSortDecide = true }, cancellationToken)
+            .ConfigureAwait(false);
+
+        _logger.Information("Let auto-sort decide where {Mod} belongs; it was filed by hand under {Variant}", modFolder, was);
+        return was is { Length: > 0 };
     }
 
     /// <inheritdoc />

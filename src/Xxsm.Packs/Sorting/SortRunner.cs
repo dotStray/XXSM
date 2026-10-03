@@ -574,10 +574,11 @@ public sealed class SortRunner(
             _ when alreadyThere =>
                 (SortRowAction.AlreadyFiled, "Already filed correctly."),
 
-            { IsResolved: false } when mod.VariantFolderName is { Length: > 0 } =>
+            // A person who asked auto-sort to decide no longer files it by the folder it is in.
+            { IsResolved: false } when mod.VariantFolderName is { Length: > 0 } && mod.Config?.AutoSortDecides != true =>
                 (SortRowAction.UnidentifiedButFiled,
-                    "Could not be identified, and is already filed under " +
-                    $"'{mod.VariantFolderName}'. Left where it is."),
+                    $"Could not be identified: {decision.Explanation} It is already under '{mod.VariantFolderName}', " +
+                    "so it stays where it is."),
 
             _ => (SortRowAction.Move, decision.Explanation),
         };

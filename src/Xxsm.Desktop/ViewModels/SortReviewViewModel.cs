@@ -170,7 +170,7 @@ public sealed partial class SortReviewViewModel(
 
     /// <summary>The header on the collapsed "staying put" section.</summary>
     public string UnchangedText =>
-        _text.Format(nameof(Strings.SortReview_Unchanged), _text.Mods(Unchanged.Count));
+        _text.ForCount(Unchanged.Count, nameof(Strings.SortReview_Unchanged_One), nameof(Strings.SortReview_Unchanged), _text.Mods(Unchanged.Count));
 
     /// <summary>How many of the showing rows are ticked.</summary>
     public int SelectedCount => ShownMoves.Count(row => row.IsSelected);
@@ -207,6 +207,20 @@ public sealed partial class SortReviewViewModel(
 
     /// <summary>Whether the plan found nothing to do.</summary>
     public bool IsEmpty => !IsPlanning && Moves.Count == 0;
+
+    /// <summary>Whether the plan found nothing to do and nothing staying put to show either.</summary>
+    public bool IsEmptyWithNothingListed => IsEmpty && Unchanged.Count == 0;
+
+    /// <summary>Whether there are rows to draw: moves, or mods staying put.</summary>
+    public bool HasRows => Moves.Count > 0 || Unchanged.Count > 0;
+
+    /// <summary>Whether a mod is staying put because it could not be identified.</summary>
+    public bool HasUnidentified => Unchanged.Any(row => row.Row.Action == SortRowAction.UnidentifiedButFiled);
+
+    /// <summary>Under "Nothing to move": that everything is filed, or that what is left could not be identified.</summary>
+    public string EmptyBodyText => HasUnidentified
+        ? _text[nameof(Strings.SortReview_Empty_Unidentified)]
+        : _text[nameof(Strings.SortReview_Empty_Body)];
 
     /// <summary>Works out what a sort would do, and shows it. Changes nothing.</summary>
     /// <param name="internalName">A character to narrow to, or null for the whole Mods folder.</param>
@@ -293,6 +307,9 @@ public sealed partial class SortReviewViewModel(
 
         IsPlanning = false;
         RefreshShown();
+
+        // With nothing to move, the reasons are the answer, so they are shown rather than folded away.
+        IsUnchangedExpanded = Moves.Count == 0 && HasUnidentified;
 
         // A failed or cancelled scan must not leave "nothing to move" on screen.
         if (!planned)
@@ -537,6 +554,10 @@ public sealed partial class SortReviewViewModel(
         OnPropertyChanged(nameof(HasMoves));
         OnPropertyChanged(nameof(HasUnchanged));
         OnPropertyChanged(nameof(IsEmpty));
+        OnPropertyChanged(nameof(IsEmptyWithNothingListed));
+        OnPropertyChanged(nameof(HasRows));
+        OnPropertyChanged(nameof(HasUnidentified));
+        OnPropertyChanged(nameof(EmptyBodyText));
         OnPropertyChanged(nameof(FilterAllText));
         OnPropertyChanged(nameof(FilterHashText));
         OnPropertyChanged(nameof(FilterNameText));
@@ -556,6 +577,7 @@ public sealed partial class SortReviewViewModel(
     {
         OnPropertyChanged(nameof(CanApply));
         OnPropertyChanged(nameof(IsEmpty));
+        OnPropertyChanged(nameof(IsEmptyWithNothingListed));
     }
 
     partial void OnCharacterNameChanged(string? value) => OnPropertyChanged(nameof(Heading));

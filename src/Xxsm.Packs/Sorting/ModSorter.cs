@@ -569,6 +569,26 @@ public sealed class ModSorter(ILogger logger) : IModSorter
 
         if (hits.Count > 1)
         {
+            if (TieBrokenByHashes(hits.Values.Select(hit => hit.Variant), candidates) is { } chosen)
+            {
+                var others = hits.Keys.Where(name => !IdEquals(name, chosen.Variant.InternalName)).Order(StringComparer.OrdinalIgnoreCase).ToList();
+
+                return Resolved(
+                    signals,
+                    chosen.Variant,
+                    SortDecidedBy.Name,
+                    confidence: 0.6,
+                    isDefaultVariantFallback: false,
+                    memberDecidedByName: false,
+                    runnerUp: others[0],
+                    candidates,
+                    extracted,
+                    prunedMatches,
+                    $"The name matched {string.Join(", ", hits.Keys.Order(StringComparer.OrdinalIgnoreCase))}; of those, " +
+                    $"only {chosen.Variant.InternalName} has hashes in the mod ({chosen.Hashes.ToString(CultureInfo.InvariantCulture)} " +
+                    "matched, too few to decide alone), so it is the one.");
+            }
+
             // A wrong confident answer is worse than Others.
             return Ambiguous(
                 signals,
@@ -593,6 +613,31 @@ public sealed class ModSorter(ILogger logger) : IModSorter
             prunedMatches,
             $"'{matchedSource}' contains the whole word '{matchedToken}', which only " +
             $"{matchedVariant.InternalName} answers to.");
+    }
+
+    /// <summary>
+    /// The one named variant whose family every hash match belongs to, with how many hashes matched it; null when the
+    /// hashes match nothing, more than one family, or a family none or several of the names belong to.
+    /// </summary>
+    private static (MergedVariant Variant, int Hashes)? TieBrokenByHashes(
+        IEnumerable<MergedVariant> named, IReadOnlyList<SortCandidate> candidates)
+    {
+        var families = candidates.Select(candidate => candidate.FamilyId).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+
+        if (families.Count != 1)
+        {
+            return null;
+        }
+
+        var inFamily = named.Where(variant => IdEquals(variant.FamilyId, families[0])).ToList();
+
+        if (inFamily.Count != 1)
+        {
+            return null;
+        }
+
+        var hashes = candidates.SelectMany(candidate => candidate.MatchedHashes).Distinct(StringComparer.Ordinal).Count();
+        return (inFamily[0], hashes);
     }
 
     /// <summary>Every normalised name a variant answers to; a key more than one claims is never matched.</summary>

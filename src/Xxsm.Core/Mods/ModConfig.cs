@@ -59,6 +59,15 @@ public sealed record ModConfig
     [JsonPropertyName("variantOverride")]
     public string? VariantOverride { get; init; }
 
+    /// <summary>True when a person asked auto-sort to decide, so the character folder the mod is in does not count as
+    /// filing it; null otherwise.</summary>
+    [JsonPropertyName("letAutoSortDecide")]
+    public bool? LetAutoSortDecide { get; init; }
+
+    /// <summary>Whether a person asked auto-sort to decide where this mod belongs.</summary>
+    [JsonIgnore]
+    public bool AutoSortDecides => LetAutoSortDecide == true;
+
     /// <summary>The mod's GameBanana page, when linked; see <see cref="WithModUrl"/>.</summary>
     [JsonPropertyName("gameBanana")]
     public ModGameBananaInfo? GameBanana { get; init; }

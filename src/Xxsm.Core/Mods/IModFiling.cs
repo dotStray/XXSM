@@ -19,6 +19,15 @@ public interface IModFiling
     /// failed.</exception>
     Task<bool> ForgetAsync(string modFolder, CancellationToken cancellationToken = default);
 
+    /// <summary>Forgets a person's filing and records that auto-sort decides, so the folder the mod is in no longer
+    /// counts as filing it either. Filing it by hand again clears that.</summary>
+    /// <param name="modFolder">The mod folder.</param>
+    /// <param name="cancellationToken">Cancels before anything is written.</param>
+    /// <returns>True when a filing was forgotten; false when there was none.</returns>
+    /// <exception cref="ModOperationException">There is no such folder, the metadata could not be read, or the write
+    /// failed.</exception>
+    Task<bool> LetAutoSortDecideAsync(string modFolder, CancellationToken cancellationToken = default);
+
     /// <summary>Moves a mod under a character and remembers that a person put it there.</summary>
     /// <param name="modFolder">The mod folder to move.</param>
     /// <param name="destinationParent">The character's folder. Created if it does not exist.</param>

@@ -1303,7 +1303,7 @@ public sealed partial class CharacterDetailPageViewModel : PageViewModel, IRefre
             {
                 foreach (var target in rows)
                 {
-                    await _filing.ForgetAsync(target.Path, ct).ConfigureAwait(true);
+                    await _filing.LetAutoSortDecideAsync(target.Path, ct).ConfigureAwait(true);
                 }
 
                 await _rescan(ct).ConfigureAwait(true);

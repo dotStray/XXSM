@@ -507,7 +507,8 @@ internal static class ModOperationCommands
 
         var command = new Command(
             "forget-filing",
-            "Forget that you filed a mod by hand, so the next auto-sort decides where it belongs. Moves nothing.")
+            "Forget that you filed a mod by hand, so the next auto-sort decides where it belongs — the character folder it " +
+            "is in no longer counts as filing it either. Moves nothing.")
         {
             folder,
         };
@@ -520,7 +521,7 @@ internal static class ModOperationCommands
 
             var forgot = await provider
                 .GetRequiredService<IModFiling>()
-                .ForgetAsync(path, cancellationToken)
+                .LetAutoSortDecideAsync(path, cancellationToken)
                 .ConfigureAwait(false);
 
             var report = new ModFilingForgetReport(path, forgot);
@@ -535,7 +536,7 @@ internal static class ModOperationCommands
                 ("Mod", PathDisplay.Show(report.Folder)),
                 ("Forgot", forgot
                     ? "yes — the next auto-sort decides where it belongs"
-                    : "no — nobody had filed it by hand, so nothing changed"),
+                    : "nobody had filed it by hand; the next auto-sort still decides, its folder included"),
             ]);
 
             return 0;
