@@ -34,7 +34,8 @@
           </StackPanel>
         </Border>
 
-        <!-- A hidden download: a line that follows the user from page to page, with Show and Cancel. -->
+        <!-- A hidden download: a line that follows the user from page to page. Show lists every download; Cancel stops
+             this one. -->
         <Border DockPanel.Dock="Top"
                 Background="{DynamicResource XxsmBadgeBrush}"
                 BorderBrush="{DynamicResource XxsmBorderBrush}"
@@ -61,6 +62,9 @@
                          IsVisible="{Binding HasRate}" Text="{Binding RateText}" />
               <TextBlock Classes="muted" FontSize="12"
                          IsVisible="{Binding HasRemaining}" Text="{Binding RemainingText}" />
+              <TextBlock FontSize="12" Foreground="{DynamicResource XxsmAccentBrush}"
+                         IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Downloads.MoreRunningText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                         Text="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).Downloads.MoreRunningText}" />
             </StackPanel>
 
             <Button Grid.Column="2"

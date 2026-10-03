@@ -3898,6 +3898,22 @@
     <value>Remove</value>
     <comment>Button that takes a download off the list and removes its archive.</comment>
   </data>
+  <data name="Downloads_All" xml:space="preserve">
+    <value>All downloads ({0})</value>
+    <comment>Button in a single download's panel, back to the list of every current download. {0} is how many.</comment>
+  </data>
+  <data name="Downloads_More" xml:space="preserve">
+    <value>+{0} more</value>
+    <comment>Beside the download on the strip at the top, when more are running. {0} is how many more.</comment>
+  </data>
+  <data name="Downloads_NoneCurrent" xml:space="preserve">
+    <value>Nothing is downloading or waiting to be installed.</value>
+    <comment>The download list in the install panel when every download has been installed or taken off.</comment>
+  </data>
+  <data name="ModInstall_DownloadAnother" xml:space="preserve">
+    <value>Download another…</value>
+    <comment>Button in the install panel: leaves the download running and asks for another mod's address.</comment>
+  </data>
   <data name="Downloads_Show" xml:space="preserve">
     <value>Show</value>
     <comment>Button that brings a hidden download's panel back.</comment>

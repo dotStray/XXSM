@@ -68,6 +68,7 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
         _downloads.Changed += OnChanged;
         _downloads.Progress += OnProgress;
         _install.PropertyChanged += OnInstallChanged;
+        _install.DownloadList = this;
     }
 
     /// <summary>Raised when a row asks to be shown where the install panel can be drawn; the shell navigates.</summary>
@@ -130,9 +131,32 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
     /// <summary>Whether anything at all is downloading, whoever is showing it.</summary>
     public bool IsDownloading => Active is not null;
 
-    /// <summary>Whether the top strip has something to show: not while the install panel shows that download.</summary>
+    /// <summary>Whether the top strip has something to show: not while the install panel shows that download, or
+    /// every download.</summary>
     public bool HasActive =>
-        Active is { } running && !(_install.IsOpen && _install.AttachedDownloadId == running.Id);
+        Active is { } running
+        && !(_install.IsOpen && (_install.IsListingDownloads || _install.AttachedDownloadId == running.Id));
+
+    /// <summary>Every download running or waiting to be installed, newest first: what the install panel lists.</summary>
+    public ObservableCollection<DownloadRowViewModel> CurrentRows { get; } = [];
+
+    /// <summary>Whether nothing is running or waiting to be installed.</summary>
+    public bool HasNoCurrent => CurrentRows.Count == 0;
+
+    /// <summary>Whether more than one download is current, so a single one's panel offers the whole list.</summary>
+    public bool HasSeveralCurrent => CurrentRows.Count > 1;
+
+    /// <summary>The button back to the whole list: <em>All downloads (3)</em>.</summary>
+    public string AllCurrentText => _text.Format(nameof(Strings.Downloads_All), CurrentRows.Count);
+
+    /// <summary>Beside the strip's download, how many more are running: <em>+2 more</em>, or null.</summary>
+    public string? MoreRunningText => Rows.Count(row => row.IsRunning) is > 1 and var running
+        ? _text.Format(nameof(Strings.Downloads_More), running - 1)
+        : null;
+
+    /// <summary>Opens the install panel on every current download.</summary>
+    [RelayCommand]
+    public void ShowList() => _install.ListDownloads();
 
     /// <summary>Whether there is anything at all to show.</summary>
     public bool HasRows => Rows.Count > 0;
@@ -172,10 +196,6 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
 
         _install.Attach(row.Job);
     }
-
-    /// <summary>Brings the running download's panel back.</summary>
-    [RelayCommand]
-    public void ShowActive() => Show(Active);
 
     /// <summary>Stops a running download.</summary>
     [RelayCommand]
@@ -287,7 +307,8 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
     private void OnInstallChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
         if (e.PropertyName is nameof(ModInstallViewModel.IsOpen)
-            or nameof(ModInstallViewModel.AttachedDownloadId))
+            or nameof(ModInstallViewModel.AttachedDownloadId)
+            or nameof(ModInstallViewModel.IsListingDownloads))
         {
             OnPropertyChanged(nameof(HasActive));
         }
@@ -360,6 +381,23 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
     private void RaiseCounts()
     {
         Active = Rows.FirstOrDefault(row => row.IsRunning);
+
+        List<DownloadRowViewModel> current = [.. Rows.Where(row => row.IsRunning || row.Job.State == DownloadState.Ready)];
+
+        if (!CurrentRows.SequenceEqual(current))
+        {
+            CurrentRows.Clear();
+
+            foreach (var row in current)
+            {
+                CurrentRows.Add(row);
+            }
+        }
+
+        OnPropertyChanged(nameof(HasNoCurrent));
+        OnPropertyChanged(nameof(HasSeveralCurrent));
+        OnPropertyChanged(nameof(AllCurrentText));
+        OnPropertyChanged(nameof(MoreRunningText));
 
         OnPropertyChanged(nameof(HasRows));
         OnPropertyChanged(nameof(HasFinished));

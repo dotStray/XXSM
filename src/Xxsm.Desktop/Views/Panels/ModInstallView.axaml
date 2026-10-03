@@ -20,12 +20,36 @@
                    IsVisible="{Binding IsReading}" />
       </StackPanel>
 
-      <!-- While a download runs: Hide leaves it going, Cancel stops it. -->
+      <!-- While a download runs: Hide leaves it going, Cancel stops it. On the left, another download, or all of them. -->
       <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto,Auto" Margin="0,12,0,0">
-        <Button Grid.Column="1"
-                IsVisible="{Binding !IsDownloading}"
+        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Left">
+          <Button IsVisible="{Binding CanDownloadAnother}"
+                  Command="{Binding DownloadAnotherCommand}"
+                  Content="{DynamicResource Text.ModInstall_DownloadAnother}" />
+          <Button Command="{Binding DownloadList.ShowListCommand, FallbackValue={x:Null}}"
+                  Content="{Binding DownloadList.AllCurrentText, FallbackValue=''}">
+            <Button.IsVisible>
+              <MultiBinding Converter="{x:Static BoolConverters.And}">
+                <Binding Path="IsDownloading" />
+                <Binding Path="DownloadList.HasSeveralCurrent" FallbackValue="{x:False}" />
+              </MultiBinding>
+            </Button.IsVisible>
+          </Button>
+        </StackPanel>
+        <Button Grid.Column="2" Classes="accent" Margin="8,0,0,0"
+                IsVisible="{Binding IsListingDownloads}"
                 Command="{Binding CloseCommand}"
-                Content="{DynamicResource Text.ModInstall_Cancel}" />
+                Content="{DynamicResource Text.ModInstall_Hide}" />
+        <Button Grid.Column="1"
+                Command="{Binding CloseCommand}"
+                Content="{DynamicResource Text.ModInstall_Cancel}">
+          <Button.IsVisible>
+            <MultiBinding Converter="{x:Static BoolConverters.And}">
+              <Binding Path="!IsDownloading" />
+              <Binding Path="!IsListingDownloads" />
+            </MultiBinding>
+          </Button.IsVisible>
+        </Button>
         <Button Grid.Column="2" Classes="accent" Margin="8,0,0,0"
                 IsVisible="{Binding IsChoosingFile}"
                 IsEnabled="{Binding FileChooser.HasSelection}"
@@ -93,6 +117,22 @@
       </StackPanel>
 
       <Panel>
+
+        <!-- Every download running or waiting to be installed: the rows the Mods page draws. -->
+        <Panel IsVisible="{Binding IsListingDownloads}">
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     IsVisible="{Binding DownloadList.HasNoCurrent, FallbackValue={x:True}}"
+                     Text="{DynamicResource Text.Downloads_NoneCurrent}" />
+          <ScrollViewer>
+            <ItemsControl DataContext="{Binding DownloadList}" ItemsSource="{Binding CurrentRows}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:DownloadRowViewModel">
+                  <panels:DownloadRowView />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </Panel>
 
         <!-- The address prompt, here because the address is the install's first step. -->
         <StackPanel Spacing="10" VerticalAlignment="Top" IsVisible="{Binding IsAskingForAddress}">

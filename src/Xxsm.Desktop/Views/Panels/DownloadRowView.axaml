@@ -1,0 +1,77 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Xxsm.Desktop.ViewModels"
+             x:Class="Xxsm.Desktop.Views.Panels.DownloadRowView"
+             x:DataType="vm:DownloadRowViewModel">
+
+  <!-- One download: its name, how far along, and what can be done with it. Drawn inside an ItemsControl whose
+       DataContext is the download list, whose commands the buttons use. -->
+  <Border Classes="inlineNotice" Padding="10" Margin="0,0,0,8">
+    <StackPanel Spacing="6">
+
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+        <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+          <TextBlock TextTrimming="CharacterEllipsis"
+                     Foreground="{DynamicResource XxsmTextBrush}"
+                     Text="{Binding DisplayName}" />
+          <TextBlock Classes="muted" FontSize="12"
+                     IsVisible="{Binding HasSubtitle}"
+                     Text="{Binding Subtitle}" />
+        </StackPanel>
+        <TextBlock Grid.Column="1" Classes="muted" FontSize="12"
+                   VerticalAlignment="Center" Text="{Binding StateText}" />
+      </Grid>
+
+      <!-- Only while it is running. -->
+      <StackPanel Spacing="6" IsVisible="{Binding IsRunning}">
+        <ProgressBar Height="6" Minimum="0" Maximum="100"
+                     Value="{Binding Percent}"
+                     IsIndeterminate="{Binding IsIndeterminate}"
+                     AutomationProperties.Name="{Binding DisplayName}" />
+        <StackPanel Orientation="Horizontal" Spacing="12">
+          <TextBlock Classes="muted" FontSize="12" Text="{Binding ProgressText}" />
+          <TextBlock Classes="muted" FontSize="12"
+                     IsVisible="{Binding HasRate}" Text="{Binding RateText}" />
+          <TextBlock Classes="muted" FontSize="12"
+                     IsVisible="{Binding HasRemaining}" Text="{Binding RemainingText}" />
+        </StackPanel>
+      </StackPanel>
+
+      <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                 IsVisible="{Binding HasError}" Text="{Binding Error}" />
+
+      <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                 IsVisible="{Binding IsForAnotherGame}"
+                 Text="{DynamicResource Text.Downloads_OtherGame}" />
+
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button IsVisible="{Binding IsRunning}"
+                Command="{Binding $parent[ItemsControl].((vm:DownloadsViewModel)DataContext).ShowCommand}"
+                CommandParameter="{Binding}"
+                Content="{DynamicResource Text.Downloads_Show}" />
+        <Button IsVisible="{Binding IsRunning}"
+                Command="{Binding $parent[ItemsControl].((vm:DownloadsViewModel)DataContext).CancelCommand}"
+                CommandParameter="{Binding}"
+                Content="{DynamicResource Text.Downloads_Cancel}" />
+        <Button Classes="accent" IsVisible="{Binding CanInstall}"
+                Command="{Binding $parent[ItemsControl].((vm:DownloadsViewModel)DataContext).InstallCommand}"
+                CommandParameter="{Binding}"
+                Content="{DynamicResource Text.Downloads_Install}" />
+        <Button IsVisible="{Binding CanRetry}"
+                Command="{Binding $parent[ItemsControl].((vm:DownloadsViewModel)DataContext).RetryCommand}"
+                CommandParameter="{Binding}"
+                Content="{DynamicResource Text.Downloads_Retry}" />
+        <Button IsVisible="{Binding HasPage}"
+                Command="{Binding $parent[ItemsControl].((vm:DownloadsViewModel)DataContext).OpenPageCommand}"
+                CommandParameter="{Binding}"
+                Content="{DynamicResource Text.Mods_Updates_Open}" />
+        <Button Classes="destructive" IsVisible="{Binding !IsRunning}"
+                Command="{Binding $parent[ItemsControl].((vm:DownloadsViewModel)DataContext).RemoveCommand}"
+                CommandParameter="{Binding}"
+                Content="{DynamicResource Text.Downloads_Remove}" />
+      </StackPanel>
+
+    </StackPanel>
+  </Border>
+
+</UserControl>

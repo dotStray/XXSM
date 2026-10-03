@@ -338,12 +338,12 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     public void ShowMods() => SelectedNavigationItem = _modsItem;
 
-    /// <summary>Brings the running download's panel back, having first gone somewhere that can draw it.</summary>
+    /// <summary>Opens the install panel on every current download, having first gone somewhere that can draw it.</summary>
     [RelayCommand]
     public void ShowDownload()
     {
         ShowPanelPage();
-        Downloads.ShowActive();
+        Downloads.ShowList();
     }
 
     private void OnDownloadOpenRequested(object? sender, DownloadRowViewModel row) => ShowPanelPage();

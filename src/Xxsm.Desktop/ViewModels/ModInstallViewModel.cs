@@ -561,7 +561,9 @@ public sealed partial class ModInstallViewModel(
     public ObservableCollection<string> StrandedFiles { get; } = [];
 
     /// <summary>The panel's title.</summary>
-    public string Heading => IsAskingForAddress || IsChoosingFile
+    public string Heading => IsListingDownloads
+        ? _text[nameof(Strings.Downloads_Heading)]
+        : IsAskingForAddress || IsChoosingFile
         ? _text[nameof(Strings.GameBanana_Prompt_Heading)]
         : IsAlreadyInstalled
         ? _text[nameof(Strings.GameBanana_Already_Heading)]
@@ -572,7 +574,7 @@ public sealed partial class ModInstallViewModel(
     /// <summary>Whether the line under the title has a count to give yet: only once a source was read.</summary>
     public bool HasSummary =>
         !IsReading && !IsDownloading && !IsAskingForAddress && !IsDownloadBlocked && !IsAlreadyInstalled
-        && !IsChoosingFile;
+        && !IsChoosingFile && !IsListingDownloads;
 
     /// <summary>What was found, in one line.</summary>
     public string SummaryText => _text.Format(
@@ -600,7 +602,37 @@ public sealed partial class ModInstallViewModel(
     /// <summary>Whether the source held nothing that looks like a mod, once one was read.</summary>
     public bool IsEmpty =>
         !IsReading && !IsDownloading && !IsAskingForAddress && !IsDownloadBlocked && !IsAlreadyInstalled
-        && !IsChoosingFile && Rows.Count == 0;
+        && !IsChoosingFile && !IsListingDownloads && Rows.Count == 0;
+
+    // Every download at once
+
+    /// <summary>The download list the panel shows every current download from; set by that list.</summary>
+    public DownloadsViewModel? DownloadList { get; internal set; }
+
+    /// <summary>Whether the panel is listing every download that is running or waiting to be installed.</summary>
+    [ObservableProperty]
+    private bool _isListingDownloads;
+
+    /// <summary>Whether the panel offers <em>Download another…</em>: while a download runs, or while they are listed.</summary>
+    public bool CanDownloadAnother => IsDownloading || IsListingDownloads;
+
+    /// <summary>Opens the panel on every download that is running or waiting to be installed.</summary>
+    public void ListDownloads()
+    {
+        Close();
+        IsListingDownloads = true;
+        IsOpen = true;
+        RaiseCounts();
+    }
+
+    /// <summary>Leaves whatever is downloading running and asks for another mod's address, for the same character.</summary>
+    [RelayCommand]
+    private void DownloadAnother()
+    {
+        var target = _job?.Record.TargetVariantId;
+        var name = _job?.Record.TargetDisplayName;
+        AskForAddress(target, name);
+    }
 
     // From a GameBanana address
 
@@ -987,6 +1019,7 @@ public sealed partial class ModInstallViewModel(
 
         _job = job;
         AttachedDownloadId = job.Id;
+        IsListingDownloads = false;
 
         SourceName = job.Record.PageUrl ?? GameBananaUrl.ForMod(job.Record.ModId);
         TargetName = job.Record.TargetDisplayName;
@@ -1494,6 +1527,7 @@ public sealed partial class ModInstallViewModel(
         GameBananaNote = null;
         BlockedPageUrl = null;
         IsAskingForAddress = false;
+        IsListingDownloads = false;
         IsAlreadyInstalled = false;
         _alreadyModId = null;
         InstalledCopies.Clear();
@@ -1535,8 +1569,17 @@ public sealed partial class ModInstallViewModel(
         OnPropertyChanged(nameof(HasSummary));
     }
 
+    partial void OnIsListingDownloadsChanged(bool value)
+    {
+        OnPropertyChanged(nameof(Heading));
+        OnPropertyChanged(nameof(HasSummary));
+        OnPropertyChanged(nameof(IsEmpty));
+        OnPropertyChanged(nameof(CanDownloadAnother));
+    }
+
     partial void OnIsDownloadingChanged(bool value)
     {
+        OnPropertyChanged(nameof(CanDownloadAnother));
         OnPropertyChanged(nameof(HasGameBananaNote));
         OnPropertyChanged(nameof(HasSummary));
         OnPropertyChanged(nameof(IsEmpty));
