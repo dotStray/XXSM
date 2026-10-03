@@ -619,6 +619,50 @@
                        AcceptsReturn="True" TextWrapping="Wrap" MinHeight="48" MaxHeight="96"
                        AutomationProperties.Name="{DynamicResource Text.CharacterDetail_Detail_Notes}" />
             </StackPanel>
+            <!-- What the mod remembers in game. A button lists the defaults that would change; the same Save writes them. -->
+            <StackPanel Spacing="6" IsVisible="{Binding SavedSettings.HasSettings}">
+              <StackPanel Spacing="2">
+                <TextBlock Classes="sectionLabel" Text="{DynamicResource Text.SavedSettings_Heading}" />
+                <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap" Text="{DynamicResource Text.SavedSettings_Body}" />
+              </StackPanel>
+              <WrapPanel ItemSpacing="8" LineSpacing="8">
+                <Button Command="{Binding SavedSettings.UseInGameCommand}"
+                        Content="{DynamicResource Text.SavedSettings_UseInGame}" />
+                <Button IsVisible="{Binding SavedSettings.CanRestore}"
+                        Command="{Binding SavedSettings.RestoreCommand}"
+                        Content="{DynamicResource Text.SavedSettings_Restore}" />
+              </WrapPanel>
+              <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                         IsVisible="{Binding SavedSettings.Status, Converter={x:Static conv:ObjectConverters.IsNotNull}}"
+                         Text="{Binding SavedSettings.Status}" />
+              <Border Classes="inlineNotice" Padding="8" IsVisible="{Binding SavedSettings.IsDirty}">
+                <StackPanel Spacing="6">
+                  <TextBlock FontSize="12" TextWrapping="Wrap" Text="{Binding SavedSettings.ChangesText}" />
+                  <ItemsControl ItemsSource="{Binding SavedSettings.Changes}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:SavedSettingChange">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,1">
+                          <TextBlock Grid.Column="0" Classes="mono" FontSize="12" TextTrimming="CharacterEllipsis"
+                                     Text="{Binding Name}" />
+                          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                            <TextBlock Classes="mono muted" FontSize="12" Text="{Binding From}" />
+                            <TextBlock Classes="muted" FontSize="12" Text="→" />
+                            <TextBlock Classes="mono" FontSize="12" Text="{Binding To}" />
+                          </StackPanel>
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </Border>
+              <ItemsControl ItemsSource="{Binding SavedSettings.Problems}" IsVisible="{Binding SavedSettings.HasProblems}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="x:String">
+                    <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap" Text="{Binding}" />
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
             <!-- The keys, saved by the same Save. Only the values typed into change in the mod's file. -->
             <StackPanel Spacing="6" IsVisible="{Binding KeySwaps.HasBindings}">
               <StackPanel Spacing="2">
@@ -659,50 +703,6 @@
             </StackPanel>
             <StackPanel Spacing="4" IsVisible="{Binding KeySwaps.HasProblems}">
               <ItemsControl ItemsSource="{Binding KeySwaps.Problems}">
-                <ItemsControl.ItemTemplate>
-                  <DataTemplate x:DataType="x:String">
-                    <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap" Text="{Binding}" />
-                  </DataTemplate>
-                </ItemsControl.ItemTemplate>
-              </ItemsControl>
-            </StackPanel>
-            <!-- What the mod remembers in game. A button lists the defaults that would change; the same Save writes them. -->
-            <StackPanel Spacing="6" IsVisible="{Binding SavedSettings.HasSettings}">
-              <StackPanel Spacing="2">
-                <TextBlock Classes="sectionLabel" Text="{DynamicResource Text.SavedSettings_Heading}" />
-                <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap" Text="{DynamicResource Text.SavedSettings_Body}" />
-              </StackPanel>
-              <WrapPanel ItemSpacing="8" LineSpacing="8">
-                <Button Command="{Binding SavedSettings.UseInGameCommand}"
-                        Content="{DynamicResource Text.SavedSettings_UseInGame}" />
-                <Button IsVisible="{Binding SavedSettings.CanRestore}"
-                        Command="{Binding SavedSettings.RestoreCommand}"
-                        Content="{DynamicResource Text.SavedSettings_Restore}" />
-              </WrapPanel>
-              <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
-                         IsVisible="{Binding SavedSettings.Status, Converter={x:Static conv:ObjectConverters.IsNotNull}}"
-                         Text="{Binding SavedSettings.Status}" />
-              <Border Classes="inlineNotice" Padding="8" IsVisible="{Binding SavedSettings.IsDirty}">
-                <StackPanel Spacing="6">
-                  <TextBlock FontSize="12" TextWrapping="Wrap" Text="{Binding SavedSettings.ChangesText}" />
-                  <ItemsControl ItemsSource="{Binding SavedSettings.Changes}">
-                    <ItemsControl.ItemTemplate>
-                      <DataTemplate x:DataType="vm:SavedSettingChange">
-                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,1">
-                          <TextBlock Grid.Column="0" Classes="mono" FontSize="12" TextTrimming="CharacterEllipsis"
-                                     Text="{Binding Name}" />
-                          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
-                            <TextBlock Classes="mono muted" FontSize="12" Text="{Binding From}" />
-                            <TextBlock Classes="muted" FontSize="12" Text="→" />
-                            <TextBlock Classes="mono" FontSize="12" Text="{Binding To}" />
-                          </StackPanel>
-                        </Grid>
-                      </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                  </ItemsControl>
-                </StackPanel>
-              </Border>
-              <ItemsControl ItemsSource="{Binding SavedSettings.Problems}" IsVisible="{Binding SavedSettings.HasProblems}">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="x:String">
                     <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap" Text="{Binding}" />

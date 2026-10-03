@@ -4851,15 +4851,15 @@
     <comment>A count of several settings a mod keeps between game sessions. {0} is how many.</comment>
   </data>
   <data name="SavedSettings_Heading" xml:space="preserve">
-    <value>In-game settings</value>
+    <value>Default toggles</value>
     <comment>Label over the settings a mod keeps between game sessions, in the detail pane.</comment>
   </data>
   <data name="SavedSettings_Body" xml:space="preserve">
-    <value>What this mod remembers between game sessions, such as its toggles and sliders. Make where you have them now its defaults, so it starts that way again after the game forgets them.</value>
+    <value>Save your current in-game toggles as default, so that re-enabling the mods keep them.</value>
     <comment>Under the In-game settings label.</comment>
   </data>
   <data name="SavedSettings_UseInGame" xml:space="preserve">
-    <value>Use in-game settings as defaults</value>
+    <value>Use current toggles as defaults</value>
     <comment>Button: shows each setting whose saved value differs from the mod's default; Save writes them into the mod's file.</comment>
   </data>
   <data name="SavedSettings_Restore" xml:space="preserve">
