@@ -192,6 +192,19 @@
     <!-- Setup. Occupies the whole window: there is nothing useful behind it yet. -->
     <firstRun:FirstRunView DataContext="{Binding FirstRun}" IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsFirstRun}" />
 
+    <!-- Notices pop up over everything, panels and setup included, hanging from the top-right corner. Only the
+         pop-ups take clicks: the layer is as big as they are. -->
+    <ItemsControl x:Name="NoticePopups"
+                  ItemsSource="{Binding NoticePopups.Popups}"
+                  HorizontalAlignment="Right" VerticalAlignment="Top"
+                  Width="340" Margin="0,12,16,0">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="vm:NoticePopupViewModel">
+          <panels:NoticePopupView />
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+
   </Panel>
 
 </Window>

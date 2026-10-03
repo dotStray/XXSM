@@ -101,6 +101,7 @@ public static class DesktopHost
         services.AddSingleton<ITextCatalogue>(p => p.GetRequiredService<TextCatalogue>());
 
         services.AddSingleton<INotificationService, NotificationService>();
+        services.AddSingleton<NoticePopupsViewModel>();
         services.AddSingleton<ViewModelWorkRunner>();
         services.AddSingleton<GameContext>();
         services.AddSingleton<StudioVisibility>();

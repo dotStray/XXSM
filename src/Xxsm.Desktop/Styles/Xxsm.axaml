@@ -949,6 +949,45 @@
   </Style>
 
   <!-- Behind an overlay panel: dims the page and, having a Background, stops presses reaching the grid below. -->
+  <!-- A notice popped up over the window: a card that floats, its edge coloured by how much it matters. -->
+  <Style Selector="Border.noticePopup">
+    <Setter Property="Background" Value="{DynamicResource XxsmSurfaceBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource XxsmBorderBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Padding" Value="12,8,8,8" />
+    <Setter Property="BoxShadow" Value="0 4 18 0 #40000000" />
+  </Style>
+
+  <!-- Smaller than a page's buttons, so a pop-up covers as little of the page as it can. -->
+  <Style Selector="Border.noticePopup Button">
+    <Setter Property="MinWidth" Value="0" />
+    <Setter Property="Padding" Value="12,3" />
+  </Style>
+
+  <Style Selector="Border.noticePopup.warning">
+    <Setter Property="BorderBrush" Value="{DynamicResource XxsmWarnBrush}" />
+  </Style>
+
+  <Style Selector="Border.noticePopup.error">
+    <Setter Property="BorderBrush" Value="{DynamicResource XxsmErrorBrush}" />
+  </Style>
+
+  <Style Selector="Border.countdownTrack">
+    <Setter Property="Height" Value="3" />
+    <Setter Property="CornerRadius" Value="1.5" />
+    <Setter Property="Background" Value="{DynamicResource XxsmBorderBrush}" />
+  </Style>
+
+  <Style Selector="Border.countdown">
+    <Setter Property="CornerRadius" Value="1.5" />
+    <Setter Property="Background" Value="{DynamicResource XxsmAccentBrush}" />
+  </Style>
+
+  <Style Selector="Border.noticePopup.warning Border.countdown">
+    <Setter Property="Background" Value="{DynamicResource XxsmWarnBrush}" />
+  </Style>
+
   <Style Selector="Border.scrim">
     <Setter Property="Background" Value="{DynamicResource XxsmScrimBrush}" />
     <Setter Property="IsHitTestVisible" Value="True" />

@@ -1,0 +1,59 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Xxsm.Desktop.ViewModels"
+             x:Class="Xxsm.Desktop.Views.Panels.NoticePopupView"
+             x:DataType="vm:NoticePopupViewModel"
+             ClipToBounds="True">
+
+  <!-- The gap below sits inside the control, so folding the control away closes the gap too. -->
+  <Border Classes="noticePopup"
+          Classes.error="{Binding Notice.IsError}"
+          Classes.warning="{Binding Notice.IsWarning}"
+          Margin="0,0,0,8">
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+
+      <!-- Severity is a word, not only a colour. -->
+      <Panel Grid.Row="0">
+        <TextBlock FontSize="11" IsVisible="{Binding Notice.IsInformation}"
+                   Foreground="{DynamicResource XxsmMutedBrush}"
+                   Text="{DynamicResource Text.Notifications_Severity_Information}" />
+        <TextBlock FontSize="11" IsVisible="{Binding Notice.IsWarning}"
+                   Foreground="{DynamicResource XxsmWarnBrush}"
+                   Text="{DynamicResource Text.Notifications_Severity_Warning}" />
+        <TextBlock FontSize="11" IsVisible="{Binding Notice.IsError}"
+                   Foreground="{DynamicResource XxsmErrorBrush}"
+                   Text="{DynamicResource Text.Notifications_Severity_Error}" />
+      </Panel>
+
+      <TextBlock Grid.Row="1" Margin="0,2,0,0" Text="{Binding Notice.Title}"
+                 FontWeight="SemiBold" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis"
+                 Foreground="{DynamicResource XxsmTextBrush}" />
+
+      <!-- The whole text is on the Notices page. -->
+      <TextBlock Grid.Row="2" Margin="0,4,0,0" Text="{Binding Notice.Message}"
+                 FontSize="12" TextWrapping="Wrap" MaxLines="3" TextTrimming="CharacterEllipsis"
+                 IsVisible="{Binding Notice.Message, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                 Foreground="{DynamicResource XxsmMutedBrush}" />
+
+      <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="6" Margin="0,6,0,0"
+                  HorizontalAlignment="Right">
+        <Button Classes="accent"
+                Command="{Binding ActionCommand}"
+                IsVisible="{Binding Notice.HasAction}"
+                Content="{Binding Notice.ActionText}" />
+        <Button Command="{Binding RetryCommand}"
+                IsVisible="{Binding HasRetry}"
+                Content="{DynamicResource Text.Notifications_Retry}" />
+        <Button Command="{Binding DismissCommand}"
+                Content="{DynamicResource Text.Notifications_Dismiss}" />
+      </StackPanel>
+
+      <!-- How long is left: runs down over the stay, full while held. An error stays, so it has none. -->
+      <Border Grid.Row="4" Classes="countdownTrack" Margin="0,8,4,0" IsVisible="{Binding HasCountdown}">
+        <Border x:Name="Countdown" Classes="countdown" RenderTransformOrigin="0%,50%" />
+      </Border>
+
+    </Grid>
+  </Border>
+
+</UserControl>

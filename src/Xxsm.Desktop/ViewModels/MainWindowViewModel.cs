@@ -47,6 +47,9 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     /// <summary>What is downloading now, and what has been.</summary>
     public DownloadsViewModel Downloads { get; }
 
+    /// <summary>The notices popped up over the window.</summary>
+    public NoticePopupsViewModel NoticePopups { get; }
+
     private bool _isSwitchingGame;
 
     private bool _isDetailRemembered;
@@ -74,7 +77,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         SortReviewViewModel sortReview,
         ModInstallViewModel install,
         PackUpdateWatcher packUpdates,
-        AppUpdateWatcher appUpdates)
+        AppUpdateWatcher appUpdates,
+        NoticePopupsViewModel noticePopups)
     {
         ArgumentNullException.ThrowIfNull(game);
         ArgumentNullException.ThrowIfNull(settings);
@@ -99,6 +103,8 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         _packUpdates = packUpdates;
         ArgumentNullException.ThrowIfNull(appUpdates);
         _appUpdates = appUpdates;
+        ArgumentNullException.ThrowIfNull(noticePopups);
+        NoticePopups = noticePopups;
         _columnWidths = columnWidths;
         _sortReview = sortReview;
         _install = install;
@@ -503,6 +509,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         _notifications.PropertyChanged += OnNotificationsChanged;
         _packUpdates.PropertyChanged += OnPackUpdatesChanged;
         Downloads.OpenRequested += OnDownloadOpenRequested;
+        NoticePopups.Activate();
         CurrentPage?.Activate();
     }
 
@@ -512,6 +519,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         _notifications.PropertyChanged -= OnNotificationsChanged;
         _packUpdates.PropertyChanged -= OnPackUpdatesChanged;
         Downloads.OpenRequested -= OnDownloadOpenRequested;
+        NoticePopups.Deactivate();
 
         foreach (var item in _allItems)
         {
