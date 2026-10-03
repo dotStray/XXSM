@@ -71,8 +71,6 @@ public interface IKeySwapService
 public sealed class KeySwapService(IIniFileService files, ILogger logger) : IKeySwapService
 {
     private const string SectionPrefix = "Key";
-    private const int MaximumDepth = 8;
-    private const int MaximumFiles = 500;
 
     private readonly IIniFileService _files = files;
     private readonly ILogger _logger = logger.ForContext<KeySwapService>();
@@ -80,15 +78,15 @@ public sealed class KeySwapService(IIniFileService files, ILogger logger) : IKey
     /// <inheritdoc />
     public async Task<KeySwapReadResult> ReadAsync(string modFolder, CancellationToken cancellationToken = default)
     {
-        var root = ModRoot(modFolder);
+        var root = ModInis.Root(modFolder);
         var sections = new List<KeySwapSection>();
         var problems = new List<string>();
 
-        foreach (var file in FindInis(root, problems))
+        foreach (var file in ModInis.Find(root, problems))
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var relative = RelativeFile(root, file);
+            var relative = ModInis.Relative(root, file);
             IniDocument document;
 
             try
@@ -119,12 +117,12 @@ public sealed class KeySwapService(IIniFileService files, ILogger logger) : IKey
     {
         ArgumentNullException.ThrowIfNull(edits);
 
-        var root = ModRoot(modFolder);
+        var root = ModInis.Root(modFolder);
         var planned = new List<(string Path, IniDocument Document, List<IniEdit> Edits)>();
 
         foreach (var group in edits.GroupBy(edit => edit.File, StringComparer.Ordinal))
         {
-            var path = ResolveFile(root, group.Key);
+            var path = ModInis.Resolve(root, group.Key);
             var document = await _files.ReadAsync(path, int.MaxValue, cancellationToken).ConfigureAwait(false);
             var bindings = Bindings(document, group.Key).SelectMany(section => section.Fields).ToList();
             var fileEdits = new List<IniEdit>();
@@ -173,7 +171,7 @@ public sealed class KeySwapService(IIniFileService files, ILogger logger) : IKey
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            KeepOriginal(root, path);
+            ModInis.KeepOriginal(root, path, _logger);
             await _files.WriteAsync(path, bytes, cancellationToken).ConfigureAwait(false);
 
             foreach (var edit in fileEdits)
@@ -239,120 +237,5 @@ public sealed class KeySwapService(IIniFileService files, ILogger logger) : IKey
         }
 
         return value;
-    }
-
-    private static string ModRoot(string modFolder)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(modFolder);
-
-        if (!PathComparer.TryResolveExisting(modFolder, out var resolved) || !Directory.Exists(resolved))
-        {
-            throw new ModOperationException($"The mod folder '{PathDisplay.Show(modFolder)}' does not exist.", modFolder);
-        }
-
-        return PathComparer.Normalize(resolved);
-    }
-
-    /// <summary>Keeps an INI's first original in <c>.xxsm/originals/</c>, once, as <c>name.ini.original</c>.</summary>
-    private void KeepOriginal(string root, string path)
-    {
-        var relative = Path.GetRelativePath(root, path);
-        // Not ending in .ini: 3DMigoto would load the copy beside the file.
-        var original = Path.Combine(root, ModConfigSchema.DirectoryName, "originals", relative + ".original");
-
-        try
-        {
-            if (File.Exists(original))
-            {
-                return;
-            }
-
-            Directory.CreateDirectory(Path.GetDirectoryName(original)!);
-            File.Copy(path, original, overwrite: false);
-            _logger.Information("Kept the original of {Path} at {Original} before its first key edit", path, original);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            throw new ModOperationException(
-                $"Could not keep a copy of '{PathDisplay.Show(relative)}' before changing it ({ex.Message}), so it was not changed.",
-                path,
-                ex);
-        }
-    }
-
-    private static string ResolveFile(string root, string relative)
-    {
-        var candidate = Path.GetFullPath(Path.Combine(root, relative));
-
-        if (!UntrustedLocation.IsSameOrUnderExactly(root, candidate) ||
-            !string.Equals(Path.GetExtension(candidate), ".ini", StringComparison.OrdinalIgnoreCase) ||
-            !PathComparer.TryResolveExisting(candidate, out var resolved) ||
-            !File.Exists(resolved))
-        {
-            throw new ModOperationException(
-                $"'{PathDisplay.Show(relative)}' is not an INI file in this mod. Nothing was changed.", candidate);
-        }
-
-        return resolved;
-    }
-
-    private static string RelativeFile(string root, string file) =>
-        (PathComparer.TryGetRelativePath(root, file) ?? Path.GetFileName(file)).Replace('\\', '/');
-
-    private static List<string> FindInis(string root, List<string> problems)
-    {
-        var found = new List<string>();
-        var pending = new Stack<(string Directory, int Depth)>();
-        pending.Push((root, 0));
-
-        while (pending.Count > 0)
-        {
-            var (directory, depth) = pending.Pop();
-            string[] entries;
-
-            try
-            {
-                entries = Directory.GetFileSystemEntries(directory);
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            {
-                problems.Add($"{RelativeFile(root, directory)}: {ex.Message}");
-                continue;
-            }
-
-            foreach (var entry in entries)
-            {
-                var name = Path.GetFileName(entry);
-
-                // 3DMigoto skips anything named DISABLED…; XXSM's own folders are dot-folders.
-                if (name.StartsWith('.') || ModsFolderLayout.IsDisabled(name))
-                {
-                    continue;
-                }
-
-                if (Directory.Exists(entry))
-                {
-                    if (depth + 1 <= MaximumDepth && new DirectoryInfo(entry).LinkTarget is null)
-                    {
-                        pending.Push((entry, depth + 1));
-                    }
-
-                    continue;
-                }
-
-                if (string.Equals(Path.GetExtension(entry), ".ini", StringComparison.OrdinalIgnoreCase))
-                {
-                    found.Add(entry);
-
-                    if (found.Count >= MaximumFiles)
-                    {
-                        problems.Add($"This mod has more than {MaximumFiles} INI files; only the first {MaximumFiles} were read.");
-                        return [.. found.Order(StringComparer.Ordinal)];
-                    }
-                }
-            }
-        }
-
-        return [.. found.Order(StringComparer.Ordinal)];
     }
 }

@@ -119,12 +119,14 @@ public sealed partial class CharacterDetailPageViewModel : PageViewModel, IRefre
         Func<CancellationToken, Task> rescan,
         Action goBack,
         Xxsm.Core.Ini.IKeySwapService keySwaps,
-        Xxsm.Core.Profiles.IProfileService profiles)
+        Xxsm.Core.Profiles.IProfileService profiles,
+        Xxsm.Core.Ini.ISavedSettingsService savedSettings)
         : base(text)
     {
         ArgumentNullException.ThrowIfNull(columnWidths);
         ArgumentNullException.ThrowIfNull(keySwaps);
         ArgumentNullException.ThrowIfNull(profiles);
+        ArgumentNullException.ThrowIfNull(savedSettings);
         _profiles = profiles;
         ColumnWidths = columnWidths;
 
@@ -132,6 +134,16 @@ public sealed partial class CharacterDetailPageViewModel : PageViewModel, IRefre
         KeySwaps.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(KeySwapEditorViewModel.IsDirty))
+            {
+                OnPropertyChanged(nameof(IsEditDirty));
+                SaveEditsCommand.NotifyCanExecuteChanged();
+            }
+        };
+
+        SavedSettings = new SavedSettingsViewModel(savedSettings, text);
+        SavedSettings.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(SavedSettingsViewModel.IsDirty))
             {
                 OnPropertyChanged(nameof(IsEditDirty));
                 SaveEditsCommand.NotifyCanExecuteChanged();
@@ -398,10 +410,14 @@ public sealed partial class CharacterDetailPageViewModel : PageViewModel, IRefre
     /// <summary>The selected mod's key bindings, edited in the pane and saved with it.</summary>
     public KeySwapEditorViewModel KeySwaps { get; }
 
+    /// <summary>The selected mod's settings kept between game sessions; new defaults are saved with the pane.</summary>
+    public SavedSettingsViewModel SavedSettings { get; }
+
     /// <summary>Whether any of the edit boxes differs from what is on disk.</summary>
     public bool IsEditDirty =>
         SelectedRow is { } row &&
         (KeySwaps.IsDirty ||
+         SavedSettings.IsDirty ||
          !string.Equals(EditName.Trim(), row.DisplayName, StringComparison.Ordinal) ||
          !string.Equals(EditFolderName.Trim(), row.BareFolderName, StringComparison.Ordinal) ||
          !string.Equals(EditModUrl.Trim(), row.ModUrl ?? string.Empty, StringComparison.Ordinal) ||
@@ -691,7 +707,7 @@ public sealed partial class CharacterDetailPageViewModel : PageViewModel, IRefre
     [RelayCommand]
     private void RevertEdits() => ResetEdits();
 
-    /// <summary>Applies the pane's edits: the keys, the folder rename, then the label, address and details.</summary>
+    /// <summary>Applies the pane's edits: the keys and defaults, the folder rename, then the label, address and details.</summary>
     /// <remarks>Both names are checked for a clash before either is applied, so a save never half-happens.</remarks>
     [RelayCommand(CanExecute = nameof(CanSaveEdits))]
     private Task SaveEditsAsync()
@@ -769,8 +785,9 @@ public sealed partial class CharacterDetailPageViewModel : PageViewModel, IRefre
             }
         }
 
-        // The keys first, while the folder is where they were read from.
+        // The keys and the defaults first, while the folder is where they were read from.
         await KeySwaps.SaveAsync(cancellationToken).ConfigureAwait(true);
+        await SavedSettings.SaveAsync(cancellationToken).ConfigureAwait(true);
 
         var path = row.Path;
 
@@ -834,6 +851,7 @@ public sealed partial class CharacterDetailPageViewModel : PageViewModel, IRefre
         EditDescription = SelectedRow?.Description ?? string.Empty;
         EditNotes = SelectedRow?.Notes ?? string.Empty;
         KeySwaps.Revert();
+        SavedSettings.Revert();
     }
 
     /// <summary>The four details the pane edits beside the name and address, as stored.</summary>
@@ -1823,6 +1841,7 @@ public sealed partial class CharacterDetailPageViewModel : PageViewModel, IRefre
 
         UpdatePreviewImage();
         Track(KeySwaps.LoadAsync(SelectedRow?.Path, ActivationToken));
+        Track(SavedSettings.LoadAsync(SelectedRow?.Path, ActivationToken));
     }
 
     /// <summary>Brings <see cref="PreviewImage"/> in line with the selection, keyed on path, not row.</summary>

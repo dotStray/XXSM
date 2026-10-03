@@ -23,6 +23,11 @@ internal static class TextCounts
     public static string Keys(this ITextCatalogue text, int count) =>
         Of(text, count, nameof(Strings.Count_Key_One), nameof(Strings.Count_Key_Many));
 
+    /// <summary>A count of the settings a mod keeps between game sessions.</summary>
+    /// <returns>For example <c>1 setting</c> or <c>4 settings</c>.</returns>
+    public static string Settings(this ITextCatalogue text, int count) =>
+        Of(text, count, nameof(Strings.Count_Setting_One), nameof(Strings.Count_Setting_Many));
+
     /// <summary>A count of downloads.</summary>
     /// <returns>For example <c>1 download</c> or <c>2 downloads</c>.</returns>
     public static string Downloads(this ITextCatalogue text, int count) =>

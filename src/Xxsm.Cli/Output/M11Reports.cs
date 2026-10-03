@@ -108,6 +108,14 @@ internal sealed record ModKeySectionReport(string File, string Section, string? 
 /// <summary><c>xxsm mod keys</c>.</summary>
 internal sealed record ModKeysReport(string Mod, bool Changed, IReadOnlyList<ModKeySectionReport> Sections, IReadOnlyList<string> Problems);
 
+/// <summary>One saved setting in <c>xxsm mod defaults</c>.</summary>
+internal sealed record ModDefaultReport(
+    string File, int Line, string Name, string Default, string? InGame, string? Original, string? NewDefault);
+
+/// <summary><c>xxsm mod defaults</c>.</summary>
+internal sealed record ModDefaultsReport(
+    string Mod, string? GameSettingsFile, IReadOnlyList<ModDefaultReport> Settings, IReadOnlyList<string> Problems);
+
 /// <summary><c>xxsm mod export</c>.</summary>
 internal sealed record ModExportReport(
     string ModsDirectory,

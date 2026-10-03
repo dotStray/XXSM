@@ -22,6 +22,7 @@ internal static class ModCommand
             ModDownloadCommands.Create(),
             ModRandomiseCommand.Create(),
             ModKeysCommand.Create(),
+            ModDefaultsCommand.Create(),
             ModExportCommand.Create(),
             ModImportCommand.Create(),
         };

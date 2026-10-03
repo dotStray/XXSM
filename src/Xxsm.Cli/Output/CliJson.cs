@@ -80,6 +80,7 @@ internal static class CliJson
 [JsonSerializable(typeof(SwitchUndoReport))]
 [JsonSerializable(typeof(RandomiseReport))]
 [JsonSerializable(typeof(ModKeysReport))]
+[JsonSerializable(typeof(ModDefaultsReport))]
 [JsonSerializable(typeof(ModExportReport))]
 [JsonSerializable(typeof(ModImportReport))]
 [JsonSerializable(typeof(ConfigReport))]

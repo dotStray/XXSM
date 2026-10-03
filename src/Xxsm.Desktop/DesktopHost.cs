@@ -288,7 +288,8 @@ public static class DesktopHost
             ct => provider.GetRequiredService<MainWindowViewModel>().RescanModsAsync(ct),
             () => provider.GetRequiredService<MainWindowViewModel>().CloseCharacterDetail(),
             provider.GetRequiredService<Xxsm.Core.Ini.IKeySwapService>(),
-            provider.GetRequiredService<Xxsm.Core.Profiles.IProfileService>()));
+            provider.GetRequiredService<Xxsm.Core.Profiles.IProfileService>(),
+            provider.GetRequiredService<Xxsm.Core.Ini.ISavedSettingsService>()));
 
         services.AddSingleton(provider => new DownloadsViewModel(
             provider.GetRequiredService<Xxsm.Packs.Downloads.IDownloadManager>(),

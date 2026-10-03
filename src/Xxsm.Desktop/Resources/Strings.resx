@@ -4794,4 +4794,44 @@
     <value>{0}, {1} still waiting for hashes</value>
     <comment>Adds how many are waiting for hashes ({1}) to what the pack holds ({0}).</comment>
   </data>
+  <data name="Count_Setting_One" xml:space="preserve">
+    <value>1 setting</value>
+    <comment>A count of one setting a mod keeps between game sessions, for a sentence that takes a count.</comment>
+  </data>
+  <data name="Count_Setting_Many" xml:space="preserve">
+    <value>{0} settings</value>
+    <comment>A count of several settings a mod keeps between game sessions. {0} is how many.</comment>
+  </data>
+  <data name="SavedSettings_Heading" xml:space="preserve">
+    <value>In-game settings</value>
+    <comment>Label over the settings a mod keeps between game sessions, in the detail pane.</comment>
+  </data>
+  <data name="SavedSettings_Body" xml:space="preserve">
+    <value>What this mod remembers between game sessions, such as its toggles and sliders. Make where you have them now its defaults, so it starts that way again after the game forgets them.</value>
+    <comment>Under the In-game settings label.</comment>
+  </data>
+  <data name="SavedSettings_UseInGame" xml:space="preserve">
+    <value>Use in-game settings as defaults</value>
+    <comment>Button: shows each setting whose saved value differs from the mod's default; Save writes them into the mod's file.</comment>
+  </data>
+  <data name="SavedSettings_Restore" xml:space="preserve">
+    <value>Restore the mod's own defaults</value>
+    <comment>Button, shown once XXSM has changed a default: shows the defaults the mod came with; Save writes them back.</comment>
+  </data>
+  <data name="SavedSettings_Changes" xml:space="preserve">
+    <value>{0} will change. Save writes them into the mod's file; Revert leaves it as it is.</value>
+    <comment>Over the list of changed defaults. {0} is a count, such as "4 settings".</comment>
+  </data>
+  <data name="SavedSettings_AlreadyMatch" xml:space="preserve">
+    <value>The mod's defaults already match the game.</value>
+    <comment>After Use in-game settings as defaults, when there is nothing to change.</comment>
+  </data>
+  <data name="SavedSettings_NothingSaved" xml:space="preserve">
+    <value>The game hasn't saved this mod's settings yet. It saves them when you press F10, when you quit, and every so often while you play.</value>
+    <comment>After Use in-game settings as defaults, when the game has no saved value for any of the mod's settings.</comment>
+  </data>
+  <data name="SavedSettings_AlreadyOriginal" xml:space="preserve">
+    <value>The mod's defaults are already the ones it came with.</value>
+    <comment>After Restore the mod's own defaults, when there is nothing to change.</comment>
+  </data>
 </root>

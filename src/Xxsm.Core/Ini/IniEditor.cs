@@ -44,9 +44,11 @@ public static class IniEditor
 
     /// <summary>Applies several value replacements in one pass.</summary>
     /// <param name="document">The document the entries came from.</param>
-    /// <param name="edits">The edits, in any order.</param>
+    /// <param name="edits">The edits, in any order. A directive line, such as <c>global persist $x</c>, gains
+    /// <c> = value</c> after its last non-blank character.</param>
     /// <returns>New file bytes.</returns>
-    /// <exception cref="ArgumentException">An edit names a line that is not an entry, or two edits overlap.</exception>
+    /// <exception cref="ArgumentException">An edit names a line that is neither an entry nor a directive, or two
+    /// edits overlap.</exception>
     /// <exception cref="IniWriteException">A new value cannot be encoded the way the file is.</exception>
     public static byte[] Apply(IniDocument document, IReadOnlyList<IniEdit> edits)
     {
@@ -63,6 +65,12 @@ public static class IniEditor
 
         foreach (var edit in edits)
         {
+            if (edit.Entry.Kind == IniLineKind.Directive)
+            {
+                ordered.Add((EndOfText(document, edit.Entry), Encode(encoder, " = " + edit.Value, document, edit.Entry)));
+                continue;
+            }
+
             if (edit.Entry.Kind != IniLineKind.Entry)
             {
                 throw new ArgumentException(
@@ -106,6 +114,19 @@ public static class IniEditor
         return result;
     }
 
+    private static ByteSpan EndOfText(IniDocument document, IniLine line)
+    {
+        var bytes = document.Bytes;
+        var end = line.Span.End;
+
+        while (end > line.Span.Start && bytes[end - 1] is (byte)' ' or (byte)'\t')
+        {
+            end--;
+        }
+
+        return new ByteSpan(end, 0);
+    }
+
     private static byte[] Encode(Encoding encoder, string value, IniDocument document, IniLine entry)
     {
         try
@@ -126,6 +147,6 @@ public static class IniEditor
 }
 
 /// <summary>One value replacement for <see cref="IniEditor.Apply"/>.</summary>
-/// <param name="Entry">The entry line whose value changes.</param>
+/// <param name="Entry">The entry line whose value changes, or a directive line that gains one.</param>
 /// <param name="Value">The new value text.</param>
 public readonly record struct IniEdit(IniLine Entry, string Value);
