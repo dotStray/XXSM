@@ -15,5 +15,9 @@ internal static class PagePaste
         !e.Handled
         && e.Key == Key.V
         && e.KeyModifiers.HasFlag(KeyModifiers.Control)
-        && TopLevel.GetTopLevel(page)?.FocusManager?.GetFocusedElement() is not (TextBox or AutoCompleteBox);
+        && !IsTyping(page);
+
+    /// <summary>Whether a text box has the focus, so a key is the user's typing and not a page's shortcut.</summary>
+    public static bool IsTyping(Visual page) =>
+        TopLevel.GetTopLevel(page)?.FocusManager?.GetFocusedElement() is TextBox or AutoCompleteBox;
 }

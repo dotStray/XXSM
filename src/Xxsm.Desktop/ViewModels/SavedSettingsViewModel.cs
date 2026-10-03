@@ -60,8 +60,9 @@ public sealed partial class SavedSettingsViewModel(ISavedSettingsService setting
     /// <summary>Reads a mod's settings, or clears the section. Read again for the same mod, the defaults waiting to be saved
     /// are kept while their lines are unchanged; otherwise they are dropped.</summary>
     /// <param name="modFolder">The mod, or <c>null</c> for none.</param>
+    /// <param name="sameMod">True when this is the mod already showing, perhaps renamed by switching it on or off.</param>
     /// <param name="cancellationToken">Cancels the read.</param>
-    public async Task LoadAsync(string? modFolder, CancellationToken cancellationToken)
+    public async Task LoadAsync(string? modFolder, bool sameMod, CancellationToken cancellationToken)
     {
         // Selecting quickly starts several reads; only the last one's answer is shown.
         var version = ++_version;
@@ -72,7 +73,7 @@ public sealed partial class SavedSettingsViewModel(ISavedSettingsService setting
             return;
         }
 
-        var waiting = string.Equals(ModFolder, modFolder, StringComparison.Ordinal) ? Changes.ToList() : [];
+        var waiting = sameMod ? Changes.ToList() : [];
 
         ModFolder = modFolder;
         Show(read);
@@ -130,7 +131,7 @@ public sealed partial class SavedSettingsViewModel(ISavedSettingsService setting
 
         await _settings.WriteAsync(folder, edits, cancellationToken).ConfigureAwait(true);
         Changes.Clear();
-        await LoadAsync(folder, cancellationToken).ConfigureAwait(true);
+        await LoadAsync(folder, sameMod: true, cancellationToken).ConfigureAwait(true);
     }
 
     /// <summary>Drops the listed defaults; the mod's file is left as it is.</summary>

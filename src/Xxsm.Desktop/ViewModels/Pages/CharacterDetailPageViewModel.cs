@@ -88,7 +88,8 @@ public sealed partial class CharacterDetailPageViewModel : PageViewModel, IRefre
     private List<IBitmapLease> _skinPortraits = [];
     private string? _reselectPath;
 
-    /// <summary>The mod whose values the edit boxes hold; a rescan that selects it again keeps what was typed.</summary>
+    /// <summary>The mod whose values the edit boxes hold, by its selection key, which switching it on or off does not
+    /// change; a rescan that selects it again keeps what was typed.</summary>
     private string? _editing;
     private bool _restoringSelection;
     private int _totalModCount;
@@ -1839,8 +1840,8 @@ public sealed partial class CharacterDetailPageViewModel : PageViewModel, IRefre
         RaiseProfilesChanged();
 
         // Exact comparison on purpose: two mods can differ only by case on ext4.
-        var same = SelectedRow?.Path is { } path && string.Equals(path, _editing, StringComparison.Ordinal);
-        _editing = SelectedRow?.Path;
+        var same = SelectedRow?.SelectionKey is { } key && string.Equals(key, _editing, StringComparison.Ordinal);
+        _editing = SelectedRow?.SelectionKey;
 
         if (!same || !IsEditDirty)
         {
@@ -1851,8 +1852,8 @@ public sealed partial class CharacterDetailPageViewModel : PageViewModel, IRefre
         SaveEditsCommand.NotifyCanExecuteChanged();
 
         UpdatePreviewImage();
-        Track(KeySwaps.LoadAsync(SelectedRow?.Path, ActivationToken));
-        Track(SavedSettings.LoadAsync(SelectedRow?.Path, ActivationToken));
+        Track(KeySwaps.LoadAsync(SelectedRow?.Path, same, ActivationToken));
+        Track(SavedSettings.LoadAsync(SelectedRow?.Path, same, ActivationToken));
     }
 
     /// <summary>Brings <see cref="PreviewImage"/> in line with the selection, keyed on path, not row.</summary>

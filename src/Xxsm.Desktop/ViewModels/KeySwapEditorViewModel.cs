@@ -126,8 +126,10 @@ public sealed partial class KeySwapEditorViewModel(IKeySwapService keys, ITextCa
 
     /// <summary>Reads a mod's bindings, or clears the section.</summary>
     /// <param name="modFolder">The mod, or <c>null</c> for none.</param>
+    /// <param name="sameMod">True when this is the mod already showing, perhaps renamed by switching it on or off: what
+    /// was typed is kept on every line the file still has as it was.</param>
     /// <param name="cancellationToken">Cancels the read.</param>
-    public async Task LoadAsync(string? modFolder, CancellationToken cancellationToken)
+    public async Task LoadAsync(string? modFolder, bool sameMod, CancellationToken cancellationToken)
     {
         // Selecting quickly starts several reads; only the last one's answer is shown.
         var version = ++_version;
@@ -151,10 +153,9 @@ public sealed partial class KeySwapEditorViewModel(IKeySwapService keys, ITextCa
         }
 
         // Another mod starts folded again; the same one read again keeps what was typed into lines that did not change.
-        var same = string.Equals(ModFolder, modFolder, StringComparison.Ordinal);
-        var typed = same ? Edits() : [];
+        var typed = sameMod ? Edits() : [];
 
-        if (!same)
+        if (!sameMod)
         {
             ShowAll = false;
         }
@@ -191,7 +192,7 @@ public sealed partial class KeySwapEditorViewModel(IKeySwapService keys, ITextCa
         }
 
         await _keys.WriteAsync(folder, Edits(), cancellationToken).ConfigureAwait(true);
-        await LoadAsync(folder, cancellationToken).ConfigureAwait(true);
+        await LoadAsync(folder, sameMod: true, cancellationToken).ConfigureAwait(true);
     }
 
     /// <summary>Puts every box back to what its file says.</summary>

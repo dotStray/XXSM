@@ -63,6 +63,7 @@ public partial class CharacterDetailPage : UserControl
         AddHandler(DragDrop.DragLeaveEvent, OnDragLeave);
         AddHandler(DragDrop.DropEvent, OnDrop);
         AddHandler(PointerPressedEvent, OnPointerPressed, RoutingStrategies.Tunnel);
+        AddHandler(KeyDownEvent, OnShortcutKeyDown);
 
         AddHandler(ContextRequestedEvent, (_, e) => Model?.PrepareRowMenu(RowOf(e.Source)), RoutingStrategies.Tunnel);
 
@@ -404,6 +405,29 @@ public partial class CharacterDetailPage : UserControl
         TopLevel.GetTopLevel(this)?.RemoveHandler(KeyDownEvent, OnKeyDown);
 
         base.OnDetachedFromVisualTree(e);
+    }
+
+    /// <summary>Space switches the selected mods on or off, Delete deletes them, Escape goes back; never while typing.</summary>
+    private void OnShortcutKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Handled || e.KeyModifiers != KeyModifiers.None || Model is not { } model || PagePaste.IsTyping(this))
+        {
+            return;
+        }
+
+        System.Windows.Input.ICommand? command = e.Key switch
+        {
+            Key.Space => model.ToggleSelectedCommand,
+            Key.Delete => model.DeleteSelectedCommand,
+            Key.Escape => model.BackCommand,
+            _ => null,
+        };
+
+        if (command?.CanExecute(null) == true)
+        {
+            command.Execute(null);
+            e.Handled = true;
+        }
     }
 
     /// <summary>Ctrl+V with no text box focused: a GameBanana address on the clipboard starts an install.</summary>

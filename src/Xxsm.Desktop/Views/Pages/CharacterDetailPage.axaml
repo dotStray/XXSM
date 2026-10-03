@@ -14,13 +14,6 @@
     <x:Double x:Key="ButtonMinWidth">120</x:Double>
   </UserControl.Resources>
 
-  <UserControl.KeyBindings>
-    <!-- Space switches the selected mods on or off; Delete and Escape need no mouse either. -->
-    <KeyBinding Gesture="Space" Command="{Binding ToggleSelectedCommand}" />
-    <KeyBinding Gesture="Delete" Command="{Binding DeleteSelectedCommand}" />
-    <KeyBinding Gesture="Escape" Command="{Binding BackCommand}" />
-  </UserControl.KeyBindings>
-
   <!-- The page, and the panels that cover it: siblings, so a tall panel centres over the whole window. -->
   <!-- The whole page takes a drop. The transparent background makes its empty stretches hit-testable. -->
   <Panel Background="Transparent" DragDrop.AllowDrop="True">
