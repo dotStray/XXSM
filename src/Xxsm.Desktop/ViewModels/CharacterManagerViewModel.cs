@@ -10,6 +10,7 @@ using Xxsm.Packs.Hashes;
 using Xxsm.Packs.Merge;
 using Xxsm.Packs.Pictures;
 using Xxsm.Packs.Portraits;
+using Xxsm.Packs.Sorting;
 
 namespace Xxsm.Desktop.ViewModels;
 
@@ -49,7 +50,8 @@ public sealed partial class CharacterManagerViewModel(
     ITextCatalogue text,
     ILogger logger,
     Func<CancellationToken, Task> rescan,
-    Func<CancellationToken, Task> reload) : ViewModelBase
+    Func<CancellationToken, Task> reload,
+    IModThumbnailCache thumbnails) : ViewModelBase
 {
     private readonly GameContext _game = game;
     private readonly ICharacterEditor _characters = characters;
@@ -80,8 +82,32 @@ public sealed partial class CharacterManagerViewModel(
     /// <summary>Whether the editor panel is open.</summary>
     public bool IsEditorOpen => Editor is not null;
 
-    /// <summary>Whether the editor panel is on screen; the delete question replaces it rather than stacking.</summary>
-    public bool IsEditorShowing => IsEditorOpen && !IsDeleting;
+    /// <summary>Whether the editor panel is on screen; the delete question and the mod picker replace it rather than
+    /// stacking.</summary>
+    public bool IsEditorShowing => IsEditorOpen && !IsDeleting && !IsPicking;
+
+    /// <summary>The mods <em>Learn from a mod…</em> chooses from, in the editor's place.</summary>
+    public ModPickerViewModel Picker => _modPicker ??= CreatePicker();
+
+    private ModPickerViewModel? _modPicker;
+
+    /// <summary>Whether the mod picker is showing.</summary>
+    public bool IsPicking => _modPicker?.IsOpen == true;
+
+    private ModPickerViewModel CreatePicker()
+    {
+        var created = new ModPickerViewModel(Text, thumbnails);
+        created.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(ModPickerViewModel.IsOpen))
+            {
+                OnPropertyChanged(nameof(IsPicking));
+                OnPropertyChanged(nameof(IsEditorShowing));
+            }
+        };
+
+        return created;
+    }
 
     /// <summary>What the delete panel is asking about, or null when it is closed.</summary>
     [ObservableProperty]
@@ -424,7 +450,7 @@ public sealed partial class CharacterManagerViewModel(
         return true;
     }
 
-    /// <summary>Reads every hash out of a mod folder into the editor's list.</summary>
+    /// <summary>Shows every mod in the Mods folder to learn hashes from, the edited character's own first.</summary>
     [RelayCommand]
     private Task LearnFromModAsync()
     {
@@ -433,7 +459,32 @@ public sealed partial class CharacterManagerViewModel(
             return Task.CompletedTask;
         }
 
-        return _runner.RunAsync(
+        var own = editor.Existing?.ModFilesName;
+
+        List<(InstalledMod Mod, string? Character)> candidates =
+        [
+            .. (_game.Inventory?.AllMods ?? [])
+                .Select(mod => (Mod: mod, Character: UnsortedMods.CharacterFor(mod.VariantFolderName, data)?.DisplayName))
+                .OrderBy(pair => own is not null && PathComparer.AreNamesEqual(pair.Mod.VariantFolderName, own) ? 0 : 1)
+                .ThenBy(pair => pair.Character ?? pair.Mod.VariantFolderName ?? string.Empty, StringComparer.CurrentCultureIgnoreCase)
+                .ThenBy(pair => pair.Mod.DisplayName, StringComparer.CurrentCultureIgnoreCase),
+        ];
+
+        return Picker.OpenAsync(new ModPickerRequest(
+            Text.Format(nameof(Strings.CharacterEditor_Learn_Heading), editor.Name.Trim().Length > 0 ? editor.Name.Trim() : Text[nameof(Strings.CharacterEditor_Learn_ThisCharacter)]),
+            Text[nameof(Strings.CharacterEditor_Learn_Body)],
+            Text[nameof(Strings.CharacterEditor_Learn_NoMods)],
+            SingleChoice: true,
+            _ => Text[nameof(Strings.CharacterEditor_Learn_Confirm)],
+            candidates,
+            picked => LearnFromAsync(editor, data, picked[0].Path),
+            Text[nameof(Strings.CharacterEditor_Learn_Outside)],
+            () => LearnFromOutsideAsync(editor, data)));
+    }
+
+    /// <summary>Asks for a mod folder anywhere, and learns from it.</summary>
+    private Task<bool> LearnFromOutsideAsync(CharacterEditorViewModel editor, GameData data) =>
+        _runner.RunAsync(
             Heading,
             async ct =>
             {
@@ -441,32 +492,38 @@ public sealed partial class CharacterManagerViewModel(
                     .PickFolderAsync(Text[nameof(Strings.CharacterEditor_Learn_PickerTitle)], cancellationToken: ct)
                     .ConfigureAwait(true);
 
-                if (folder is not { Length: > 0 })
+                if (folder is { Length: > 0 })
                 {
-                    return;
-                }
-
-                var learned = await _learner.LearnAsync(folder, data, default, null, ct).ConfigureAwait(true);
-
-                if (!learned.HasHashes)
-                {
-                    editor.HashPasteSummary = Text[nameof(Strings.CharacterEditor_Learn_Nothing)];
-                    return;
-                }
-
-                var added = editor.Add([.. learned.Hashes.Select(hash => hash.Entry)]);
-
-                editor.HashPasteSummary = Text.Format(
-                    nameof(Strings.CharacterEditor_Learn_Found),
-                    Text.Hashes(added),
-                    Path.GetFileName(PathComparer.Normalize(folder).TrimEnd('/')));
-
-                if (editor.IsNew && editor.Name.Trim().Length == 0)
-                {
-                    editor.Name = learned.SuggestedName;
+                    await LearnAsync(editor, data, folder, ct).ConfigureAwait(true);
                 }
             },
             CancellationToken.None);
+
+    /// <summary>Reads every hash out of a mod folder into the editor's list.</summary>
+    private Task<bool> LearnFromAsync(CharacterEditorViewModel editor, GameData data, string folder) =>
+        _runner.RunAsync(Heading, ct => LearnAsync(editor, data, folder, ct), CancellationToken.None);
+
+    private async Task LearnAsync(CharacterEditorViewModel editor, GameData data, string folder, CancellationToken cancellationToken)
+    {
+        var learned = await _learner.LearnAsync(folder, data, default, null, cancellationToken).ConfigureAwait(true);
+
+        if (!learned.HasHashes)
+        {
+            editor.HashPasteSummary = Text[nameof(Strings.CharacterEditor_Learn_Nothing)];
+            return;
+        }
+
+        var added = editor.Add([.. learned.Hashes.Select(hash => hash.Entry)]);
+
+        editor.HashPasteSummary = Text.Format(
+            nameof(Strings.CharacterEditor_Learn_Found),
+            Text.Hashes(added),
+            Path.GetFileName(PathComparer.Normalize(folder).TrimEnd('/')));
+
+        if (editor.IsNew && editor.Name.Trim().Length == 0)
+        {
+            editor.Name = learned.SuggestedName;
+        }
     }
 
     /// <summary>Asks where a custom character's mods should go before deleting it.</summary>
@@ -659,6 +716,8 @@ public sealed partial class CharacterManagerViewModel(
 
     partial void OnEditorChanged(CharacterEditorViewModel? value)
     {
+        _modPicker?.Cancel();
+
         OnPropertyChanged(nameof(IsEditorOpen));
         OnPropertyChanged(nameof(IsEditorShowing));
         OnPropertyChanged(nameof(IsOpen));

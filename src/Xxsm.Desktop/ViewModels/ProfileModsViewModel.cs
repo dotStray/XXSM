@@ -36,10 +36,8 @@ public sealed partial class ProfileModsViewModel : ObservableObject, IDisposable
     private readonly IModThumbnailCache _thumbnails;
     private readonly IProfileModsActions _actions;
     private readonly List<ModTileViewModel> _all = [];
-    private readonly List<ModTileViewModel> _candidates = [];
     private ProfileMember? _replacing;
     private CancellationTokenSource _pictures = new();
-    private CancellationTokenSource _pickPictures = new();
 
     internal ProfileModsViewModel(ITextCatalogue text, IModThumbnailCache thumbnails, IProfileModsActions actions)
     {
@@ -50,7 +48,26 @@ public sealed partial class ProfileModsViewModel : ObservableObject, IDisposable
         _text = text;
         _thumbnails = thumbnails;
         _actions = actions;
+
+        Picker = new ModPickerViewModel(text, thumbnails);
+        Picker.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(ModPickerViewModel.IsOpen))
+            {
+                if (!Picker.IsOpen)
+                {
+                    _replacing = null;
+                }
+
+                OnPropertyChanged(nameof(IsPicking));
+                OnPropertyChanged(nameof(IsShowingProfile));
+                OnPropertyChanged(nameof(IsReplacing));
+            }
+        };
     }
+
+    /// <summary>The picker <em>Add mods…</em> and <em>Find replacement…</em> open, in the same place as the profile.</summary>
+    public ModPickerViewModel Picker { get; }
 
     /// <summary>Whether the panel is showing.</summary>
     [ObservableProperty]
@@ -87,9 +104,7 @@ public sealed partial class ProfileModsViewModel : ObservableObject, IDisposable
     // Choosing mods: Add mods… and Find replacement…
 
     /// <summary>Whether the panel is showing the picker instead of the profile's mods.</summary>
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsShowingProfile))]
-    private bool _isPicking;
+    public bool IsPicking => Picker.IsOpen;
 
     /// <summary>Whether the panel is showing the profile's mods.</summary>
     public bool IsShowingProfile => !IsPicking;
@@ -97,48 +112,13 @@ public sealed partial class ProfileModsViewModel : ObservableObject, IDisposable
     /// <summary>Whether the picker is choosing one mod for a missing one, rather than mods to add.</summary>
     public bool IsReplacing => _replacing is not null;
 
-    /// <summary>The picker's heading: <em>Add mods to Abyss team</em>, or <em>Replace Old Outfit</em>.</summary>
-    public string PickHeading => _replacing is { } member
-        ? _text.Format(nameof(Strings.ProfileMods_Replace_Heading), member.Entry.Name ?? PathDisplay.Show(member.Entry.Path))
-        : _text.Format(nameof(Strings.ProfileMods_Add_Heading), Heading);
-
-    /// <summary>What the picker is for, in a sentence.</summary>
-    public string PickBody => _text[IsReplacing ? nameof(Strings.ProfileMods_Replace_Body) : nameof(Strings.ProfileMods_Add_Body)];
-
-    /// <summary>What the picker's search box holds.</summary>
-    [ObservableProperty]
-    private string _pickSearchText = string.Empty;
-
-    /// <summary>Every mod the profile does not have, after the search.</summary>
-    public ObservableCollection<ModTileViewModel> PickTiles { get; } = [];
-
-    /// <summary>Whether there is nothing the profile does not have already.</summary>
-    public bool HasNoCandidates => _candidates.Count == 0;
-
-    /// <summary>Whether the picker's search matched nothing.</summary>
-    public bool HasNoPickMatches => _candidates.Count > 0 && PickTiles.Count == 0;
-
-    /// <summary>The picker's button: <em>Add 3 mods</em>, or <em>Use this mod</em>.</summary>
-    public string ConfirmPickText
-    {
-        get
-        {
-            var picked = _candidates.Count(tile => tile.IsPicked);
-            return IsReplacing
-                ? _text[nameof(Strings.ProfileMods_Replace_Confirm)]
-                : picked == 0
-                    ? _text[nameof(Strings.ProfileMods_Add_None)]
-                    : _text.Format(nameof(Strings.ProfileMods_Add_Confirm), _text.Mods(picked));
-        }
-    }
-
     /// <summary>Shows a profile, or shows it again after a change, keeping the search.</summary>
     /// <param name="contents">The profile and its mods.</param>
     public Task Show(ProfileContents contents)
     {
         ArgumentNullException.ThrowIfNull(contents);
 
-        Release(_all, ref _pictures);
+        ModTiles.Release(_all, ref _pictures);
         Profile = contents.Profile;
         _all.Clear();
 
@@ -156,16 +136,16 @@ public sealed partial class ProfileModsViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(IsEmpty));
         AddModsCommand.NotifyCanExecuteChanged();
 
-        return LoadPicturesAsync(_all, _pictures.Token);
+        return ModTiles.LoadPicturesAsync(_thumbnails, _all, _pictures.Token);
     }
 
     /// <summary>Closes the panel and lets go of every picture.</summary>
     [RelayCommand]
     public void Close()
     {
-        CancelPick();
+        Picker.Cancel();
         IsOpen = false;
-        Release(_all, ref _pictures);
+        ModTiles.Release(_all, ref _pictures);
         _all.Clear();
         Tiles.Clear();
         Profile = null;
@@ -181,172 +161,61 @@ public sealed partial class ProfileModsViewModel : ObservableObject, IDisposable
 
     private Task StartPicking(ProfileMember? replacing)
     {
-        _replacing = replacing;
-        Release(_candidates, ref _pickPictures);
-        _candidates.Clear();
-
         var already = _all.Where(tile => tile.Mod is not null).Select(tile => tile.Mod!.Path).ToHashSet(StringComparer.Ordinal);
 
-        foreach (var (mod, character) in _actions.AllMods()
-                     .Where(mod => !already.Contains(mod.Path))
-                     .Select(mod => (Mod: mod, Character: _actions.CharacterOf(mod.VariantFolderName)))
-                     .OrderBy(pair => pair.Character ?? pair.Mod.VariantFolderName ?? string.Empty, StringComparer.CurrentCultureIgnoreCase)
-                     .ThenBy(pair => pair.Mod.DisplayName, StringComparer.CurrentCultureIgnoreCase))
-        {
-            _candidates.Add(ModTileViewModel.ForCandidate(mod, character, _text, this));
-        }
+        List<(InstalledMod Mod, string? Character)> candidates =
+        [
+            .. _actions.AllMods()
+                .Where(mod => !already.Contains(mod.Path))
+                .Select(mod => (Mod: mod, Character: _actions.CharacterOf(mod.VariantFolderName)))
+                .OrderBy(pair => pair.Character ?? pair.Mod.VariantFolderName ?? string.Empty, StringComparer.CurrentCultureIgnoreCase)
+                .ThenBy(pair => pair.Mod.DisplayName, StringComparer.CurrentCultureIgnoreCase),
+        ];
 
-        PickSearchText = string.Empty;
-        FilterPick();
-        IsPicking = true;
+        var request = replacing is { } member
+            ? new ModPickerRequest(
+                _text.Format(nameof(Strings.ProfileMods_Replace_Heading), member.Entry.Name ?? PathDisplay.Show(member.Entry.Path)),
+                _text[nameof(Strings.ProfileMods_Replace_Body)],
+                _text[nameof(Strings.ProfileMods_NoCandidates)],
+                SingleChoice: true,
+                _ => _text[nameof(Strings.ProfileMods_Replace_Confirm)],
+                candidates,
+                picked => _actions.ReplaceAsync(member, picked[0].Path))
+            : new ModPickerRequest(
+                _text.Format(nameof(Strings.ProfileMods_Add_Heading), Heading),
+                _text[nameof(Strings.ProfileMods_Add_Body)],
+                _text[nameof(Strings.ProfileMods_NoCandidates)],
+                SingleChoice: false,
+                picked => picked == 0
+                    ? _text[nameof(Strings.ProfileMods_Add_None)]
+                    : _text.Format(nameof(Strings.ProfileMods_Add_Confirm), _text.Mods(picked)),
+                candidates,
+                picked => _actions.AddAsync([.. picked.Select(mod => mod.Path)]));
+
+        var opening = Picker.OpenAsync(request);
+        _replacing = replacing;
         OnPropertyChanged(nameof(IsReplacing));
-        OnPropertyChanged(nameof(PickHeading));
-        OnPropertyChanged(nameof(PickBody));
-        OnPropertyChanged(nameof(HasNoCandidates));
-        RefreshPicked();
-
-        return LoadPicturesAsync(_candidates, _pickPictures.Token);
-    }
-
-    /// <summary>Goes back to the profile's mods without changing anything.</summary>
-    [RelayCommand]
-    private void CancelPick()
-    {
-        IsPicking = false;
-        _replacing = null;
-        Release(_candidates, ref _pickPictures);
-        _candidates.Clear();
-        PickTiles.Clear();
-        OnPropertyChanged(nameof(IsReplacing));
-    }
-
-    /// <summary>Adds the chosen mods, or puts the chosen one in the missing one's place.</summary>
-    [RelayCommand(CanExecute = nameof(CanConfirmPick))]
-    private async Task ConfirmPickAsync()
-    {
-        var picked = _candidates.Where(tile => tile.IsPicked).Select(tile => tile.Mod!.Path).ToList();
-        var replacing = _replacing;
-        CancelPick();
-
-        if (replacing is not null)
-        {
-            await _actions.ReplaceAsync(replacing, picked[0]).ConfigureAwait(true);
-        }
-        else
-        {
-            await _actions.AddAsync(picked).ConfigureAwait(true);
-        }
-    }
-
-    private bool CanConfirmPick() => _candidates.Any(tile => tile.IsPicked);
-
-    /// <summary>A tile in the picker was pressed: picked, or not; one at a time when replacing.</summary>
-    internal void TogglePick(ModTileViewModel tile)
-    {
-        if (IsReplacing)
-        {
-            foreach (var other in _candidates.Where(other => !ReferenceEquals(other, tile)))
-            {
-                other.IsPicked = false;
-            }
-        }
-
-        tile.IsPicked = !tile.IsPicked;
-        RefreshPicked();
+        return opening;
     }
 
     internal Task RemoveAsync(ModTileViewModel tile) => _actions.RemoveAsync(tile.Member!);
 
     internal void GoTo(ModTileViewModel tile) => _actions.GoTo(tile.Mod!.Path);
 
-    private void RefreshPicked()
-    {
-        OnPropertyChanged(nameof(ConfirmPickText));
-        ConfirmPickCommand.NotifyCanExecuteChanged();
-    }
-
     partial void OnSearchTextChanged(string value) => Filter();
-
-    partial void OnPickSearchTextChanged(string value) => FilterPick();
 
     private void Filter()
     {
-        Refill(Tiles, _all, SearchText);
+        ModTiles.Refill(Tiles, _all, SearchText);
         OnPropertyChanged(nameof(HasNoMatches));
-    }
-
-    private void FilterPick()
-    {
-        Refill(PickTiles, _candidates, PickSearchText);
-        OnPropertyChanged(nameof(HasNoPickMatches));
-    }
-
-    private static void Refill(ObservableCollection<ModTileViewModel> shown, List<ModTileViewModel> all, string search)
-    {
-        var words = search.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        shown.Clear();
-
-        foreach (var tile in all.Where(tile => words.All(tile.Matches)))
-        {
-            shown.Add(tile);
-        }
-    }
-
-    /// <summary>Decodes each tile's picture, one at a time.</summary>
-    private async Task LoadPicturesAsync(List<ModTileViewModel> tiles, CancellationToken cancellationToken)
-    {
-        foreach (var tile in tiles.ToList())
-        {
-            if (cancellationToken.IsCancellationRequested)
-            {
-                return;
-            }
-
-            if (tile.Mod is not { } mod)
-            {
-                continue;
-            }
-
-            IBitmapLease? lease;
-
-            try
-            {
-                lease = await _thumbnails.AcquireAsync(mod, cancellationToken).ConfigureAwait(true);
-            }
-            catch (OperationCanceledException)
-            {
-                return;
-            }
-
-            if (cancellationToken.IsCancellationRequested)
-            {
-                lease?.Dispose();
-                return;
-            }
-
-            tile.TakePicture(lease);
-        }
-    }
-
-    private static void Release(List<ModTileViewModel> tiles, ref CancellationTokenSource loading)
-    {
-        loading.Cancel();
-        loading.Dispose();
-        loading = new CancellationTokenSource();
-
-        foreach (var tile in tiles)
-        {
-            tile.TakePicture(null);
-        }
     }
 
     /// <summary>Lets go of the pictures for good.</summary>
     public void Dispose()
     {
-        Release(_all, ref _pictures);
-        Release(_candidates, ref _pickPictures);
+        ModTiles.Release(_all, ref _pictures);
         _pictures.Dispose();
-        _pickPictures.Dispose();
+        Picker.Dispose();
     }
 }
 
@@ -389,10 +258,10 @@ public sealed partial class ModTileViewModel : ObservableObject
         return tile;
     }
 
-    internal static ModTileViewModel ForCandidate(InstalledMod mod, string? character, ITextCatalogue text, ProfileModsViewModel panel)
+    internal static ModTileViewModel ForCandidate(InstalledMod mod, string? character, ITextCatalogue text, ModPickerViewModel picker)
     {
         var tile = new ModTileViewModel(mod, member: null, mod.DisplayName, OnOrOff(text, mod, character), canEdit: true, addedText: null);
-        tile.OpenCommand = new RelayCommand(() => panel.TogglePick(tile));
+        tile.OpenCommand = new RelayCommand(() => picker.TogglePick(tile));
         return tile;
     }
 
@@ -474,5 +343,71 @@ public sealed partial class ModTileViewModel : ObservableObject
         _lease?.Dispose();
         _lease = lease;
         Picture = lease?.Bitmap;
+    }
+}
+
+/// <summary>What a list of mod tiles needs, wherever it is drawn: the search, and the pictures.</summary>
+internal static class ModTiles
+{
+    /// <summary>Fills <paramref name="shown"/> with the tiles whose name or line holds every word of the search.</summary>
+    public static void Refill(ObservableCollection<ModTileViewModel> shown, List<ModTileViewModel> all, string search)
+    {
+        var words = search.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        shown.Clear();
+
+        foreach (var tile in all.Where(tile => words.All(tile.Matches)))
+        {
+            shown.Add(tile);
+        }
+    }
+
+    /// <summary>Decodes each tile's picture, one at a time.</summary>
+    public static async Task LoadPicturesAsync(
+        IModThumbnailCache thumbnails, List<ModTileViewModel> tiles, CancellationToken cancellationToken)
+    {
+        foreach (var tile in tiles.ToList())
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+
+            if (tile.Mod is not { } mod)
+            {
+                continue;
+            }
+
+            IBitmapLease? lease;
+
+            try
+            {
+                lease = await thumbnails.AcquireAsync(mod, cancellationToken).ConfigureAwait(true);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+
+            if (cancellationToken.IsCancellationRequested)
+            {
+                lease?.Dispose();
+                return;
+            }
+
+            tile.TakePicture(lease);
+        }
+    }
+
+    /// <summary>Stops the pictures loading and lets go of every one held.</summary>
+    public static void Release(List<ModTileViewModel> tiles, ref CancellationTokenSource loading)
+    {
+        loading.Cancel();
+        loading.Dispose();
+        loading = new CancellationTokenSource();
+
+        foreach (var tile in tiles)
+        {
+            tile.TakePicture(null);
+        }
     }
 }

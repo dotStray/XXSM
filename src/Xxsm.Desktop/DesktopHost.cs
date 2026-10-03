@@ -238,7 +238,8 @@ public static class DesktopHost
             provider.GetRequiredService<ITextCatalogue>(),
             provider.GetRequiredService<ILogger>(),
             ct => provider.GetRequiredService<MainWindowViewModel>().RescanModsAsync(ct),
-            ct => provider.GetRequiredService<MainWindowViewModel>().ReloadGameAsync(ct)));
+            ct => provider.GetRequiredService<MainWindowViewModel>().ReloadGameAsync(ct),
+            provider.GetRequiredService<IModThumbnailCache>()));
 
         // Pages take a delegate for the shell, not the shell itself, which would be a cycle.
         services.AddSingleton(provider => new CharactersPageViewModel(

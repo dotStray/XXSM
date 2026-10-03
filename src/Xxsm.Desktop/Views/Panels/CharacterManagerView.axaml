@@ -7,8 +7,16 @@
              x:Name="Root"
              x:DataType="vm:CharacterManagerViewModel">
 
-  <!-- The Character Manager, over the page you are on; the editor and the delete question replace each other. -->
+  <!-- The Character Manager, over the page you are on; the editor, the delete question and the mod picker replace each
+       other. -->
   <Panel>
+
+      <!-- Learn from a mod…: every mod as a tile, in the editor's place. -->
+      <Border Classes="card" Margin="24" MaxWidth="1180"
+              HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+              IsVisible="{Binding IsPicking}">
+        <panels:ModPickerView DataContext="{Binding Picker}" />
+      </Border>
 
       <!-- The Character Manager, over the grid rather than in a dialog. -->
       <Border Classes="card" MaxWidth="560" MaxHeight="720"

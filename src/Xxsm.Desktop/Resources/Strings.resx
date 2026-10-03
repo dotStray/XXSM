@@ -1316,6 +1316,30 @@
     <value>Learn from a mod…</value>
     <comment>Button that reads every hash out of a mod folder.</comment>
   </data>
+  <data name="CharacterEditor_Learn_Heading" xml:space="preserve">
+    <value>Learn {0}'s hashes from a mod</value>
+    <comment>Heading of the mod picker Learn from a mod opens. {0} is the character's name.</comment>
+  </data>
+  <data name="CharacterEditor_Learn_ThisCharacter" xml:space="preserve">
+    <value>this character</value>
+    <comment>Stands in for the name in the Learn heading while a new character has none yet.</comment>
+  </data>
+  <data name="CharacterEditor_Learn_Body" xml:space="preserve">
+    <value>Pick a mod made for this character: XXSM reads its hashes into the list, and the mod itself is not changed. This character's own mods come first.</value>
+    <comment>Under the Learn picker's heading.</comment>
+  </data>
+  <data name="CharacterEditor_Learn_NoMods" xml:space="preserve">
+    <value>There are no mods in the Mods folder to learn from. Choose one from outside the app instead.</value>
+    <comment>The Learn picker with no mods to show.</comment>
+  </data>
+  <data name="CharacterEditor_Learn_Confirm" xml:space="preserve">
+    <value>Learn from this mod</value>
+    <comment>The Learn picker's confirm button.</comment>
+  </data>
+  <data name="CharacterEditor_Learn_Outside" xml:space="preserve">
+    <value>From outside the app…</value>
+    <comment>Button at the bottom of the Learn picker: choose a mod folder anywhere with the file browser.</comment>
+  </data>
   <data name="CharacterEditor_Learn_PickerTitle" xml:space="preserve">
     <value>Choose a mod folder to read</value>
     <comment>Title of the learn-from-mod folder dialog.</comment>

@@ -1,0 +1,55 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Xxsm.Desktop.ViewModels"
+             xmlns:controls="clr-namespace:Xxsm.Desktop.Controls"
+             xmlns:panels="clr-namespace:Xxsm.Desktop.Views.Panels"
+             x:Class="Xxsm.Desktop.Views.Panels.ModPickerView"
+             x:DataType="vm:ModPickerViewModel">
+
+  <!-- Every mod as a tile, to choose from; the host draws the card around it. -->
+  <DockPanel>
+    <StackPanel DockPanel.Dock="Top" Spacing="8" Margin="0,0,0,12">
+      <TextBlock Classes="subheading" TextTrimming="CharacterEllipsis" Text="{Binding Heading}" />
+      <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{Binding Body}" />
+      <TextBox Text="{Binding SearchText}" IsVisible="{Binding !HasNoCandidates}"
+               PlaceholderText="{DynamicResource Text.ProfileMods_SearchAll}"
+               AutomationProperties.Name="{DynamicResource Text.ProfileMods_SearchAll}" />
+    </StackPanel>
+
+    <!-- Going elsewhere on the left; back and confirm on the right. -->
+    <Grid DockPanel.Dock="Bottom" ColumnDefinitions="Auto,*,Auto,Auto" Margin="0,12,0,0">
+      <Button Grid.Column="0"
+              IsVisible="{Binding HasOutside}"
+              Command="{Binding OutsideCommand}"
+              Content="{Binding OutsideText}" />
+      <Button Grid.Column="2"
+              Command="{Binding CancelCommand}"
+              Content="{DynamicResource Text.ProfileMods_Back}" />
+      <Button Grid.Column="3" Classes="accent" Margin="8,0,0,0"
+              Command="{Binding ConfirmCommand}"
+              Content="{Binding ConfirmText}" />
+    </Grid>
+
+    <Panel>
+      <TextBlock Classes="muted" TextWrapping="Wrap" IsVisible="{Binding HasNoCandidates}"
+                 Text="{Binding NothingText}" />
+      <TextBlock Classes="muted" TextWrapping="Wrap" IsVisible="{Binding HasNoMatches}"
+                 Text="{DynamicResource Text.ProfileMods_NoMatches}" />
+      <ScrollViewer>
+        <ItemsControl ItemsSource="{Binding Tiles}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:ModTileViewModel">
+              <panels:ModTileView />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <controls:FillingWrapPanel MinItemWidth="150" MaxItemWidth="150" ItemSpacing="12" RowSpacing="12" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+        </ItemsControl>
+      </ScrollViewer>
+    </Panel>
+  </DockPanel>
+
+</UserControl>
