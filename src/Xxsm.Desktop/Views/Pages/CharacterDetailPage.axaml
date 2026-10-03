@@ -456,6 +456,32 @@
 
            <!-- Save and Revert at the foot of the pane. Save is disabled until something has changed. -->
            <StackPanel DockPanel.Dock="Bottom" Margin="0,12,0,0" Spacing="6">
+             <!-- A menu's change, listed before Save writes it; Revert drops it. About eight lines, then it scrolls. -->
+             <Border Classes="inlineNotice" Padding="8" IsVisible="{Binding HasPendingIni}">
+               <StackPanel Spacing="6">
+                 <TextBlock FontSize="12" TextWrapping="Wrap" Text="{Binding PendingIniText}" />
+                 <ScrollViewer MaxHeight="150">
+                   <ItemsControl ItemsSource="{Binding PendingIniLines}" Margin="0,0,12,0">
+                     <ItemsControl.ItemTemplate>
+                       <DataTemplate x:DataType="pages:PendingIniLine">
+                         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,1">
+                           <TextBlock Grid.Column="0" Classes="mono" FontSize="12" TextTrimming="CharacterEllipsis"
+                                      Text="{Binding Name}" />
+                           <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                             <TextBlock Classes="mono muted" FontSize="12" Text="{Binding From}" />
+                             <TextBlock Classes="muted" FontSize="12" Text="→" />
+                             <TextBlock Classes="mono" FontSize="12" Text="{Binding To}" />
+                           </StackPanel>
+                         </Grid>
+                       </DataTemplate>
+                     </ItemsControl.ItemTemplate>
+                   </ItemsControl>
+                 </ScrollViewer>
+                 <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
+                            IsVisible="{Binding PendingIniNote, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                            Text="{Binding PendingIniNote}" />
+               </StackPanel>
+             </Border>
              <!-- Halves of the pane, so no minimum: at the narrowest pane two minimum-width buttons would overlap. -->
              <!-- Each with an arrow for its menu: what it does to the mod's INI straight away, undone from the notice. -->
              <Grid ColumnDefinitions="*,*" ColumnSpacing="6">

@@ -67,6 +67,7 @@ public sealed partial class KeySwapEditorViewModel(IKeySwapService keys, ITextCa
     private readonly IKeySwapService _keys = keys;
     private readonly ITextCatalogue _text = text;
     private int _version;
+    private readonly Lock _showGate = new();
 
     /// <summary>The mod whose bindings are showing, or <c>null</c>.</summary>
     public string? ModFolder { get; private set; }
@@ -132,7 +133,7 @@ public sealed partial class KeySwapEditorViewModel(IKeySwapService keys, ITextCa
     public async Task LoadAsync(string? modFolder, bool sameMod, CancellationToken cancellationToken)
     {
         // Selecting quickly starts several reads; only the last one's answer is shown.
-        var version = ++_version;
+        var version = Interlocked.Increment(ref _version);
         KeySwapReadResult? read = null;
 
         if (modFolder is { Length: > 0 })
@@ -147,30 +148,34 @@ public sealed partial class KeySwapEditorViewModel(IKeySwapService keys, ITextCa
             }
         }
 
-        if (version != _version)
+        // Two reads can finish at once off the window's thread; the newest is shown, the other dropped, never both.
+        lock (_showGate)
         {
-            return;
-        }
+            if (version != _version)
+            {
+                return;
+            }
 
-        // Another mod starts folded again; the same one read again keeps what was typed into lines that did not change.
-        var typed = sameMod ? Edits() : [];
+            // Another mod starts folded again; the same one read again keeps what was typed into lines that did not change.
+            var typed = sameMod ? Edits() : [];
 
-        if (!sameMod)
-        {
-            ShowAll = false;
-        }
+            if (!sameMod)
+            {
+                ShowAll = false;
+            }
 
-        ModFolder = modFolder;
-        Show(read);
+            ModFolder = modFolder;
+            Show(read);
 
-        foreach (var edit in typed)
-        {
-            var box = Sections
-                .Where(section => string.Equals(section.Section.File, edit.File, StringComparison.Ordinal))
-                .SelectMany(section => section.Fields)
-                .FirstOrDefault(field => field.Field.Line == edit.Line && string.Equals(field.Field.Value, edit.ExpectedValue, StringComparison.Ordinal));
+            foreach (var edit in typed)
+            {
+                var box = Sections
+                    .Where(section => string.Equals(section.Section.File, edit.File, StringComparison.Ordinal))
+                    .SelectMany(section => section.Fields)
+                    .FirstOrDefault(field => field.Field.Line == edit.Line && string.Equals(field.Field.Value, edit.ExpectedValue, StringComparison.Ordinal));
 
-            box?.Value = edit.Value;
+                box?.Value = edit.Value;
+            }
         }
     }
 

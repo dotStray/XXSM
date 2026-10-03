@@ -4974,6 +4974,30 @@
     <value>Restore the mod's whole INI</value>
     <comment>In Revert's menu, enabled once XXSM has changed the mod's INI: puts back the author's file exactly, keys and defaults together, with an Undo.</comment>
   </data>
+  <data name="CharacterDetail_IniPending_InGame" xml:space="preserve">
+    <value>Save makes your current toggles its defaults:</value>
+    <comment>Over the list in the detail pane after Save ▾ → Use current toggles as defaults; each line is "default now → the game's value". Revert drops it.</comment>
+  </data>
+  <data name="CharacterDetail_IniPending_Defaults" xml:space="preserve">
+    <value>Save puts back the mod's own defaults:</value>
+    <comment>Over the list after Revert ▾ → Restore the mod's own defaults; each line is "now → the author's".</comment>
+  </data>
+  <data name="CharacterDetail_IniPending_Keys" xml:space="preserve">
+    <value>Save puts back the mod's own keys:</value>
+    <comment>Over the list after Revert ▾ → Restore the mod's own keys; each line is "now → the author's".</comment>
+  </data>
+  <data name="CharacterDetail_IniPending_Ini" xml:space="preserve">
+    <value>Save puts back the mod's whole INI:</value>
+    <comment>Over the list after Revert ▾ → Restore the mod's whole INI; each line is "now → the author's".</comment>
+  </data>
+  <data name="CharacterDetail_IniPending_Other" xml:space="preserve">
+    <value>Other lines in {0} differ too, and are put back as well.</value>
+    <comment>Under the list for the whole INI, when lines other than keys and toggles differ. {0} lists INI files.</comment>
+  </data>
+  <data name="CharacterDetail_IniPending_Changed" xml:space="preserve">
+    <value>The mod's INI changed since this list was made, so nothing was written; this is the list now.</value>
+    <comment>Under the list when Save found the file changed since the list was made.</comment>
+  </data>
   <data name="CharacterDetail_Ini_InGame_Done" xml:space="preserve">
     <value>{0}: your current toggles are now its defaults.</value>
     <comment>Notice with an Undo. {0} is the mod.</comment>

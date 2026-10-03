@@ -414,6 +414,7 @@ public sealed partial class CharacterDetailPageViewModel : PageViewModel, IRefre
     public bool IsEditDirty =>
         SelectedRow is { } row &&
         (KeySwaps.IsDirty ||
+         HasPendingIni ||
          !string.Equals(EditName.Trim(), row.DisplayName, StringComparison.Ordinal) ||
          !string.Equals(EditFolderName.Trim(), row.BareFolderName, StringComparison.Ordinal) ||
          !string.Equals(EditModUrl.Trim(), row.ModUrl ?? string.Empty, StringComparison.Ordinal) ||
@@ -781,8 +782,13 @@ public sealed partial class CharacterDetailPageViewModel : PageViewModel, IRefre
             }
         }
 
-        // The keys first, while the folder is where they were read from.
+        // The keys and a menu's change first, while the folder is where they were read from.
         await KeySwaps.SaveAsync(cancellationToken).ConfigureAwait(true);
+
+        if (!await SavePendingIniAsync(row.Path, wantedName, cancellationToken).ConfigureAwait(true))
+        {
+            return;
+        }
 
         var path = row.Path;
 
@@ -846,6 +852,7 @@ public sealed partial class CharacterDetailPageViewModel : PageViewModel, IRefre
         EditDescription = SelectedRow?.Description ?? string.Empty;
         EditNotes = SelectedRow?.Notes ?? string.Empty;
         KeySwaps.Revert();
+        DropPendingIni();
     }
 
     /// <summary>The four details the pane edits beside the name and address, as stored.</summary>
