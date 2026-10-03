@@ -53,9 +53,6 @@ public sealed record MergedVariant
     /// <summary>This variant's hashes, after the overlay's additions, removals and mode.</summary>
     public required IReadOnlyList<PackHashEntry> Hashes { get; init; }
 
-    /// <summary>Whether the pack flagged this variant as awaiting hashes.</summary>
-    public required bool HashesPendingFlag { get; init; }
-
     /// <summary>When this variant was created, for a user-created one.</summary>
     public DateTimeOffset? CreatedAt { get; init; }
 

@@ -222,7 +222,6 @@ public sealed class GameDataService(IGamePackLoader loader, IOverlayStore overla
             IsLocked = edit?.Locked ?? origin != VariantOrigin.Pack,
             LockedFields = edit?.LockedFields ?? [],
             Hashes = hashes,
-            HashesPendingFlag = packVariant?.HashesPending ?? false,
             CreatedAt = edit?.CreatedAt,
         };
     }

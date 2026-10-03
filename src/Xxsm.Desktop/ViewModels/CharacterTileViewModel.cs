@@ -63,7 +63,7 @@ public sealed partial class CharacterTileViewModel : ObservableObject, IDisposab
         IsHidden = variant.Hidden;
 
         // No hashes is valid, not an error: badged rather than hidden.
-        HashesPending = variant.HashesPendingFlag || variant.Hashes.Count == 0;
+        HashesPending = variant.IsHashesPending;
 
         Initial = DisplayName is { Length: > 0 }
             ? DisplayName[..1].ToUpperInvariant()
