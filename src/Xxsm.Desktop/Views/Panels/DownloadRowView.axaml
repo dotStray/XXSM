@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:Xxsm.Desktop.ViewModels"
+             xmlns:panels="clr-namespace:Xxsm.Desktop.Views.Panels"
              x:Class="Xxsm.Desktop.Views.Panels.DownloadRowView"
              x:DataType="vm:DownloadRowViewModel">
 
@@ -45,10 +46,17 @@
                  Text="{DynamicResource Text.Downloads_OtherGame}" />
 
       <StackPanel Orientation="Horizontal" Spacing="8">
-        <Button IsVisible="{Binding IsRunning}"
-                Command="{Binding $parent[ItemsControl].((vm:DownloadsViewModel)DataContext).ShowCommand}"
+        <!-- Not where the row is already in the panel Show would open. -->
+        <Button Command="{Binding $parent[ItemsControl].((vm:DownloadsViewModel)DataContext).ShowCommand}"
                 CommandParameter="{Binding}"
-                Content="{DynamicResource Text.Downloads_Show}" />
+                Content="{DynamicResource Text.Downloads_Show}">
+          <Button.IsVisible>
+            <MultiBinding Converter="{x:Static BoolConverters.And}">
+              <Binding Path="IsRunning" />
+              <Binding Path="OffersShow" RelativeSource="{RelativeSource AncestorType=panels:DownloadRowView}" />
+            </MultiBinding>
+          </Button.IsVisible>
+        </Button>
         <Button IsVisible="{Binding IsRunning}"
                 Command="{Binding $parent[ItemsControl].((vm:DownloadsViewModel)DataContext).CancelCommand}"
                 CommandParameter="{Binding}"
