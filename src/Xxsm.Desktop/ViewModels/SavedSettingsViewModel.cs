@@ -57,7 +57,8 @@ public sealed partial class SavedSettingsViewModel(ISavedSettingsService setting
     /// <summary>Over the list: how many settings change, and what Save and Revert do.</summary>
     public string ChangesText => _text.Format(nameof(Strings.SavedSettings_Changes), _text.Settings(Changes.Count));
 
-    /// <summary>Reads a mod's settings, or clears the section; anything waiting to be saved is dropped.</summary>
+    /// <summary>Reads a mod's settings, or clears the section. Read again for the same mod, the defaults waiting to be saved
+    /// are kept while their lines are unchanged; otherwise they are dropped.</summary>
     /// <param name="modFolder">The mod, or <c>null</c> for none.</param>
     /// <param name="cancellationToken">Cancels the read.</param>
     public async Task LoadAsync(string? modFolder, CancellationToken cancellationToken)
@@ -71,9 +72,31 @@ public sealed partial class SavedSettingsViewModel(ISavedSettingsService setting
             return;
         }
 
+        var waiting = string.Equals(ModFolder, modFolder, StringComparison.Ordinal) ? Changes.ToList() : [];
+
         ModFolder = modFolder;
         Show(read);
         Revert();
+
+        var kept = waiting
+            .Select(change => read.Settings.FirstOrDefault(setting =>
+                string.Equals(setting.File, change.Setting.File, StringComparison.Ordinal) &&
+                setting.Line == change.Setting.Line &&
+                string.Equals(setting.Default, change.Setting.Default, StringComparison.Ordinal)) is { } still
+                ? change with { Setting = still }
+                : null)
+            .ToList();
+
+        // A file that changed under the list makes the whole list suspect, so none of it is kept.
+        if (kept.Count > 0 && kept.All(change => change is not null))
+        {
+            foreach (var change in kept)
+            {
+                Changes.Add(change!);
+            }
+
+            Changed();
+        }
     }
 
     /// <summary>Reads the game's saved values again and lists each default that differs from them.</summary>
@@ -106,6 +129,7 @@ public sealed partial class SavedSettingsViewModel(ISavedSettingsService setting
         var edits = Changes.Select(change => new SavedSettingEdit(change.Setting.File, change.Setting.Line, change.Setting.Default, change.To)).ToList();
 
         await _settings.WriteAsync(folder, edits, cancellationToken).ConfigureAwait(true);
+        Changes.Clear();
         await LoadAsync(folder, cancellationToken).ConfigureAwait(true);
     }
 
@@ -127,10 +151,10 @@ public sealed partial class SavedSettingsViewModel(ISavedSettingsService setting
             return;
         }
 
-        var version = _version;
         var read = await ReadAsync(folder, cancellationToken).ConfigureAwait(true);
 
-        if (version != _version)
+        // Another mod was selected while this one was read.
+        if (!string.Equals(ModFolder, folder, StringComparison.Ordinal))
         {
             return;
         }

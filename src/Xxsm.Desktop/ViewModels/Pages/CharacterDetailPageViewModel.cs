@@ -87,6 +87,9 @@ public sealed partial class CharacterDetailPageViewModel : PageViewModel, IRefre
     private Func<CancellationToken, Task>? _pendingConfirmation;
     private List<IBitmapLease> _skinPortraits = [];
     private string? _reselectPath;
+
+    /// <summary>The mod whose values the edit boxes hold; a rescan that selects it again keeps what was typed.</summary>
+    private string? _editing;
     private bool _restoringSelection;
     private int _totalModCount;
 
@@ -1835,7 +1838,15 @@ public sealed partial class CharacterDetailPageViewModel : PageViewModel, IRefre
         OnPropertyChanged(nameof(GameBananaLinkText));
         RaiseProfilesChanged();
 
-        ResetEdits();
+        // Exact comparison on purpose: two mods can differ only by case on ext4.
+        var same = SelectedRow?.Path is { } path && string.Equals(path, _editing, StringComparison.Ordinal);
+        _editing = SelectedRow?.Path;
+
+        if (!same || !IsEditDirty)
+        {
+            ResetEdits();
+        }
+
         OnPropertyChanged(nameof(IsEditDirty));
         SaveEditsCommand.NotifyCanExecuteChanged();
 

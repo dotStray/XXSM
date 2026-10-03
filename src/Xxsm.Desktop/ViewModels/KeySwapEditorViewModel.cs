@@ -150,14 +150,27 @@ public sealed partial class KeySwapEditorViewModel(IKeySwapService keys, ITextCa
             return;
         }
 
-        // Another mod starts folded again; the same one read again stays as it was.
-        if (!string.Equals(ModFolder, modFolder, StringComparison.Ordinal))
+        // Another mod starts folded again; the same one read again keeps what was typed into lines that did not change.
+        var same = string.Equals(ModFolder, modFolder, StringComparison.Ordinal);
+        var typed = same ? Edits() : [];
+
+        if (!same)
         {
             ShowAll = false;
         }
 
         ModFolder = modFolder;
         Show(read);
+
+        foreach (var edit in typed)
+        {
+            var box = Sections
+                .Where(section => string.Equals(section.Section.File, edit.File, StringComparison.Ordinal))
+                .SelectMany(section => section.Fields)
+                .FirstOrDefault(field => field.Field.Line == edit.Line && string.Equals(field.Field.Value, edit.ExpectedValue, StringComparison.Ordinal));
+
+            box?.Value = edit.Value;
+        }
     }
 
     /// <summary>The changes to write.</summary>
