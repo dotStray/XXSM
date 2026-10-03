@@ -252,7 +252,7 @@ public sealed class SavedSettingsService(IIniFileService files, ILogger logger) 
     }
 
     /// <summary>The <c>global persist</c> declarations 3DMigoto registers, first of each name only.</summary>
-    private static List<Declaration> Declarations(IniDocument document)
+    internal static List<Declaration> Declarations(IniDocument document)
     {
         var found = new List<Declaration>();
         var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -485,5 +485,6 @@ public sealed class SavedSettingsService(IIniFileService files, ILogger logger) 
         }
     }
 
-    private sealed record Declaration(IniLine Line, string Name, string? Default);
+    /// <summary>One <c>global persist</c> declaration: its line, its <c>$name</c> and its default, null for none.</summary>
+    internal sealed record Declaration(IniLine Line, string Name, string? Default);
 }

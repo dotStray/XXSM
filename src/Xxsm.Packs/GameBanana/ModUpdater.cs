@@ -2,6 +2,7 @@ using Serilog;
 using Xxsm.Core;
 using Xxsm.Core.Archives;
 using Xxsm.Core.GameBanana;
+using Xxsm.Core.Ini;
 using Xxsm.Core.Io;
 using Xxsm.Core.Mods;
 using Xxsm.Packs.Downloads;
@@ -101,6 +102,9 @@ public sealed class ModUpdatePlan : IDisposable
         UnchangedCount = unchangedCount;
     }
 
+    /// <summary>Whether the user's key and default changes are made again in the new version's INIs. On unless unticked.</summary>
+    public bool KeepIniChanges { get; set; } = true;
+
     /// <summary>The mod being updated.</summary>
     public string ModFolder { get; }
 
@@ -169,8 +173,9 @@ public sealed class ModUpdatePlan : IDisposable
 /// <param name="Added">How many files were added.</param>
 /// <param name="Replaced">How many were replaced.</param>
 /// <param name="Removed">How many were removed.</param>
+/// <param name="Carried">What became of the user's key and default changes; null when they were not kept.</param>
 public sealed record ModUpdateResult(
-    string ModFolder, TrashResult Previous, string? Version, int Added, int Replaced, int Removed);
+    string ModFolder, TrashResult Previous, string? Version, int Added, int Replaced, int Removed, IniCarryReport? Carried = null);
 
 /// <summary>Replaces an installed mod with the newer version on its GameBanana page, when the user asks.</summary>
 /// <remarks>The old version goes to the trash whole; the mod's <c>.xxsm</c> folder moves to the new one.</remarks>
@@ -239,10 +244,12 @@ public sealed class ModUpdater(
     IDownloadManager downloads,
     IModArchiveReader archives,
     IGameBananaInstallSource source,
+    IIniOriginalsService iniOriginals,
     ILogger logger,
     TimeProvider? time = null) : IModUpdater
 {
     private const string MetadataFolder = ".xxsm";
+    private const string OriginalsFolder = "originals";
 
     /// <summary>How long after XXSM added a mod a file can still be the author's own write.</summary>
     private static readonly TimeSpan InstallSlack = TimeSpan.FromMinutes(2);
@@ -253,6 +260,7 @@ public sealed class ModUpdater(
     private readonly IDownloadManager _downloads = downloads;
     private readonly IModArchiveReader _archives = archives;
     private readonly IGameBananaInstallSource _source = source;
+    private readonly IIniOriginalsService _iniOriginals = iniOriginals;
     private readonly ILogger _logger = logger.ForContext<ModUpdater>();
     private readonly TimeProvider _time = time ?? TimeProvider.System;
 
@@ -366,6 +374,7 @@ public sealed class ModUpdater(
 
         TrashResult previous;
         ModOperationResult installed;
+        IniCarryReport? carried;
 
         try
         {
@@ -377,9 +386,21 @@ public sealed class ModUpdater(
                 if (Directory.Exists(Path.Combine(modFolder, MetadataFolder)))
                 {
                     CopyTree(Path.Combine(modFolder, MetadataFolder), Path.Combine(staged, MetadataFolder), skipMetadata: false);
+
+                    // The old version's originals stay with it in the trash: the new INIs are the author's own.
+                    var staleOriginals = Path.Combine(staged, MetadataFolder, OriginalsFolder);
+
+                    if (Directory.Exists(staleOriginals))
+                    {
+                        Directory.Delete(staleOriginals, recursive: true);
+                    }
                 }
+
+                carried = plan.KeepIniChanges
+                    ? await _iniOriginals.CarryAsync(modFolder, staged, cancellationToken).ConfigureAwait(false)
+                    : null;
             }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ModOperationException)
             {
                 throw new ModOperationException(
                     $"The new version could not be prepared, so nothing was changed: {ex.Message}", staged, ex);
@@ -472,7 +493,8 @@ public sealed class ModUpdater(
             plan.NewVersion,
             plan.Changes.Count(change => change.Kind == ModUpdateChangeKind.Added),
             plan.Changes.Count(change => change.Kind == ModUpdateChangeKind.Replaced),
-            plan.Changes.Count(change => change.Kind == ModUpdateChangeKind.Removed));
+            plan.Changes.Count(change => change.Kind == ModUpdateChangeKind.Removed),
+            carried);
 
         _logger.Information(
             "Updated {Path} to {Version} from GameBanana mod {ModId}; the previous version is in the trash at {Trash}",

@@ -44,6 +44,11 @@ internal static class ModExportCommand
         };
         switching.AcceptOnlyFromAmong("on", "off");
 
+        var useOriginals = new Option<bool>("--use-originals")
+        {
+            Description = "Copy each INI XXSM changed (keys, defaults) as its author shipped it. The Mods folder keeps the changed one.",
+        };
+
         var dryRun = new Option<bool>("--dry-run")
         {
             Description = "Say what would be copied and copy nothing.",
@@ -60,6 +65,7 @@ internal static class ModExportCommand
             noMetadata,
             oneFolder,
             switching,
+            useOriginals,
             dryRun,
         };
 
@@ -82,7 +88,8 @@ internal static class ModExportCommand
                             "on" => ModExportSwitching.AllOn,
                             "off" => ModExportSwitching.AllOff,
                             _ => ModExportSwitching.AsTheyAre,
-                        }),
+                        },
+                        parse.GetValue(useOriginals)),
                     cancellationToken)
                 .ConfigureAwait(false);
 
@@ -111,7 +118,10 @@ internal static class ModExportCommand
                     ModExportSwitching.AllOff => "off",
                     _ => "as-they-are",
                 },
-                plan.RenamedCount);
+                plan.RenamedCount,
+                plan.Options.UseOriginals,
+                plan.ChangedIniModCount,
+                plan.LosesOriginals);
 
             if (parse.GetValue(GlobalOptions.Json))
             {
@@ -135,6 +145,13 @@ internal static class ModExportCommand
                 ("Numbered", report.RenamedCount == 0
                     ? "none"
                     : EnglishCount.Plural(report.RenamedCount, "mod", "mods") + " had a number added so no two share a name"),
+                ("Changed INIs", report.ChangedIniMods == 0
+                    ? "none"
+                    : EnglishCount.Plural(report.ChangedIniMods, "mod", "mods") + (report.UseOriginals
+                        ? ": the copies have the authors' original INIs"
+                        : report.SkipMetadata
+                            ? ": the copies keep XXSM's changes and not the authors' originals (add --use-originals)"
+                            : ": the copies keep XXSM's changes, the originals in each copy's .xxsm folder")),
                 ("Copied to", report.Folder is { } shown ? PathDisplay.Show(shown) : "nothing copied (--dry-run)"),
             ]);
 

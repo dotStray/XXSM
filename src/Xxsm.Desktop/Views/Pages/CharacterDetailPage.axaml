@@ -457,16 +457,47 @@
            <!-- Save and Revert at the foot of the pane. Save is disabled until something has changed. -->
            <StackPanel DockPanel.Dock="Bottom" Margin="0,12,0,0" Spacing="6">
              <!-- Halves of the pane, so no minimum: at the narrowest pane two minimum-width buttons would overlap. -->
+             <!-- Each with an arrow for its menu: what it does to the mod's INI straight away, undone from the notice. -->
              <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
-               <Button Grid.Column="0" Classes="accent" MinWidth="0"
-                       HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                       Command="{Binding SaveEditsCommand}"
-                       Content="{DynamicResource Text.CharacterDetail_Edit_Save}" />
-               <Button Grid.Column="1" MinWidth="0"
-                       HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                       IsEnabled="{Binding IsEditDirty}"
-                       Command="{Binding RevertEditsCommand}"
-                       Content="{DynamicResource Text.CharacterDetail_Edit_Revert}" />
+               <Grid Grid.Column="0" ColumnDefinitions="*,Auto" ColumnSpacing="1">
+                 <Button Grid.Column="0" Classes="accent splitMain" MinWidth="0"
+                         HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                         Command="{Binding SaveEditsCommand}"
+                         Content="{DynamicResource Text.CharacterDetail_Edit_Save}" />
+                 <Button Grid.Column="1" Classes="splitArrow"
+                         ToolTip.Tip="{DynamicResource Text.CharacterDetail_SaveMore}"
+                         AutomationProperties.Name="{DynamicResource Text.CharacterDetail_SaveMore}">
+                   <Path Classes="menuIcon" Width="10" Height="5" MaxWidth="10" VerticalAlignment="Center" Data="{StaticResource Icon.chevronDown}" />
+                   <Button.Flyout>
+                     <MenuFlyout Placement="TopEdgeAlignedLeft">
+                       <MenuItem Header="{DynamicResource Text.SavedSettings_UseInGame}"
+                                 Command="{Binding UseInGameDefaultsCommand}" />
+                     </MenuFlyout>
+                   </Button.Flyout>
+                 </Button>
+               </Grid>
+               <Grid Grid.Column="1" ColumnDefinitions="*,Auto" ColumnSpacing="1">
+                 <Button Grid.Column="0" Classes="splitMain" MinWidth="0"
+                         HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                         IsEnabled="{Binding IsEditDirty}"
+                         Command="{Binding RevertEditsCommand}"
+                         Content="{DynamicResource Text.CharacterDetail_Edit_Revert}" />
+                 <Button Grid.Column="1" Classes="splitArrow"
+                         ToolTip.Tip="{DynamicResource Text.CharacterDetail_RevertMore}"
+                         AutomationProperties.Name="{DynamicResource Text.CharacterDetail_RevertMore}">
+                   <Path Classes="menuIcon" Width="10" Height="5" MaxWidth="10" VerticalAlignment="Center" Data="{StaticResource Icon.chevronDown}" />
+                   <Button.Flyout>
+                     <MenuFlyout Placement="TopEdgeAlignedRight">
+                       <MenuItem Header="{DynamicResource Text.SavedSettings_Restore}"
+                                 Command="{Binding RestoreDefaultsCommand}" />
+                       <MenuItem Header="{DynamicResource Text.CharacterDetail_Revert_Keys}"
+                                 Command="{Binding RestoreKeysCommand}" />
+                       <MenuItem Header="{DynamicResource Text.CharacterDetail_Revert_Ini}"
+                                 Command="{Binding RestoreIniCommand}" />
+                     </MenuFlyout>
+                   </Button.Flyout>
+                 </Button>
+               </Grid>
              </Grid>
              <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
                      Command="{Binding OpenModFolderCommand}"
@@ -612,50 +643,6 @@
                        AcceptsReturn="True" TextWrapping="Wrap" MinHeight="48" MaxHeight="96"
                        AutomationProperties.Name="{DynamicResource Text.CharacterDetail_Detail_Notes}" />
             </StackPanel>
-            <!-- What the mod remembers in game. A button lists the defaults that would change; the same Save writes them. -->
-            <StackPanel Spacing="6" IsVisible="{Binding SavedSettings.HasSettings}">
-              <StackPanel Spacing="2">
-                <TextBlock Classes="sectionLabel" Text="{DynamicResource Text.SavedSettings_Heading}" />
-                <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap" Text="{DynamicResource Text.SavedSettings_Body}" />
-              </StackPanel>
-              <WrapPanel ItemSpacing="8" LineSpacing="8">
-                <Button Command="{Binding SavedSettings.UseInGameCommand}"
-                        Content="{DynamicResource Text.SavedSettings_UseInGame}" />
-                <Button IsVisible="{Binding SavedSettings.CanRestore}"
-                        Command="{Binding SavedSettings.RestoreCommand}"
-                        Content="{DynamicResource Text.SavedSettings_Restore}" />
-              </WrapPanel>
-              <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
-                         IsVisible="{Binding SavedSettings.Status, Converter={x:Static conv:ObjectConverters.IsNotNull}}"
-                         Text="{Binding SavedSettings.Status}" />
-              <Border Classes="inlineNotice" Padding="8" IsVisible="{Binding SavedSettings.IsDirty}">
-                <StackPanel Spacing="6">
-                  <TextBlock FontSize="12" TextWrapping="Wrap" Text="{Binding SavedSettings.ChangesText}" />
-                  <ItemsControl ItemsSource="{Binding SavedSettings.Changes}">
-                    <ItemsControl.ItemTemplate>
-                      <DataTemplate x:DataType="vm:SavedSettingChange">
-                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,1">
-                          <TextBlock Grid.Column="0" Classes="mono" FontSize="12" TextTrimming="CharacterEllipsis"
-                                     Text="{Binding Name}" />
-                          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
-                            <TextBlock Classes="mono muted" FontSize="12" Text="{Binding From}" />
-                            <TextBlock Classes="muted" FontSize="12" Text="→" />
-                            <TextBlock Classes="mono" FontSize="12" Text="{Binding To}" />
-                          </StackPanel>
-                        </Grid>
-                      </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                  </ItemsControl>
-                </StackPanel>
-              </Border>
-              <ItemsControl ItemsSource="{Binding SavedSettings.Problems}" IsVisible="{Binding SavedSettings.HasProblems}">
-                <ItemsControl.ItemTemplate>
-                  <DataTemplate x:DataType="x:String">
-                    <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap" Text="{Binding}" />
-                  </DataTemplate>
-                </ItemsControl.ItemTemplate>
-              </ItemsControl>
-            </StackPanel>
             <!-- The keys, saved by the same Save. Only the values typed into change in the mod's file. -->
             <StackPanel Spacing="6" IsVisible="{Binding KeySwaps.HasBindings}">
               <StackPanel Spacing="2">
@@ -689,10 +676,16 @@
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>
               </ItemsControl>
-              <Button HorizontalAlignment="Left"
+              <!-- An arrow; its words show on hover and are read aloud. -->
+              <Button Classes="iconButton small" HorizontalAlignment="Left"
                       IsVisible="{Binding KeySwaps.HasMore}"
                       Command="{Binding KeySwaps.ToggleShowAllCommand}"
-                      Content="{Binding KeySwaps.ShowAllText}" />
+                      ToolTip.Tip="{Binding KeySwaps.ShowAllText}"
+                      AutomationProperties.Name="{Binding KeySwaps.ShowAllText}">
+                <!-- Twice as wide as tall, like the chevron: a square box draws it at the top. -->
+                <Path Classes="disclosure" Classes.open="{Binding KeySwaps.ShowAll}" Width="12" Height="6" VerticalAlignment="Center"
+                      Data="{StaticResource Icon.chevronDown}" />
+              </Button>
             </StackPanel>
             <StackPanel Spacing="4" IsVisible="{Binding KeySwaps.HasProblems}">
               <ItemsControl ItemsSource="{Binding KeySwaps.Problems}">

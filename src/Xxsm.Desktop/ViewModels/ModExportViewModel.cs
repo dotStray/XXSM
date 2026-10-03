@@ -46,6 +46,22 @@ public sealed partial class ModExportViewModel(
     [ObservableProperty]
     private bool _oneFolder;
 
+    /// <summary>Copy each INI XXSM changed as its author shipped it.</summary>
+    [ObservableProperty]
+    private bool _useOriginals;
+
+    /// <summary>How many mods have INIs changed in XXSM, in words; null when none.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasChangedInis))]
+    private string? _changedInisText;
+
+    /// <summary>Whether the copy would keep XXSM's changes but not the authors' originals.</summary>
+    [ObservableProperty]
+    private bool _losesOriginals;
+
+    /// <summary>Whether any mod has an INI changed in XXSM, so the choice of originals is offered.</summary>
+    public bool HasChangedInis => ChangedInisText is not null;
+
     /// <summary>Whether the copies are switched on or off. Only the copies change.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SwitchAsTheyAre), nameof(SwitchAllOn), nameof(SwitchAllOff))]
@@ -200,6 +216,8 @@ public sealed partial class ModExportViewModel(
 
     partial void OnOneFolderChanged(bool value) => Counting = PlanAsync();
 
+    partial void OnUseOriginalsChanged(bool value) => Counting = PlanAsync();
+
     partial void OnSwitchingChanged(ModExportSwitching value) => Counting = PlanAsync();
 
     /// <summary>A radio button turned on chooses its switching; one turned off by its neighbour does nothing.</summary>
@@ -220,7 +238,7 @@ public sealed partial class ModExportViewModel(
 
         // Ticking twice quickly starts two counts; only the last one's answer is shown.
         var version = ++_planVersion;
-        var options = new ModExportOptions(EnabledOnly, SkipMetadata, OneFolder, Switching);
+        var options = new ModExportOptions(EnabledOnly, SkipMetadata, OneFolder, Switching, UseOriginals);
         _plan = null;
         Summary = null;
         OnPropertyChanged(nameof(CanExport));
@@ -238,6 +256,10 @@ public sealed partial class ModExportViewModel(
         }
 
         _plan = plan;
+        ChangedInisText = plan.ChangedIniModCount > 0
+            ? _text.Format(nameof(Strings.Export_ChangedInis), _text.Mods(plan.ChangedIniModCount))
+            : null;
+        LosesOriginals = plan.LosesOriginals;
         Summary = _text.Format(nameof(Strings.Export_Summary), _text.Mods(plan.Mods.Count), Xxsm.Core.Text.ByteSize.Describe(plan.TotalBytes)) +
                   (plan.SkippedDisabledCount > 0
                       ? " " + _text.Format(nameof(Strings.Export_Skipped), _text.Mods(plan.SkippedDisabledCount))

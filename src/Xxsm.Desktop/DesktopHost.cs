@@ -7,6 +7,7 @@ using Serilog;
 using Serilog.Events;
 using Xxsm.Core.GameBanana;
 using Xxsm.Core.Hosting;
+using Xxsm.Core.Ini;
 using Xxsm.Core.Io;
 using Xxsm.Core.Mods;
 using Xxsm.Core.Settings;
@@ -143,6 +144,13 @@ public static class DesktopHost
             provider.GetRequiredService<ViewModelWorkRunner>(),
             provider.GetRequiredService<ITextCatalogue>()));
 
+        services.AddSingleton(provider => new ChangedInisViewModel(
+            provider.GetRequiredService<GameContext>(),
+            provider.GetRequiredService<IIniOriginalsService>(),
+            provider.GetRequiredService<INotificationService>(),
+            provider.GetRequiredService<ViewModelWorkRunner>(),
+            provider.GetRequiredService<ITextCatalogue>()));
+
         services.AddSingleton(provider => new ProfilesPageViewModel(
             provider.GetRequiredService<GameContext>(),
             provider.GetRequiredService<Xxsm.Core.Profiles.IProfileService>(),
@@ -201,7 +209,8 @@ public static class DesktopHost
             provider.GetRequiredService<IUrlLauncher>(),
             provider.GetRequiredService<IUiDispatcher>(),
             provider.GetRequiredService<ITextCatalogue>(),
-            ct => provider.GetRequiredService<MainWindowViewModel>().RescanModsAsync(ct)));
+            ct => provider.GetRequiredService<MainWindowViewModel>().RescanModsAsync(ct),
+            provider.GetRequiredService<IIniOriginalsService>()));
 
         services.AddSingleton(provider => new ModInstallViewModel(
             provider.GetRequiredService<GameContext>(),
@@ -290,7 +299,8 @@ public static class DesktopHost
             () => provider.GetRequiredService<MainWindowViewModel>().CloseCharacterDetail(),
             provider.GetRequiredService<Xxsm.Core.Ini.IKeySwapService>(),
             provider.GetRequiredService<Xxsm.Core.Profiles.IProfileService>(),
-            provider.GetRequiredService<Xxsm.Core.Ini.ISavedSettingsService>()));
+            provider.GetRequiredService<Xxsm.Core.Ini.ISavedSettingsService>(),
+            provider.GetRequiredService<IIniOriginalsService>()));
 
         services.AddSingleton(provider => new DownloadsViewModel(
             provider.GetRequiredService<Xxsm.Packs.Downloads.IDownloadManager>(),
@@ -321,6 +331,7 @@ public static class DesktopHost
             provider.GetRequiredService<ModUpdateViewModel>(),
             provider.GetRequiredService<RandomiserViewModel>(),
             provider.GetRequiredService<ModExportViewModel>(),
+            provider.GetRequiredService<ChangedInisViewModel>(),
             provider.GetRequiredService<ModImportViewModel>(),
             provider.GetRequiredService<CharacterManagerViewModel>(),
             provider.GetRequiredService<Xxsm.Core.Profiles.IProfileService>(),

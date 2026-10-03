@@ -128,7 +128,21 @@ internal sealed record ModExportReport(
     bool SkipMetadata,
     bool OneFolder,
     string Switch,
-    int RenamedCount);
+    int RenamedCount,
+    bool UseOriginals,
+    int ChangedIniMods,
+    bool LosesOriginals);
+
+/// <summary>One key or default line that differs from the author's, in <c>xxsm mod changed</c> and <c>revert</c>.</summary>
+internal sealed record ModIniLineReport(string File, string Kind, string Section, string Name, string Original, string Current);
+
+/// <summary>One mod in <c>xxsm mod changed</c> and <c>revert</c>.</summary>
+internal sealed record ModIniChangesReport(
+    string Mod, IReadOnlyList<ModIniLineReport> Lines, IReadOnlyList<string> OtherChanges, IReadOnlyList<string> Problems);
+
+/// <summary><c>xxsm mod changed</c> and <c>xxsm mod revert</c>: what differs, and whether it was put back.</summary>
+internal sealed record ModIniChangesListReport(
+    string? Scope, bool Reverted, IReadOnlyList<ModIniChangesReport> Mods, IReadOnlyList<string> TrashedCopies);
 
 /// <summary>One mod in <c>xxsm mod import</c>.</summary>
 internal sealed record ModImportRowReport(

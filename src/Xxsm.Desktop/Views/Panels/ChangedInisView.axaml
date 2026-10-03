@@ -1,0 +1,59 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Xxsm.Desktop.ViewModels"
+             x:Class="Xxsm.Desktop.Views.Panels.ChangedInisView"
+             x:DataType="vm:ChangedInisViewModel">
+
+  <!-- Every mod whose INIs XXSM changed, each ticked; the button puts the authors' INIs back. -->
+  <Border Classes="card" MaxWidth="640" MaxHeight="660"
+          HorizontalAlignment="Stretch" VerticalAlignment="Center"
+          IsVisible="{Binding IsOpen}">
+    <DockPanel>
+
+      <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,12">
+        <TextBlock Classes="subheading" Text="{DynamicResource Text.ChangedInis_Heading}" />
+        <TextBlock Classes="muted" TextWrapping="Wrap" Text="{DynamicResource Text.ChangedInis_Body}" />
+      </StackPanel>
+
+      <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right"
+                  Spacing="8" Margin="0,12,0,0">
+        <Button Command="{Binding CloseCommand}"
+                Content="{DynamicResource Text.ChangedInis_Cancel}" />
+        <Button Classes="accent" IsEnabled="{Binding CanRevert}"
+                Command="{Binding RevertCommand}"
+                Content="{DynamicResource Text.ChangedInis_Revert}" />
+      </StackPanel>
+
+      <ScrollViewer>
+        <StackPanel Spacing="10">
+          <TextBlock Classes="muted" TextWrapping="Wrap" IsVisible="{Binding !HasAny}"
+                     Text="{DynamicResource Text.ChangedInis_None}" />
+          <ItemsControl ItemsSource="{Binding Rows}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:ChangedIniRowViewModel">
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8" Margin="0,0,0,10">
+                  <CheckBox Grid.Column="0" VerticalAlignment="Top"
+                            IsChecked="{Binding IsChecked}"
+                            AutomationProperties.Name="{Binding Name}" />
+                  <StackPanel Grid.Column="1" Spacing="2">
+                    <TextBlock TextTrimming="CharacterEllipsis" Text="{Binding Name}" />
+                    <TextBlock Classes="muted" FontSize="11" TextTrimming="CharacterEllipsis" Text="{Binding Place}" />
+                    <ItemsControl ItemsSource="{Binding Lines}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="x:String">
+                          <TextBlock Classes="mono" FontSize="12" TextWrapping="Wrap" Text="{Binding}" />
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </ScrollViewer>
+
+    </DockPanel>
+  </Border>
+
+</UserControl>

@@ -76,6 +76,8 @@ public sealed partial class CharacterDetailPageViewModel : PageViewModel, IRefre
     private readonly ModUpdateViewModel _update;
     private readonly Func<CancellationToken, Task> _rescan;
     private readonly Action _goBack;
+    private readonly Xxsm.Core.Ini.ISavedSettingsService _savedSettings;
+    private readonly Xxsm.Core.Ini.IIniOriginalsService _iniOriginals;
 
     private CharacterTileViewModel? _character;
     private IBitmapLease? _portraitHandle;
@@ -124,13 +126,17 @@ public sealed partial class CharacterDetailPageViewModel : PageViewModel, IRefre
         Action goBack,
         Xxsm.Core.Ini.IKeySwapService keySwaps,
         Xxsm.Core.Profiles.IProfileService profiles,
-        Xxsm.Core.Ini.ISavedSettingsService savedSettings)
+        Xxsm.Core.Ini.ISavedSettingsService savedSettings,
+        Xxsm.Core.Ini.IIniOriginalsService iniOriginals)
         : base(text)
     {
         ArgumentNullException.ThrowIfNull(columnWidths);
         ArgumentNullException.ThrowIfNull(keySwaps);
         ArgumentNullException.ThrowIfNull(profiles);
         ArgumentNullException.ThrowIfNull(savedSettings);
+        ArgumentNullException.ThrowIfNull(iniOriginals);
+        _savedSettings = savedSettings;
+        _iniOriginals = iniOriginals;
         _profiles = profiles;
         ColumnWidths = columnWidths;
 
@@ -138,16 +144,6 @@ public sealed partial class CharacterDetailPageViewModel : PageViewModel, IRefre
         KeySwaps.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(KeySwapEditorViewModel.IsDirty))
-            {
-                OnPropertyChanged(nameof(IsEditDirty));
-                SaveEditsCommand.NotifyCanExecuteChanged();
-            }
-        };
-
-        SavedSettings = new SavedSettingsViewModel(savedSettings, text);
-        SavedSettings.PropertyChanged += (_, e) =>
-        {
-            if (e.PropertyName == nameof(SavedSettingsViewModel.IsDirty))
             {
                 OnPropertyChanged(nameof(IsEditDirty));
                 SaveEditsCommand.NotifyCanExecuteChanged();
@@ -414,14 +410,10 @@ public sealed partial class CharacterDetailPageViewModel : PageViewModel, IRefre
     /// <summary>The selected mod's key bindings, edited in the pane and saved with it.</summary>
     public KeySwapEditorViewModel KeySwaps { get; }
 
-    /// <summary>The selected mod's settings kept between game sessions; new defaults are saved with the pane.</summary>
-    public SavedSettingsViewModel SavedSettings { get; }
-
     /// <summary>Whether any of the edit boxes differs from what is on disk.</summary>
     public bool IsEditDirty =>
         SelectedRow is { } row &&
         (KeySwaps.IsDirty ||
-         SavedSettings.IsDirty ||
          !string.Equals(EditName.Trim(), row.DisplayName, StringComparison.Ordinal) ||
          !string.Equals(EditFolderName.Trim(), row.BareFolderName, StringComparison.Ordinal) ||
          !string.Equals(EditModUrl.Trim(), row.ModUrl ?? string.Empty, StringComparison.Ordinal) ||
@@ -789,9 +781,8 @@ public sealed partial class CharacterDetailPageViewModel : PageViewModel, IRefre
             }
         }
 
-        // The keys and the defaults first, while the folder is where they were read from.
+        // The keys first, while the folder is where they were read from.
         await KeySwaps.SaveAsync(cancellationToken).ConfigureAwait(true);
-        await SavedSettings.SaveAsync(cancellationToken).ConfigureAwait(true);
 
         var path = row.Path;
 
@@ -855,7 +846,6 @@ public sealed partial class CharacterDetailPageViewModel : PageViewModel, IRefre
         EditDescription = SelectedRow?.Description ?? string.Empty;
         EditNotes = SelectedRow?.Notes ?? string.Empty;
         KeySwaps.Revert();
-        SavedSettings.Revert();
     }
 
     /// <summary>The four details the pane edits beside the name and address, as stored.</summary>
@@ -1853,7 +1843,7 @@ public sealed partial class CharacterDetailPageViewModel : PageViewModel, IRefre
 
         UpdatePreviewImage();
         Track(KeySwaps.LoadAsync(SelectedRow?.Path, same, ActivationToken));
-        Track(SavedSettings.LoadAsync(SelectedRow?.Path, same, ActivationToken));
+        Track(LoadIniStateAsync(SelectedRow?.Path, ActivationToken));
     }
 
     /// <summary>Brings <see cref="PreviewImage"/> in line with the selection, keyed on path, not row.</summary>

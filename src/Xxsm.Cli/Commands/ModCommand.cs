@@ -27,6 +27,11 @@ internal static class ModCommand
             ModImportCommand.Create(),
         };
 
+        foreach (var subcommand in ModRevertCommands.Create())
+        {
+            command.Subcommands.Add(subcommand);
+        }
+
         foreach (var subcommand in ModGameBananaCommands.Create())
         {
             command.Subcommands.Add(subcommand);

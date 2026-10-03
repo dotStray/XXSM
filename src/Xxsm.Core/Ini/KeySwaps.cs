@@ -187,7 +187,8 @@ public sealed class KeySwapService(IIniFileService files, ILogger logger) : IKey
         }
     }
 
-    private static IEnumerable<KeySwapSection> Bindings(IniDocument document, string relative)
+    /// <summary>Every binding in a parsed INI, in file order.</summary>
+    internal static IEnumerable<KeySwapSection> Bindings(IniDocument document, string relative)
     {
         foreach (var section in document.Sections)
         {

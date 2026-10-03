@@ -32,7 +32,16 @@
           <CheckBox IsChecked="{Binding EnabledOnly}" Content="{DynamicResource Text.Export_EnabledOnly}" />
           <CheckBox IsChecked="{Binding SkipMetadata}" Content="{DynamicResource Text.Export_SkipMetadata}" />
           <CheckBox IsChecked="{Binding OneFolder}" Content="{DynamicResource Text.Export_OneFolder}" />
+          <!-- Only when a mod has an INI changed in XXSM; the Mods folder keeps its changes either way. -->
+          <StackPanel Spacing="2" IsVisible="{Binding HasChangedInis}">
+            <CheckBox IsChecked="{Binding UseOriginals}" Content="{DynamicResource Text.Export_UseOriginals}" />
+            <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Margin="28,0,0,0" Text="{Binding ChangedInisText}" />
+          </StackPanel>
         </StackPanel>
+
+        <Border Classes="inlineNotice" Padding="8" IsVisible="{Binding LosesOriginals}">
+          <TextBlock FontSize="12" TextWrapping="Wrap" Text="{DynamicResource Text.Export_LosesOriginals}" />
+        </Border>
 
         <!-- Only the copies are switched; the Mods folder is never touched. -->
         <StackPanel Spacing="6">

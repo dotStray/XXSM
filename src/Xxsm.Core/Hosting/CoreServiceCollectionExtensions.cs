@@ -30,6 +30,7 @@ public static class CoreServiceCollectionExtensions
         services.TryAddSingleton<IIniFileService, IniFileService>();
         services.TryAddSingleton<IKeySwapService, KeySwapService>();
         services.TryAddSingleton<ISavedSettingsService, SavedSettingsService>();
+        services.TryAddSingleton<IIniOriginalsService, IniOriginalsService>();
         services.TryAddSingleton<IModArchiveReader, ModArchiveReader>();
         services.TryAddSingleton<IModSignalExtractor, ModSignalExtractor>();
         services.TryAddSingleton<IModConfigStore, ModConfigStore>();

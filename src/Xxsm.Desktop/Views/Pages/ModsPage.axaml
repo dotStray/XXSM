@@ -251,6 +251,19 @@
             </StackPanel>
           </Border>
 
+          <!-- INIs changed in XXSM: always shown, so the way back is always found. -->
+          <Border Classes="card" IsVisible="{Binding HasInventory}">
+            <StackPanel Spacing="10">
+              <TextBlock Classes="subheading" Text="{DynamicResource Text.ChangedInis_Heading}" />
+              <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
+                         Text="{DynamicResource Text.ChangedInis_Card_Body}" />
+              <TextBlock FontSize="12" TextWrapping="Wrap" Text="{Binding ChangedInis.CountText}" />
+              <Button HorizontalAlignment="Left" IsEnabled="{Binding ChangedInis.HasAny}"
+                      Command="{Binding OpenChangedInisCommand}"
+                      Content="{DynamicResource Text.ChangedInis_Start}" />
+            </StackPanel>
+          </Border>
+
           <!-- Export. -->
           <Border Classes="card" IsVisible="{Binding HasInventory}">
             <StackPanel Spacing="10">
@@ -286,6 +299,9 @@
 
   <!-- Export. -->
   <panels:ModExportView DataContext="{Binding Export}" />
+
+  <!-- "INIs changed in XXSM". -->
+  <panels:ChangedInisView DataContext="{Binding ChangedInis}" />
 
   <!-- "Switch every mod off?" -->
   <panels:ProfileApplyView DataContext="{Binding AllOff}" />

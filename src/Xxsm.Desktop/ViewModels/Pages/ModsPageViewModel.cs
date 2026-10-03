@@ -54,6 +54,7 @@ public sealed partial class ModsPageViewModel : PageViewModel, IRefreshablePage
         ModUpdateViewModel update,
         RandomiserViewModel randomiser,
         ModExportViewModel export,
+        ChangedInisViewModel changedInis,
         ModImportViewModel import,
         CharacterManagerViewModel characterManager,
         IProfileService profiles,
@@ -72,11 +73,13 @@ public sealed partial class ModsPageViewModel : PageViewModel, IRefreshablePage
         ArgumentNullException.ThrowIfNull(update);
         ArgumentNullException.ThrowIfNull(randomiser);
         ArgumentNullException.ThrowIfNull(export);
+        ArgumentNullException.ThrowIfNull(changedInis);
         ArgumentNullException.ThrowIfNull(import);
         ArgumentNullException.ThrowIfNull(characterManager);
         _update = update;
         Randomiser = randomiser;
         Export = export;
+        ChangedInis = changedInis;
         Import = import;
         CharacterManager = characterManager;
         ArgumentNullException.ThrowIfNull(settings);
@@ -144,7 +147,7 @@ public sealed partial class ModsPageViewModel : PageViewModel, IRefreshablePage
     /// <summary>Whether a panel is over the page, so the scrim is drawn.</summary>
     public bool IsAnyPanelOpen =>
         SortReview.IsOpen || Install.IsOpen || Update.IsOpen || Randomiser.IsOpen || Export.IsOpen ||
-        Import.IsOpen || CharacterManager.IsOpen || AllOff.IsOpen;
+        ChangedInis.IsOpen || Import.IsOpen || CharacterManager.IsOpen || AllOff.IsOpen;
 
     /// <summary>"Switch every mod off?": the apply panel over a profile of nothing, never saved.</summary>
     public ProfileApplyViewModel AllOff { get; }
@@ -189,6 +192,13 @@ public sealed partial class ModsPageViewModel : PageViewModel, IRefreshablePage
     /// <summary>Opens the export panel.</summary>
     [RelayCommand]
     private void OpenExport() => Track(Export.OpenAsync());
+
+    /// <summary>"INIs changed in XXSM".</summary>
+    public ChangedInisViewModel ChangedInis { get; }
+
+    /// <summary>Opens the list of mods whose INIs XXSM changed.</summary>
+    [RelayCommand]
+    private void OpenChangedInis() => Track(ChangedInis.OpenAsync());
 
     /// <summary>"Update this mod?"</summary>
     public ModUpdateViewModel Update => _update;
@@ -333,6 +343,7 @@ public sealed partial class ModsPageViewModel : PageViewModel, IRefreshablePage
         _update.PropertyChanged += OnPanelChanged;
         Randomiser.PropertyChanged += OnPanelChanged;
         Export.PropertyChanged += OnPanelChanged;
+        ChangedInis.PropertyChanged += OnPanelChanged;
         Import.PropertyChanged += OnPanelChanged;
         CharacterManager.PropertyChanged += OnPanelChanged;
         AllOff.PropertyChanged += OnPanelChanged;
@@ -341,6 +352,7 @@ public sealed partial class ModsPageViewModel : PageViewModel, IRefreshablePage
 
         Refresh();
         Track(Import.RefreshAvailabilityAsync(ActivationToken));
+        Track(ChangedInis.RefreshCountAsync(ActivationToken));
         StartWatching();
 
         Track(_downloads.LoadAsync(ActivationToken));
@@ -357,6 +369,7 @@ public sealed partial class ModsPageViewModel : PageViewModel, IRefreshablePage
         _update.PropertyChanged -= OnPanelChanged;
         Randomiser.PropertyChanged -= OnPanelChanged;
         Export.PropertyChanged -= OnPanelChanged;
+        ChangedInis.PropertyChanged -= OnPanelChanged;
         Import.PropertyChanged -= OnPanelChanged;
         CharacterManager.PropertyChanged -= OnPanelChanged;
         AllOff.PropertyChanged -= OnPanelChanged;
@@ -365,6 +378,7 @@ public sealed partial class ModsPageViewModel : PageViewModel, IRefreshablePage
         AllOff.Close();
         Randomiser.Close();
         Export.Close();
+        ChangedInis.Close();
         Import.Close();
         CharacterManager.Close();
         StopWatching();
@@ -402,6 +416,7 @@ public sealed partial class ModsPageViewModel : PageViewModel, IRefreshablePage
             Randomiser.Close();
             Import.Close();
             Export.Close();
+            ChangedInis.Close();
             AllOff.Close();
         }
 
@@ -416,6 +431,7 @@ public sealed partial class ModsPageViewModel : PageViewModel, IRefreshablePage
             }
 
             Track(Import.RefreshAvailabilityAsync(ActivationToken));
+            Track(ChangedInis.RefreshCountAsync(ActivationToken));
 
             if (e.PropertyName == nameof(GameContext.ModsDirectory))
             {

@@ -3,6 +3,7 @@ using System.Globalization;
 using Microsoft.Extensions.DependencyInjection;
 using Xxsm.Cli.Output;
 using Xxsm.Core.GameBanana;
+using Xxsm.Core.Ini;
 using Xxsm.Core.Io;
 using Xxsm.Core.Mods;
 using Xxsm.Core.Text;
@@ -40,12 +41,18 @@ internal static class ModGameBananaCommands
             Description = "Actually replace the mod. Without it nothing is changed.",
         };
 
+        var dropIniChanges = new Option<bool>("--drop-ini-changes")
+        {
+            Description = "Leave the new version's INIs as its author made them. Without it, the key and default changes " +
+                          "made in XXSM are made again in the new version.",
+        };
+
         var command = new Command(
             "update",
             "Replace a mod with the newer version on its GameBanana page. Shows every file that "
             + "changes first; the previous version goes to the trash.")
         {
-            folder, mods, game, fileId, apply,
+            folder, mods, game, fileId, apply, dropIniChanges,
         };
 
         command.SetAction(async (parse, cancellationToken) =>
@@ -61,6 +68,8 @@ internal static class ModGameBananaCommands
             using var plan = await updater
                 .PlanAsync(parse.GetValue(folder)!, parse.GetValue(game), parse.GetValue(fileId), cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
+
+            plan.KeepIniChanges = !parse.GetValue(dropIniChanges);
 
             var result = parse.GetValue(apply)
                 ? await updater.ApplyAsync(plan, modsDirectory, cancellationToken).ConfigureAwait(false)
@@ -78,7 +87,9 @@ internal static class ModGameBananaCommands
                 ],
                 plan.UnchangedCount,
                 result is not null,
-                result?.Previous.TrashedPath);
+                result?.Previous.TrashedPath,
+                plan.KeepIniChanges,
+                Carried(result?.Carried));
 
             if (parse.GetValue(GlobalOptions.Json))
             {
@@ -109,10 +120,33 @@ internal static class ModGameBananaCommands
 
         Console.Out.WriteLine($"  {EnglishCount.Plural(report.Unchanged, "file", "files")} unchanged.");
 
+        foreach (var carried in report.CarriedIniChanges)
+        {
+            Console.Out.WriteLine(carried.Outcome switch
+            {
+                "clashed" => $"  Kept yours  {carried.File} [{carried.Section}] {carried.Name} = {carried.Yours} (the new version has {carried.NewAuthor})",
+                "missing" => $"  Not carried {carried.File} [{carried.Section}] {carried.Name} = {carried.Yours} (the new version has no such line)",
+                _ => $"  Carried     {carried.File} [{carried.Section}] {carried.Name} = {carried.Yours}",
+            });
+        }
+
         Console.Out.WriteLine(report.Applied
             ? $"Updated. The previous version is in the trash: {report.TrashedTo}"
             : "Nothing was changed. Add --apply to update it.");
     }
+
+    private static List<ModIniCarriedReport> Carried(IniCarryReport? carried) =>
+        carried is null
+            ? []
+            :
+            [
+                .. carried.Applied.Select(item => Carried(item, "applied")),
+                .. carried.Clashed.Select(item => Carried(item, "clashed")),
+                .. carried.Missing.Select(item => Carried(item, "missing")),
+            ];
+
+    private static ModIniCarriedReport Carried(IniCarried item, string outcome) =>
+        new(item.File, item.Change.Section, item.Change.Name, item.Change.Current, item.NewAuthorValue, outcome);
 
     /// <summary><c>xxsm mod link</c>: give a mod its address; no request is made.</summary>
     private static Command CreateLink()

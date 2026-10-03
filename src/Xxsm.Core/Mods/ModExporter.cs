@@ -22,11 +22,13 @@ public enum ModExportSwitching
 /// <param name="SkipMetadata">Leave out each mod's <c>.xxsm/</c> folder: its details, picture and sort record.</param>
 /// <param name="OneFolder">Put every mod straight into the export folder, without its character folder.</param>
 /// <param name="Switching">Whether the copies are switched on or off. Only the copies' names change.</param>
+/// <param name="UseOriginals">Copy each INI XXSM changed as its author shipped it, from the copy kept before the first change.</param>
 public sealed record ModExportOptions(
     bool EnabledOnly = false,
     bool SkipMetadata = false,
     bool OneFolder = false,
-    ModExportSwitching Switching = ModExportSwitching.AsTheyAre);
+    ModExportSwitching Switching = ModExportSwitching.AsTheyAre,
+    bool UseOriginals = false);
 
 /// <summary>What an export would copy.</summary>
 public sealed record ModExportPlan
@@ -54,6 +56,12 @@ public sealed record ModExportPlan
 
     /// <summary>How many bytes would be copied.</summary>
     public required long TotalBytes { get; init; }
+
+    /// <summary>How many of the mods have an INI that differs from the copy XXSM kept before changing it.</summary>
+    public required int ChangedIniModCount { get; init; }
+
+    /// <summary>Whether the copy would keep XXSM's changes to INIs but not the authors' originals to undo them with.</summary>
+    public bool LosesOriginals => Options.SkipMetadata && !Options.UseOriginals && ChangedIniModCount > 0;
 }
 
 /// <summary>How far an export has got.</summary>
@@ -115,6 +123,7 @@ public sealed class ModExporter(IModRepository repository, TimeProvider time, IL
         var inventory = await _repository.ScanAsync(modsDirectory, cancellationToken).ConfigureAwait(false);
         var mods = inventory.AllMods.Where(mod => !options.EnabledOnly || mod.IsEnabled).ToList();
         var fileCount = 0;
+        var changedIniMods = 0;
         long bytes = 0;
 
         foreach (var mod in mods)
@@ -126,7 +135,12 @@ public sealed class ModExporter(IModRepository repository, TimeProvider time, IL
                 foreach (var file in Files(mod.Path, options))
                 {
                     fileCount++;
-                    bytes += Length(file);
+                    bytes += Length(Source(mod.Path, file, options));
+                }
+
+                if (HasChangedIni(mod.Path))
+                {
+                    changedIniMods++;
                 }
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -148,6 +162,7 @@ public sealed class ModExporter(IModRepository repository, TimeProvider time, IL
             SkippedDisabledCount = inventory.ModCount - mods.Count,
             FileCount = fileCount,
             TotalBytes = bytes,
+            ChangedIniModCount = changedIniMods,
         };
     }
 
@@ -208,7 +223,7 @@ public sealed class ModExporter(IModRepository repository, TimeProvider time, IL
                     var copyTo = Path.Combine(destination, Path.GetRelativePath(mod.Path, file));
                     Directory.CreateDirectory(Path.GetDirectoryName(copyTo)!);
 
-                    bytesDone += await CopyAsync(file, copyTo, cancellationToken).ConfigureAwait(false);
+                    bytesDone += await CopyAsync(Source(mod.Path, file, plan.Options), copyTo, cancellationToken).ConfigureAwait(false);
                     filesDone++;
                 }
 
@@ -366,6 +381,42 @@ public sealed class ModExporter(IModRepository repository, TimeProvider time, IL
                 yield return entry;
             }
         }
+    }
+
+    /// <summary>The file to copy for <paramref name="file"/>: its kept original when asked for and there is one.</summary>
+    private static string Source(string modFolder, string file, ModExportOptions options)
+    {
+        if (!options.UseOriginals || !string.Equals(Path.GetExtension(file), ".ini", StringComparison.OrdinalIgnoreCase))
+        {
+            return file;
+        }
+
+        var original = Ini.ModInis.OriginalOf(modFolder, file);
+
+        return File.Exists(original) && new FileInfo(original).LinkTarget is null ? original : file;
+    }
+
+    /// <summary>Whether any INI of the mod differs from the original kept beside it in <c>.xxsm/originals/</c>.</summary>
+    private static bool HasChangedIni(string modFolder)
+    {
+        var originals = Path.Combine(modFolder, ModsFolderLayout.StateDirectoryName, "originals");
+
+        if (!Directory.Exists(originals))
+        {
+            return false;
+        }
+
+        foreach (var original in Directory.EnumerateFiles(originals, "*.ini.original", SearchOption.AllDirectories))
+        {
+            var ini = Path.Combine(modFolder, Path.GetRelativePath(originals, original)[..^".original".Length]);
+
+            if (File.Exists(ini) && !File.ReadAllBytes(ini).AsSpan().SequenceEqual(File.ReadAllBytes(original)))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static long Length(string file)

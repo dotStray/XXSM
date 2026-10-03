@@ -81,6 +81,7 @@ internal static class CliJson
 [JsonSerializable(typeof(RandomiseReport))]
 [JsonSerializable(typeof(ModKeysReport))]
 [JsonSerializable(typeof(ModDefaultsReport))]
+[JsonSerializable(typeof(ModIniChangesListReport))]
 [JsonSerializable(typeof(ModExportReport))]
 [JsonSerializable(typeof(ModImportReport))]
 [JsonSerializable(typeof(ConfigReport))]

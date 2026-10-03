@@ -3782,6 +3782,30 @@
     <value>Cancel</value>
     <comment>Closes the update panel without changing anything.</comment>
   </data>
+  <data name="ModUpdate_KeepIniChanges" xml:space="preserve">
+    <value>Keep my key and default changes</value>
+    <comment>Tick box in "Update this mod?", shown when the installed version has key or default changes made in XXSM.</comment>
+  </data>
+  <data name="ModUpdate_KeepIniChanges_Hint" xml:space="preserve">
+    <value>They are made again in the new version's INIs. Where its author changed the same line, yours is kept. Unticked, the new version stays as its author made it.</value>
+    <comment>Under ModUpdate_KeepIniChanges.</comment>
+  </data>
+  <data name="ModUpdate_Carried" xml:space="preserve">
+    <value>Your key and default changes were made again.</value>
+    <comment>Added to the update notice when changes were carried to the new version.</comment>
+  </data>
+  <data name="ModUpdate_Carried_Clashed" xml:space="preserve">
+    <value>Kept over the author's new value: {0}.</value>
+    <comment>Added to the update notice. {0} lists lines such as "[KeyHat] key = H".</comment>
+  </data>
+  <data name="ModUpdate_Carried_Missing" xml:space="preserve">
+    <value>Not in the new version, so not carried: {0}.</value>
+    <comment>Added to the update notice. {0} lists lines such as "[KeyHat] key = H".</comment>
+  </data>
+  <data name="ModUpdate_Carried_Other" xml:space="preserve">
+    <value>Other changes to {0} were not carried.</value>
+    <comment>Added to the update notice when an INI had changes that are not keys or defaults. {0} lists INI files.</comment>
+  </data>
   <data name="ModUpdate_Done_Version" xml:space="preserve">
     <value>{0} is updated to {1}. The previous version is in the trash.</value>
     <comment>Notice after an update. {0} the mod, {1} the new version.</comment>
@@ -4306,6 +4330,18 @@
     <value>Leave out XXSM's own details (the .xxsm folder in each mod)</value>
     <comment>Tick box: leave each mod's.xxsm folder out of the copy.</comment>
   </data>
+  <data name="Export_UseOriginals" xml:space="preserve">
+    <value>Use the authors' original INIs in the copy</value>
+    <comment>Tick box, shown when some mods have INIs changed in XXSM: the copy gets each author's INI as shipped, kept before XXSM's first change. The Mods folder is not changed.</comment>
+  </data>
+  <data name="Export_ChangedInis" xml:space="preserve">
+    <value>INIs changed in XXSM (keys or defaults): {0}. Your Mods folder keeps the changes either way.</value>
+    <comment>Under Export_UseOriginals. {0} is a count of mods, e.g. "2 mods".</comment>
+  </data>
+  <data name="Export_LosesOriginals" xml:space="preserve">
+    <value>Without XXSM's details, the copies keep these changes but not the authors' originals, so there is no way back to them. Tick "Use the authors' original INIs in the copy" to copy the authors' files instead.</value>
+    <comment>Warning, shown when XXSM's details are left out, some mods have INIs changed in XXSM, and the originals are not chosen.</comment>
+  </data>
   <data name="Export_OneFolder" xml:space="preserve">
     <value>Put every mod in one folder, without the character folders</value>
     <comment>Tick box: the copy has every mod side by side at its top instead of inside character folders.</comment>
@@ -4365,6 +4401,58 @@
   <data name="Export_OpenFolder" xml:space="preserve">
     <value>Open folder</value>
     <comment>Button on the export notice that opens the copy.</comment>
+  </data>
+  <data name="ChangedInis_Heading" xml:space="preserve">
+    <value>INIs changed in XXSM</value>
+    <comment>Heading of the Mods page's card and of its panel listing mods whose INIs XXSM changed (keys or defaults).</comment>
+  </data>
+  <data name="ChangedInis_Card_Body" xml:space="preserve">
+    <value>Key and default changes you made in XXSM are kept apart from each author's own INI, so you can always put the author's back.</value>
+    <comment>Body of the Mods page's card.</comment>
+  </data>
+  <data name="ChangedInis_Start" xml:space="preserve">
+    <value>Review…</value>
+    <comment>Opens the panel listing the mods whose INIs XXSM changed.</comment>
+  </data>
+  <data name="ChangedInis_None" xml:space="preserve">
+    <value>No mod has an INI changed in XXSM.</value>
+    <comment>The card's line when there are none.</comment>
+  </data>
+  <data name="ChangedInis_Count" xml:space="preserve">
+    <value>{0} have INIs changed in XXSM.</value>
+    <comment>The card's line. {0} is a count of mods, e.g. "3 mods".</comment>
+  </data>
+  <data name="ChangedInis_Count_One" xml:space="preserve">
+    <value>{0} has an INI changed in XXSM.</value>
+    <comment>The same as ChangedInis_Count, when {0} counts exactly one.</comment>
+  </data>
+  <data name="ChangedInis_Body" xml:space="preserve">
+    <value>Each line shows your value, then the author's. Putting a mod back restores its author's INI exactly, keys and defaults together. A copy of each INI as it is now goes to the trash first.</value>
+    <comment>Under the panel's heading.</comment>
+  </data>
+  <data name="ChangedInis_Line" xml:space="preserve">
+    <value>{0} [{1}] {2}: {3} (author's: {4})</value>
+    <comment>One changed line. {0} the INI file, {1} its section, {2} the setting's name, {3} the value now, {4} the author's value.</comment>
+  </data>
+  <data name="ChangedInis_OtherChanges" xml:space="preserve">
+    <value>{0}: other lines differ too, and are put back as well.</value>
+    <comment>An INI with differences that are not keys or defaults, e.g. edited by hand. {0} is the INI file.</comment>
+  </data>
+  <data name="ChangedInis_Revert" xml:space="preserve">
+    <value>Put back the authors' INIs</value>
+    <comment>The panel's button: restores the ticked mods' INIs as their authors shipped them.</comment>
+  </data>
+  <data name="ChangedInis_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+    <comment>Closes the panel without changing anything.</comment>
+  </data>
+  <data name="ChangedInis_Done" xml:space="preserve">
+    <value>Put back the authors' INIs in {0}.</value>
+    <comment>Notice. {0} is a count of mods, e.g. "2 mods".</comment>
+  </data>
+  <data name="ChangedInis_Undone" xml:space="preserve">
+    <value>Your changes are back in {0}.</value>
+    <comment>Notice after Undo. {0} is a count of mods.</comment>
   </data>
   <data name="Mods_Export_Heading" xml:space="preserve">
     <value>Export</value>
@@ -4842,33 +4930,49 @@
     <value>{0}, {1} still waiting for hashes</value>
     <comment>Adds how many are waiting for hashes ({1}) to what the pack holds ({0}).</comment>
   </data>
-  <data name="Count_Setting_One" xml:space="preserve">
-    <value>1 setting</value>
-    <comment>A count of one setting a mod keeps between game sessions, for a sentence that takes a count.</comment>
-  </data>
-  <data name="Count_Setting_Many" xml:space="preserve">
-    <value>{0} settings</value>
-    <comment>A count of several settings a mod keeps between game sessions. {0} is how many.</comment>
-  </data>
-  <data name="SavedSettings_Heading" xml:space="preserve">
-    <value>Default toggles</value>
-    <comment>Label over the settings a mod keeps between game sessions, in the detail pane.</comment>
-  </data>
-  <data name="SavedSettings_Body" xml:space="preserve">
-    <value>Save your current in-game toggles as default, so that re-enabling the mods keep them.</value>
-    <comment>Under the In-game settings label.</comment>
-  </data>
   <data name="SavedSettings_UseInGame" xml:space="preserve">
     <value>Use current toggles as defaults</value>
-    <comment>Button: shows each setting whose saved value differs from the mod's default; Save writes them into the mod's file.</comment>
+    <comment>In Save's menu in the detail pane: makes the values the game saved for the mod's settings its defaults, straight away, with an Undo.</comment>
   </data>
   <data name="SavedSettings_Restore" xml:space="preserve">
     <value>Restore the mod's own defaults</value>
-    <comment>Button, shown once XXSM has changed a default: shows the defaults the mod came with; Save writes them back.</comment>
+    <comment>In Revert's menu in the detail pane, enabled once XXSM has changed a default: puts back the defaults the mod came with, straight away, with an Undo.</comment>
   </data>
-  <data name="SavedSettings_Changes" xml:space="preserve">
-    <value>{0} will change. Save writes them into the mod's file; Revert leaves it as it is.</value>
-    <comment>Over the list of changed defaults. {0} is a count, such as "4 settings".</comment>
+  <data name="CharacterDetail_SaveMore" xml:space="preserve">
+    <value>More ways to save</value>
+    <comment>The arrow beside Save in the detail pane, read aloud and shown on hover: opens Save's menu.</comment>
+  </data>
+  <data name="CharacterDetail_RevertMore" xml:space="preserve">
+    <value>More ways to revert</value>
+    <comment>The arrow beside Revert in the detail pane, read aloud and shown on hover: opens Revert's menu.</comment>
+  </data>
+  <data name="CharacterDetail_Revert_Keys" xml:space="preserve">
+    <value>Restore the mod's own keys</value>
+    <comment>In Revert's menu, enabled once XXSM has changed a key: puts back the keys the mod came with, straight away, with an Undo.</comment>
+  </data>
+  <data name="CharacterDetail_Revert_Ini" xml:space="preserve">
+    <value>Restore the mod's whole INI</value>
+    <comment>In Revert's menu, enabled once XXSM has changed the mod's INI: puts back the author's file exactly, keys and defaults together, with an Undo.</comment>
+  </data>
+  <data name="CharacterDetail_Ini_InGame_Done" xml:space="preserve">
+    <value>{0}: your current toggles are now its defaults.</value>
+    <comment>Notice with an Undo. {0} is the mod.</comment>
+  </data>
+  <data name="CharacterDetail_Ini_Defaults_Done" xml:space="preserve">
+    <value>{0}: its own defaults are back.</value>
+    <comment>Notice with an Undo. {0} is the mod.</comment>
+  </data>
+  <data name="CharacterDetail_Ini_Keys_Done" xml:space="preserve">
+    <value>{0}: its own keys are back.</value>
+    <comment>Notice with an Undo. {0} is the mod.</comment>
+  </data>
+  <data name="CharacterDetail_Ini_Everything_Done" xml:space="preserve">
+    <value>{0}: its INI is back as its author shipped it. A copy of it as it was is in the trash.</value>
+    <comment>Notice with an Undo. {0} is the mod.</comment>
+  </data>
+  <data name="CharacterDetail_Ini_Undone" xml:space="preserve">
+    <value>{0} is as it was again.</value>
+    <comment>Notice after an Undo of one of Save's or Revert's menu items. {0} is the mod.</comment>
   </data>
   <data name="SavedSettings_AlreadyMatch" xml:space="preserve">
     <value>The mod's defaults already match the game.</value>
@@ -4877,9 +4981,5 @@
   <data name="SavedSettings_NothingSaved" xml:space="preserve">
     <value>The game hasn't saved this mod's settings yet. It saves them when you press F10, when you quit, and every so often while you play.</value>
     <comment>After Use in-game settings as defaults, when the game has no saved value for any of the mod's settings.</comment>
-  </data>
-  <data name="SavedSettings_AlreadyOriginal" xml:space="preserve">
-    <value>The mod's defaults are already the ones it came with.</value>
-    <comment>After Restore the mod's own defaults, when there is nothing to change.</comment>
   </data>
 </root>

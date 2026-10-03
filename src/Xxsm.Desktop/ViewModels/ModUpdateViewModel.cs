@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Xxsm.Core;
 using Xxsm.Core.GameBanana;
+using Xxsm.Core.Ini;
 using Xxsm.Core.Io;
 using Xxsm.Desktop.Services;
 using Xxsm.Packs.Downloads;
@@ -44,6 +45,7 @@ public sealed partial class ModUpdateViewModel : ObservableObject, IDisposable
     private readonly IUiDispatcher _ui;
     private readonly ITextCatalogue _text;
     private readonly Func<CancellationToken, Task> _rescan;
+    private readonly IIniOriginalsService _iniOriginals;
 
     private ModUpdateSource? _source;
     private ModUpdatePlan? _plan;
@@ -62,6 +64,7 @@ public sealed partial class ModUpdateViewModel : ObservableObject, IDisposable
     /// <param name="ui">Brings the download's progress onto the window's thread.</param>
     /// <param name="text">The interface's wording.</param>
     /// <param name="rescan">Rescans the Mods folder after the mod changed.</param>
+    /// <param name="iniOriginals">Says whether the mod has key or default changes to keep.</param>
     public ModUpdateViewModel(
         IModUpdater updater,
         IDownloadManager downloads,
@@ -71,7 +74,8 @@ public sealed partial class ModUpdateViewModel : ObservableObject, IDisposable
         IUrlLauncher urls,
         IUiDispatcher ui,
         ITextCatalogue text,
-        Func<CancellationToken, Task> rescan)
+        Func<CancellationToken, Task> rescan,
+        IIniOriginalsService iniOriginals)
     {
         ArgumentNullException.ThrowIfNull(updater);
         ArgumentNullException.ThrowIfNull(downloads);
@@ -82,6 +86,7 @@ public sealed partial class ModUpdateViewModel : ObservableObject, IDisposable
         ArgumentNullException.ThrowIfNull(ui);
         ArgumentNullException.ThrowIfNull(text);
         ArgumentNullException.ThrowIfNull(rescan);
+        ArgumentNullException.ThrowIfNull(iniOriginals);
 
         _updater = updater;
         _downloads = downloads;
@@ -92,6 +97,7 @@ public sealed partial class ModUpdateViewModel : ObservableObject, IDisposable
         _ui = ui;
         _text = text;
         _rescan = rescan;
+        _iniOriginals = iniOriginals;
 
         FileChooser = new GameBananaFileChooserViewModel(text);
         FileChooser.PropertyChanged += (_, e) =>
@@ -106,6 +112,14 @@ public sealed partial class ModUpdateViewModel : ObservableObject, IDisposable
     /// <summary>Whether the panel is on screen.</summary>
     [ObservableProperty]
     private bool _isOpen;
+
+    /// <summary>Whether the installed version has key or default changes made in XXSM.</summary>
+    [ObservableProperty]
+    private bool _hasIniChanges;
+
+    /// <summary>Whether those changes are made again in the new version. On unless unticked.</summary>
+    [ObservableProperty]
+    private bool _keepIniChanges = true;
 
     /// <summary>Whether the page is being read or the file downloaded and compared.</summary>
     [ObservableProperty]
@@ -275,6 +289,7 @@ public sealed partial class ModUpdateViewModel : ObservableObject, IDisposable
                 {
                     try
                     {
+                        plan.KeepIniChanges = KeepIniChanges;
                         result = await _updater.ApplyAsync(plan, mods, ct).ConfigureAwait(true);
                     }
                     catch (XxsmException ex)
@@ -322,9 +337,9 @@ public sealed partial class ModUpdateViewModel : ObservableObject, IDisposable
         notice = _notifications.Add(
             NotificationSeverity.Information,
             _text[nameof(Strings.ModUpdate_Heading)],
-            result.Version is { Length: > 0 } version
+            (result.Version is { Length: > 0 } version
                 ? _text.Format(nameof(Strings.ModUpdate_Done_Version), name, version)
-                : _text.Format(nameof(Strings.ModUpdate_Done), name),
+                : _text.Format(nameof(Strings.ModUpdate_Done), name)) + Carried(result.Carried),
             action: undo,
             actionText: _text[nameof(Strings.Notifications_Undo)]);
 
@@ -377,6 +392,8 @@ public sealed partial class ModUpdateViewModel : ObservableObject, IDisposable
         FileText = null;
         EditWarning = null;
         UnchangedText = null;
+        HasIniChanges = false;
+        KeepIniChanges = true;
     }
 
     private async Task PrepareAsync(long? fileId)
@@ -473,6 +490,57 @@ public sealed partial class ModUpdateViewModel : ObservableObject, IDisposable
         }
 
         Show(plan);
+        await ReadIniChangesAsync(plan).ConfigureAwait(true);
+    }
+
+    /// <summary>Offers to keep the key and default changes when the installed version has any.</summary>
+    private async Task ReadIniChangesAsync(ModUpdatePlan plan)
+    {
+        try
+        {
+            var changes = await _iniOriginals.ReadAsync(plan.ModFolder, CancellationToken.None).ConfigureAwait(true);
+
+            if (ReferenceEquals(_plan, plan))
+            {
+                HasIniChanges = changes.HasKeyChanges || changes.HasDefaultChanges;
+                EditWarning = HasIniChanges ? null : EditWarning;
+            }
+        }
+        catch (ModOperationException)
+        {
+            HasIniChanges = false;
+        }
+    }
+
+    /// <summary>What became of the key and default changes, for the notice; empty when there is nothing to say.</summary>
+    private string Carried(IniCarryReport? carried)
+    {
+        if (carried is null || carried.IsEmpty)
+        {
+            return string.Empty;
+        }
+
+        static string Lines(IEnumerable<IniCarried> items) =>
+            string.Join(", ", items.Select(item => $"[{item.Change.Section}] {item.Change.Name} = {item.Change.Current}"));
+
+        var text = " " + _text[nameof(Strings.ModUpdate_Carried)];
+
+        if (carried.Clashed.Count > 0)
+        {
+            text += " " + _text.Format(nameof(Strings.ModUpdate_Carried_Clashed), Lines(carried.Clashed));
+        }
+
+        if (carried.Missing.Count > 0)
+        {
+            text += " " + _text.Format(nameof(Strings.ModUpdate_Carried_Missing), Lines(carried.Missing));
+        }
+
+        if (carried.OtherChangesLeft.Count > 0)
+        {
+            text += " " + _text.Format(nameof(Strings.ModUpdate_Carried_Other), string.Join(", ", carried.OtherChangesLeft));
+        }
+
+        return text;
     }
 
     private void ShowSource(ModUpdateSource source)

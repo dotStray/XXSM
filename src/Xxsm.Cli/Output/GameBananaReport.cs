@@ -93,6 +93,8 @@ public sealed record ModUpdateChangeReport(string Path, string Kind, bool MayBeE
 /// <param name="Unchanged">How many files are the same.</param>
 /// <param name="Applied">Whether the mod was replaced.</param>
 /// <param name="TrashedTo">Where the previous version went, when it was.</param>
+/// <param name="IniChangesKept">Whether the user's key and default changes were to be made again in the new version.</param>
+/// <param name="CarriedIniChanges">What became of each of them; empty when none were carried or nothing was applied.</param>
 public sealed record ModUpdatePlanReport(
     string ModFolder,
     string? InstalledVersion,
@@ -102,7 +104,18 @@ public sealed record ModUpdatePlanReport(
     IReadOnlyList<ModUpdateChangeReport> Changes,
     int Unchanged,
     bool Applied,
-    string? TrashedTo);
+    string? TrashedTo,
+    bool IniChangesKept,
+    IReadOnlyList<ModIniCarriedReport> CarriedIniChanges);
+
+/// <summary>One of the user's key or default changes, carried to a new version or not.</summary>
+/// <param name="File">The INI.</param>
+/// <param name="Section">Its section.</param>
+/// <param name="Name">The line's name.</param>
+/// <param name="Yours">The user's value.</param>
+/// <param name="NewAuthor">The new version's own value; null when it has no such line.</param>
+/// <param name="Outcome"><c>applied</c>, <c>clashed</c> (the user's value replaced a new one of the author's) or <c>missing</c>.</param>
+public sealed record ModIniCarriedReport(string File, string Section, string Name, string Yours, string? NewAuthor, string Outcome);
 
 /// <summary>What <c>xxsm mod link</c> left on the mod.</summary>
 /// <param name="ModFolder">The mod folder.</param>

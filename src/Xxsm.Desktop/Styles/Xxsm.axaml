@@ -10,7 +10,7 @@
     <Setter Property="MinWidth" Value="{DynamicResource ButtonMinWidth}" />
   </Style>
 
-  <Style Selector="Button.tile, Button.pin, Button.iconButton, Button.toolbarMenu, Button.cellLink, Button.moveTarget, Button.lineArrow, Button.textLink">
+  <Style Selector="Button.tile, Button.pin, Button.iconButton, Button.splitArrow, Button.toolbarMenu, Button.cellLink, Button.moveTarget, Button.lineArrow, Button.textLink">
     <Setter Property="MinWidth" Value="0" />
   </Style>
 
@@ -722,6 +722,18 @@
 
   <Style Selector="WrapPanel.buttonRow > :is(ToggleButton)">
     <Setter Property="Margin" Value="0,0,8,6" />
+  </Style>
+
+  <!-- A button and its menu arrow drawn as one: the detail pane's Save and Revert. -->
+  <Style Selector="Button.splitMain">
+    <Setter Property="CornerRadius" Value="4,0,0,4" />
+  </Style>
+
+  <Style Selector="Button.splitArrow">
+    <Setter Property="MinWidth" Value="0" />
+    <Setter Property="Padding" Value="9,0" />
+    <Setter Property="CornerRadius" Value="0,4,4,0" />
+    <Setter Property="VerticalAlignment" Value="Stretch" />
   </Style>
 
   <!-- A borderless, icon-only button: the detail view's back arrow. -->
