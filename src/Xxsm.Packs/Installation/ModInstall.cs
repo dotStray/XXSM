@@ -83,6 +83,19 @@ public sealed record InstallChoice(
     string? Description = null,
     ModGameBananaInfo? GameBanana = null);
 
+/// <summary>Whether added mods arrive switched on or off.</summary>
+public enum InstallSwitching
+{
+    /// <summary>Each mod is added switched off.</summary>
+    Off,
+
+    /// <summary>The one mod is added switched on, and the other mods in its character folder are switched off.</summary>
+    OnlyThis,
+
+    /// <summary>Each mod is added as it came, which is switched on unless its folder says otherwise.</summary>
+    AsItIs,
+}
+
 /// <summary>What an install source contains, before anything is copied. Dispose to delete its staging.</summary>
 public sealed class InstallPlan : IDisposable
 {
@@ -178,6 +191,10 @@ public sealed record InstallResult
     /// <summary>The ones that failed, with the reason on each.</summary>
     public IReadOnlyList<InstallOutcome> Failures => [.. Outcomes.Where(outcome => outcome.Error is not null)];
 
+    /// <summary>The other mods switched off for <see cref="InstallSwitching.OnlyThis"/>, journalled for an undo; null
+    /// when that was not asked for or no other mod was on.</summary>
+    public ModSwitchRunResult? SwitchedOff { get; init; }
+
     /// <summary>The ones that installed but whose metadata could not be written.</summary>
     public IReadOnlyList<InstallOutcome> MetadataFailures =>
         [.. Outcomes.Where(outcome => outcome.MetadataError is not null)];
@@ -209,10 +226,19 @@ public interface IModInstaller
     /// <param name="plan">The plan the choices came from.</param>
     /// <param name="choices">The candidates to install, with any per-row override of target or name.</param>
     /// <param name="data">The merged game data, for resolving a chosen variant to its folder.</param>
+    /// <param name="switching">Whether the mods arrive switched on or off.</param>
     /// <param name="cancellationToken">Cancels between mods. Mods already installed stay installed.</param>
+    /// <exception cref="Xxsm.Core.ModOperationException"><see cref="InstallSwitching.OnlyThis"/> with other than one
+    /// mod, or with one going to <c>Others</c>.</exception>
     Task<InstallResult> ApplyAsync(
         InstallPlan plan,
         IReadOnlyList<InstallChoice> choices,
         Merge.GameData data,
+        InstallSwitching switching = InstallSwitching.AsItIs,
         CancellationToken cancellationToken = default);
+
+    /// <summary>Whether <see cref="InstallSwitching.OnlyThis"/> makes sense: one mod, going to a character.</summary>
+    /// <param name="choices">The mods about to be installed.</param>
+    /// <param name="data">The merged game data.</param>
+    bool CanSwitchOnlyThis(IReadOnlyList<InstallChoice> choices, Merge.GameData data);
 }

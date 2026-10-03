@@ -17,6 +17,10 @@ public enum ModSwitchSource
     /// <summary>Every mod was switched off at once, from the Mods page or <c>xxsm mod disable-all</c>.</summary>
     [JsonStringEnumMemberName("all-off")]
     AllOff,
+
+    /// <summary>A mod was added with its character's other mods switched off.</summary>
+    [JsonStringEnumMemberName("install")]
+    Install,
 }
 
 /// <summary>One mod to switch on or off.</summary>

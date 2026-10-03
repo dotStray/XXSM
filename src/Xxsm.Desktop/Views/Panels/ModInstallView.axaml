@@ -75,6 +75,20 @@
                 Content="{DynamicResource Text.ModInstall_Hide}" />
       </Grid>
 
+      <!-- Whether the new mods arrive on or off; off each time. The middle one only for one mod going to a character. -->
+      <StackPanel DockPanel.Dock="Bottom" Spacing="6" Margin="0,12,0,0" IsVisible="{Binding HasRows}">
+        <TextBlock Classes="sectionLabel" Text="{DynamicResource Text.ModInstall_Switch_Label}" />
+        <WrapPanel ItemSpacing="20" LineSpacing="6">
+          <RadioButton GroupName="installSwitching" IsChecked="{Binding SwitchOff}"
+                       Content="{DynamicResource Text.ModInstall_Switch_Off}" />
+          <RadioButton GroupName="installSwitching" IsChecked="{Binding SwitchOnlyThis}"
+                       IsVisible="{Binding CanSwitchOnlyThis}"
+                       Content="{Binding SwitchOnlyThisText}" />
+          <RadioButton GroupName="installSwitching" IsChecked="{Binding SwitchAsItIs}"
+                       Content="{DynamicResource Text.ModInstall_Switch_AsItIs}" />
+        </WrapPanel>
+      </StackPanel>
+
       <!-- The download itself: how much has arrived, how fast, how much longer. First in the panel while it runs. -->
       <Border DockPanel.Dock="Top" Classes="inlineNotice" Padding="12" Margin="0,0,0,10"
               IsVisible="{Binding IsDownloading}">

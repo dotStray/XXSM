@@ -502,8 +502,10 @@ public sealed partial class ModInstallViewModel(
     IUiDispatcher ui,
     ILogger logger,
     Func<CancellationToken, Task> rescan,
-    Func<string, bool> goToMod) : ObservableObject, IDisposable
+    Func<string, bool> goToMod,
+    SwitchRunNotices switchNotices) : ObservableObject, IDisposable
 {
+    private readonly SwitchRunNotices _switchNotices = switchNotices;
     private readonly GameContext _game = game;
     private readonly IModInstaller _installer = installer;
     private readonly IAppSettingsStore _settings = settings;
@@ -525,6 +527,43 @@ public sealed partial class ModInstallViewModel(
     private readonly Func<CancellationToken, Task> _rescan = rescan;
 
     private InstallPlan? _plan;
+
+    /// <summary>Whether the mods arrive switched off, on with their character's other mods off, or on. Off each time
+    /// the card opens.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SwitchOff), nameof(SwitchOnlyThis), nameof(SwitchAsItIs))]
+    private InstallSwitching _switching = InstallSwitching.Off;
+
+    /// <summary>The first of the three: added switched off.</summary>
+    public bool SwitchOff
+    {
+        get => Switching == InstallSwitching.Off;
+        set => ChooseSwitching(value, InstallSwitching.Off);
+    }
+
+    /// <summary>The second: switched on, with the other mods in its character folder switched off.</summary>
+    public bool SwitchOnlyThis
+    {
+        get => Switching == InstallSwitching.OnlyThis;
+        set => ChooseSwitching(value, InstallSwitching.OnlyThis);
+    }
+
+    /// <summary>The third: added as it came, switched on.</summary>
+    public bool SwitchAsItIs
+    {
+        get => Switching == InstallSwitching.AsItIs;
+        set => ChooseSwitching(value, InstallSwitching.AsItIs);
+    }
+
+    /// <summary>Whether the second is offered: one mod selected, going to a character rather than Others.</summary>
+    public bool CanSwitchOnlyThis =>
+        _game.Data is { } data && _installer.CanSwitchOnlyThis([.. Rows.Where(row => row.IsSelected).Select(row => row.ToChoice())], data);
+
+    /// <summary>The second's words, naming the character.</summary>
+    public string SwitchOnlyThisText => _text.Format(
+        nameof(Strings.ModInstall_Switch_OnlyThis),
+        Rows.FirstOrDefault(row => row.IsSelected)?.FolderText ?? string.Empty);
+
     private GameBananaMod? _pending;
     private GameBananaFile? _pendingFile;
     private GameBananaMod? _choosingPage;
@@ -1420,7 +1459,9 @@ public sealed partial class ModInstallViewModel(
             Heading,
             async ct =>
             {
-                var result = await _installer.ApplyAsync(plan, choices, data, ct).ConfigureAwait(true);
+                var switching = Switching == InstallSwitching.OnlyThis && !CanSwitchOnlyThis ? InstallSwitching.Off : Switching;
+                var title = Rows.FirstOrDefault(row => row.IsSelected)?.FolderText ?? Heading;
+                var result = await _installer.ApplyAsync(plan, choices, data, switching, ct).ConfigureAwait(true);
 
                 // Before Close, which forgets which download this came from.
                 if (_downloadId is { Length: > 0 } download)
@@ -1439,7 +1480,14 @@ public sealed partial class ModInstallViewModel(
                 _notifications.Add(
                     result.Failures.Count > 0 ? NotificationSeverity.Warning : NotificationSeverity.Information,
                     _text[nameof(Strings.ModInstall_Heading)],
-                    _text.Format(nameof(Strings.ModInstall_Done), _text.Mods(result.InstalledCount)));
+                    _text.Format(
+                        switching == InstallSwitching.Off ? nameof(Strings.ModInstall_Done_Off) : nameof(Strings.ModInstall_Done),
+                        _text.Mods(result.InstalledCount)));
+
+                if (result.SwitchedOff is { ChangedCount: > 0 } run)
+                {
+                    _switchNotices.Report(plan.ModsDirectory, run, title);
+                }
 
                 foreach (var failure in result.Failures)
                 {
@@ -1498,6 +1546,7 @@ public sealed partial class ModInstallViewModel(
 
     private void Reset()
     {
+        Switching = InstallSwitching.Off;
         var rows = Rows.ToList();
 
         foreach (var row in rows)
@@ -1553,10 +1602,37 @@ public sealed partial class ModInstallViewModel(
             OnPropertyChanged(nameof(InstallText));
             OnPropertyChanged(nameof(CanInstall));
         }
+
+        if (e.PropertyName is nameof(InstallRowViewModel.IsSelected) or nameof(InstallRowViewModel.Target))
+        {
+            RaiseSwitching();
+        }
+    }
+
+    /// <summary>A radio button turned on chooses its switching; one turned off by its neighbour does nothing.</summary>
+    private void ChooseSwitching(bool chosen, InstallSwitching switching)
+    {
+        if (chosen)
+        {
+            Switching = switching;
+        }
+    }
+
+    /// <summary>Offers the second choice only while it makes sense, falling back to switched off when it stops.</summary>
+    private void RaiseSwitching()
+    {
+        if (Switching == InstallSwitching.OnlyThis && !CanSwitchOnlyThis)
+        {
+            Switching = InstallSwitching.Off;
+        }
+
+        OnPropertyChanged(nameof(CanSwitchOnlyThis));
+        OnPropertyChanged(nameof(SwitchOnlyThisText));
     }
 
     private void RaiseCounts()
     {
+        RaiseSwitching();
         OnPropertyChanged(nameof(Heading));
         OnPropertyChanged(nameof(SummaryText));
         OnPropertyChanged(nameof(StrandedText));

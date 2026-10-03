@@ -19,6 +19,8 @@ public sealed class ModInstaller(
     IModConfigStore configs,
     IModPreviewEditor pictures,
     IModFiling filing,
+    IModRepository repository,
+    IModSwitcher switcher,
     ILogger logger) : IModInstaller
 {
     private readonly IModArchiveReader _archives = archives;
@@ -28,6 +30,8 @@ public sealed class ModInstaller(
     private readonly IModConfigStore _configs = configs;
     private readonly IModPreviewEditor _pictures = pictures;
     private readonly IModFiling _filing = filing;
+    private readonly IModRepository _repository = repository;
+    private readonly IModSwitcher _switcher = switcher;
     private readonly ILogger _logger = logger.ForContext<ModInstaller>();
 
     /// <inheritdoc />
@@ -65,11 +69,19 @@ public sealed class ModInstaller(
         InstallPlan plan,
         IReadOnlyList<InstallChoice> choices,
         GameData data,
+        InstallSwitching switching = InstallSwitching.AsItIs,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(plan);
         ArgumentNullException.ThrowIfNull(choices);
         ArgumentNullException.ThrowIfNull(data);
+
+        if (switching == InstallSwitching.OnlyThis && !CanSwitchOnlyThis(choices, data))
+        {
+            throw new ModOperationException(
+                "Switching off a character's other mods needs exactly one mod going to a character, not to Others. " +
+                "Nothing was installed.");
+        }
 
         var outcomes = new List<InstallOutcome>(choices.Count);
 
@@ -79,7 +91,13 @@ public sealed class ModInstaller(
 
             var folder = FolderFor(choice, data);
             var destination = PathComparer.Join(plan.ModsDirectory, folder);
-            var name = choice.Name is { Length: > 0 } chosen ? chosen : choice.Candidate.Name;
+            var given = choice.Name is { Length: > 0 } chosen ? chosen : choice.Candidate.Name;
+            var name = switching switch
+            {
+                InstallSwitching.Off => ModsFolderLayout.AddDisabledPrefix(given),
+                InstallSwitching.OnlyThis => ModsFolderLayout.StripDisabledPrefix(given),
+                _ => given,
+            };
 
             try
             {
@@ -115,7 +133,46 @@ public sealed class ModInstaller(
             }
         }
 
-        return new InstallResult { Outcomes = outcomes };
+        var switchedOff = switching == InstallSwitching.OnlyThis && outcomes is [{ Succeeded: true } only]
+            ? await SwitchOffOthersAsync(plan.ModsDirectory, only.InstalledPath!, cancellationToken).ConfigureAwait(false)
+            : null;
+
+        return new InstallResult { Outcomes = outcomes, SwitchedOff = switchedOff };
+    }
+
+    /// <inheritdoc />
+    public bool CanSwitchOnlyThis(IReadOnlyList<InstallChoice> choices, GameData data)
+    {
+        ArgumentNullException.ThrowIfNull(choices);
+        ArgumentNullException.ThrowIfNull(data);
+
+        return choices is [var one] &&
+               !string.Equals(FolderFor(one, data), ModsFolderLayout.UnsortedFolderName, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>Switches off every other switched-on mod in the new mod's character folder, as one journalled run.</summary>
+    private async Task<ModSwitchRunResult?> SwitchOffOthersAsync(string modsDirectory, string installed, CancellationToken cancellationToken)
+    {
+        var folder = Path.GetDirectoryName(installed)!;
+        var inventory = await _repository.ScanAsync(modsDirectory, cancellationToken).ConfigureAwait(false);
+        var others = inventory.AllMods
+            .Where(mod => mod.IsEnabled &&
+                          PathComparer.AreEqual(Path.GetDirectoryName(mod.Path) ?? string.Empty, folder) &&
+                          !PathComparer.AreEqual(mod.Path, installed))
+            .Select(mod => new ModSwitch(mod.Path, Enable: false))
+            .ToList();
+
+        if (others.Count == 0)
+        {
+            return null;
+        }
+
+        var run = await _switcher.ApplyAsync(modsDirectory, others, ModSwitchSource.Install, label: null, cancellationToken)
+            .ConfigureAwait(false);
+
+        _logger.Information("Switched off {Count} other mods in {Folder} after installing {Mod}", run.ChangedCount, folder, installed);
+
+        return run;
     }
 
     /// <summary>The character folder a choice lands in, by <c>modFilesName</c> as auto-sort files.</summary>
@@ -204,7 +261,7 @@ public sealed class ModInstaller(
         }
 
         var label = choice.DisplayName is { Length: > 0 } wanted
-                    && !PathComparer.AreNamesEqual(wanted, result.ToName)
+                    && !PathComparer.AreNamesEqual(wanted, ModsFolderLayout.StripDisabledPrefix(result.ToName))
             ? wanted
             : null;
 

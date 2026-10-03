@@ -723,6 +723,7 @@ internal static class SwitchesCommand
                         {
                             ModSwitchSource.Profile => "profile",
                             ModSwitchSource.AllOff => "all-off",
+                            ModSwitchSource.Install => "install",
                             _ => "randomiser",
                         },
                         run.Label,

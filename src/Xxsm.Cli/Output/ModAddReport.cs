@@ -9,6 +9,9 @@ namespace Xxsm.Cli.Output;
 /// <param name="StrandedFiles">Files in the source belonging to no mod.</param>
 /// <param name="Outcomes">What happened to each mod that was installed.</param>
 /// <param name="Notes">Anything noticed while reading the source.</param>
+/// <param name="SwitchRunId">The run that switched the character's other mods off, for <c>xxsm switches undo</c>; null
+/// when none was.</param>
+/// <param name="SwitchedOff">Each other mod switched off, as it was before.</param>
 public sealed record ModAddReport(
     string Source,
     bool IsArchive,
@@ -17,7 +20,9 @@ public sealed record ModAddReport(
     IReadOnlyList<InstallCandidateReport> Candidates,
     IReadOnlyList<string> StrandedFiles,
     IReadOnlyList<InstallOutcomeReport> Outcomes,
-    IReadOnlyList<string> Notes);
+    IReadOnlyList<string> Notes,
+    string? SwitchRunId,
+    IReadOnlyList<string> SwitchedOff);
 
 /// <summary>One mod an install source contains.</summary>
 /// <param name="Name">The name it would be installed as.</param>

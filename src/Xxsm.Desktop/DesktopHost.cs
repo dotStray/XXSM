@@ -231,7 +231,8 @@ public static class DesktopHost
             provider.GetRequiredService<IUiDispatcher>(),
             provider.GetRequiredService<ILogger>(),
             ct => provider.GetRequiredService<MainWindowViewModel>().RescanModsAsync(ct),
-            modFolder => provider.GetRequiredService<MainWindowViewModel>().GoToMod(modFolder)));
+            modFolder => provider.GetRequiredService<MainWindowViewModel>().GoToMod(modFolder),
+            provider.GetRequiredService<SwitchRunNotices>()));
 
         services.AddSingleton(provider => new CharacterManagerViewModel(
             provider.GetRequiredService<GameContext>(),

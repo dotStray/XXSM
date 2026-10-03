@@ -1616,6 +1616,26 @@
     <value>Nothing in it looks like a 3DMigoto mod — no INI, no buffers, no textures. Check you pointed at the mod itself rather than the folder above it.</value>
     <comment>Body shown when a source holds no mod.</comment>
   </data>
+  <data name="ModInstall_Switch_Label" xml:space="preserve">
+    <value>Once added</value>
+    <comment>Label over the install card's three choices: whether the new mods arrive switched off, on with the character's other mods off, or on.</comment>
+  </data>
+  <data name="ModInstall_Switch_Off" xml:space="preserve">
+    <value>Switched off</value>
+    <comment>The install card's first choice, and the one it starts at every time.</comment>
+  </data>
+  <data name="ModInstall_Switch_OnlyThis" xml:space="preserve">
+    <value>Switched on, and {0}'s other mods switched off</value>
+    <comment>The install card's second choice, shown only for one mod going to a character. {0} is the character. Only mods in the same character folder (same outfit) are switched off.</comment>
+  </data>
+  <data name="ModInstall_Switch_AsItIs" xml:space="preserve">
+    <value>Switched on</value>
+    <comment>The install card's third choice: nothing else changes.</comment>
+  </data>
+  <data name="ModInstall_Done_Off" xml:space="preserve">
+    <value>Installed {0}, switched off.</value>
+    <comment>Notice after installing with the first choice. {0} is how many.</comment>
+  </data>
   <data name="ModInstall_Done" xml:space="preserve">
     <value>Installed {0}.</value>
     <comment>Notice after installing. {0} is how many.</comment>

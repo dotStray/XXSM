@@ -122,11 +122,19 @@ internal static class ModAddCommand
                 + "waiting on the list is installed instead of fetching the file a second time.",
         };
 
+        var switching = new Option<string>("--switch")
+        {
+            Description = "How the mods arrive: off (the default), only (the one mod on and the other mods in its character " +
+                          "folder off; needs one mod going to a character), or on (as they came).",
+            DefaultValueFactory = _ => "off",
+        };
+        switching.AcceptOnlyFromAmong("off", "only", "on");
+
         var command = new Command(
             "add", "Install a folder or an archive, working out where each mod in it belongs.")
         {
             source, game, pack, mods, character, only, name, displayName, author, url, notes,
-            preview, files, apply, dryRun, fileId, again,
+            preview, files, apply, dryRun, fileId, again, switching,
         };
 
         command.SetAction(async (parse, cancellationToken) =>
@@ -256,7 +264,8 @@ internal static class ModAddCommand
 
             if (shouldApply && choices.Count > 0)
             {
-                result = await installer.ApplyAsync(plan, choices, data, cancellationToken).ConfigureAwait(false);
+                result = await installer.ApplyAsync(plan, choices, data, Switching(parse.GetValue(switching)), cancellationToken)
+                    .ConfigureAwait(false);
 
                 if (fetched is not null && result.InstalledCount > 0)
                 {
@@ -515,6 +524,13 @@ internal static class ModAddCommand
 
         Console.Out.WriteLine($"Installed {EnglishCount.Plural(result.InstalledCount, "mod", "mods")}.");
 
+        if (result.SwitchedOff is { ChangedCount: > 0 } run)
+        {
+            Console.Out.WriteLine(
+                $"Switched off {EnglishCount.Plural(run.ChangedCount, "other mod", "other mods")} in its character folder. " +
+                $"'xxsm switches undo --run {run.RunId}' switches them back on.");
+        }
+
         foreach (var outcome in result.Outcomes.Where(outcome => outcome.Succeeded))
         {
             Console.Out.WriteLine($"  {outcome.DestinationFolderName}/{outcome.Result!.ToName}");
@@ -546,6 +562,13 @@ internal static class ModAddCommand
             Console.Out.WriteLine();
         }
     }
+
+    private static InstallSwitching Switching(string? given) => given switch
+    {
+        "only" => InstallSwitching.OnlyThis,
+        "on" => InstallSwitching.AsItIs,
+        _ => InstallSwitching.Off,
+    };
 
     private static ModAddReport Describe(
         InstallPlan plan, IReadOnlyList<InstallChoice> choices, InstallResult? result, bool applied) => new(
@@ -579,5 +602,7 @@ internal static class ModAddCommand
                 outcome.Error,
                 outcome.MetadataError)),
         ],
-        [.. plan.Diagnostics.Select(diagnostic => diagnostic.Message)]);
+        [.. plan.Diagnostics.Select(diagnostic => diagnostic.Message)],
+        result?.SwitchedOff?.RunId,
+        [.. (result?.SwitchedOff?.Outcomes ?? []).Where(outcome => outcome.Changed).Select(outcome => outcome.Switch.ModFolder)]);
 }
