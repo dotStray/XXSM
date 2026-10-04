@@ -50,6 +50,9 @@ public sealed record ModUpdateReport
     /// <summary>Every mod known to have an update, including ones found by an earlier run.</summary>
     public required IReadOnlyList<ModUpdateStatus> Updates { get; init; }
 
+    /// <summary>The updates this run found that no earlier run had marked: the ones worth a notice.</summary>
+    public IReadOnlyList<ModUpdateStatus> NewlyFound { get; init; } = [];
+
     /// <summary>How many linked mods were not due to be checked yet.</summary>
     public required int NotDue { get; init; }
 
@@ -139,6 +142,7 @@ public sealed class ModUpdateChecker(
 
         var checkedMods = new List<ModUpdateStatus>();
         var updates = new List<ModUpdateStatus>();
+        var newlyFound = new List<ModUpdateStatus>();
         var notDue = 0;
 
         foreach (var mod in linked)
@@ -209,6 +213,11 @@ public sealed class ModUpdateChecker(
             if (status.HasUpdate)
             {
                 updates.Add(status);
+
+                if (info?.UpdateAvailable != true)
+                {
+                    newlyFound.Add(status);
+                }
             }
         }
 
@@ -226,6 +235,7 @@ public sealed class ModUpdateChecker(
             At = _time.GetUtcNow(),
             Checked = checkedMods,
             Updates = updates,
+            NewlyFound = newlyFound,
             NotDue = notDue,
             Linked = linked.Count,
         };

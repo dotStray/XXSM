@@ -3851,11 +3851,11 @@
     <comment>Takes that mod off the list by agreeing the installed version is current.</comment>
   </data>
   <data name="Mods_Updates_Notice" xml:space="preserve">
-    <value>{0} have a newer version on GameBanana</value>
-    <comment>Notice raised after a check found updates. {0} is a count of mods.</comment>
+    <value>{0} in {1} have a newer version on GameBanana</value>
+    <comment>Notice raised after a check found updates no earlier check had. {0} is a count of mods, {1} the game.</comment>
   </data>
   <data name="Mods_Updates_Notice_One" xml:space="preserve">
-    <value>{0} has a newer version on GameBanana</value>
+    <value>{0} in {1} has a newer version on GameBanana</value>
     <comment>The same as Mods_Updates_Notice, when {0} counts exactly one.</comment>
   </data>
   <data name="Mods_Updates_Notice_Body" xml:space="preserve">
@@ -3864,7 +3864,7 @@
   </data>
   <data name="Mods_Updates_Notice_Action" xml:space="preserve">
     <value>Show them</value>
-    <comment>Button on that notice; opens the Mods page.</comment>
+    <comment>Button on that notice; switches to that game and opens its Mods page.</comment>
   </data>
   <data name="Mods_Updates_Failed" xml:space="preserve">
     <value>{0} could not be asked about.</value>

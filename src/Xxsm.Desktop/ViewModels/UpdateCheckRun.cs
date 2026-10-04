@@ -15,15 +15,17 @@ public sealed partial class UpdateCheckRun(
     INotificationService notifications,
     ViewModelWorkRunner work,
     ITextCatalogue text,
+    GameContext game,
     Func<CancellationToken, Task> rescan,
-    Action showMods) : ObservableObject
+    Action<string?> showMods) : ObservableObject
 {
     private readonly IModUpdateChecker _checker = checker;
     private readonly INotificationService _notifications = notifications;
     private readonly ViewModelWorkRunner _work = work;
     private readonly ITextCatalogue _text = text;
     private readonly Func<CancellationToken, Task> _rescan = rescan;
-    private readonly Action _showMods = showMods;
+    private readonly GameContext _game = game;
+    private readonly Action<string?> _showMods = showMods;
     private readonly Lock _gate = new();
 
     private Task<ModUpdateReport?>? _current;
@@ -54,7 +56,9 @@ public sealed partial class UpdateCheckRun(
             }
 
             Interlocked.Increment(ref _running);
-            run = RunAfterAsync(_current, modsDirectory, force);
+
+            // The game is the one whose folder this is, read now: the user may switch before it ends.
+            run = RunAfterAsync(_current, modsDirectory, force, _game.GameId, _game.DisplayName ?? _game.GameId ?? string.Empty);
             _current = run;
             _currentFolder = modsDirectory;
             _currentForced = force;
@@ -64,7 +68,8 @@ public sealed partial class UpdateCheckRun(
         return run;
     }
 
-    private async Task<ModUpdateReport?> RunAfterAsync(Task<ModUpdateReport?>? before, string modsDirectory, bool force)
+    private async Task<ModUpdateReport?> RunAfterAsync(
+        Task<ModUpdateReport?>? before, string modsDirectory, bool force, string? gameId, string gameName)
     {
         try
         {
@@ -91,9 +96,9 @@ public sealed partial class UpdateCheckRun(
                         return;
                     }
 
-                    _notifications.ReportUpdates(_text, report, new AsyncRelayCommand(() =>
+                    _notifications.ReportUpdates(_text, report, gameName, new AsyncRelayCommand(() =>
                     {
-                        _showMods();
+                        _showMods(gameId);
                         return Task.CompletedTask;
                     }));
 

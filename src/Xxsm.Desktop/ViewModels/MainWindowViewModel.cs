@@ -344,6 +344,21 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     public void ShowMods() => SelectedNavigationItem = _modsItem;
 
+    /// <summary>Sends the user to one game's Mods page, switching game first when another is selected.</summary>
+    /// <param name="gameId">The game; null, or one no longer installed, opens the current game's.</param>
+    public void ShowMods(string? gameId)
+    {
+        if (gameId is { Length: > 0 }
+            && !string.Equals(SelectedGame?.GameId, gameId, StringComparison.OrdinalIgnoreCase)
+            && Games.FirstOrDefault(option => string.Equals(option.GameId, gameId, StringComparison.OrdinalIgnoreCase))
+                is { } wanted)
+        {
+            SelectedGame = wanted;
+        }
+
+        ShowMods();
+    }
+
     /// <summary>Opens the install panel on every current download, having first gone somewhere that can draw it.</summary>
     [RelayCommand]
     public void ShowDownload()

@@ -117,8 +117,9 @@ public static class DesktopHost
             provider.GetRequiredService<INotificationService>(),
             provider.GetRequiredService<ViewModelWorkRunner>(),
             provider.GetRequiredService<ITextCatalogue>(),
+            provider.GetRequiredService<GameContext>(),
             ct => provider.GetRequiredService<MainWindowViewModel>().RescanModsAsync(ct),
-            () => provider.GetRequiredService<MainWindowViewModel>().ShowMods()));
+            gameId => provider.GetRequiredService<MainWindowViewModel>().ShowMods(gameId)));
 
         services.AddSingleton(provider => new SwitchRunNotices(
             provider.GetRequiredService<IModSwitcher>(),

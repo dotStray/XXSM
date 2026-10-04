@@ -68,6 +68,7 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
         _downloads.Changed += OnChanged;
         _downloads.Progress += OnProgress;
         _install.PropertyChanged += OnInstallChanged;
+        _game.PropertyChanged += OnGameChanged;
         _install.DownloadList = this;
     }
 
@@ -302,6 +303,7 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
         _downloads.Changed -= OnChanged;
         _downloads.Progress -= OnProgress;
         _install.PropertyChanged -= OnInstallChanged;
+        _game.PropertyChanged -= OnGameChanged;
     }
 
     private void OnInstallChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -368,6 +370,22 @@ public sealed partial class DownloadsViewModel : ObservableObject, IDisposable
             _logger.Information(
                 "GameBanana download {ModId} finished while the install panel was elsewhere",
                 job.Record.ModId);
+        }
+
+        RaiseCounts();
+    }
+
+    // Which entries can be installed here depends on the game, so a switch decides every row again.
+    private void OnGameChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(GameContext.GameId))
+        {
+            return;
+        }
+
+        foreach (var row in Rows)
+        {
+            row.IsForThisGame = IsForThisGame(row.Job);
         }
 
         RaiseCounts();
