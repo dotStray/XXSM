@@ -151,6 +151,7 @@
                                 Content="{DynamicResource Text.Mods_Updates_Open}" />
                         <Button Grid.Column="4" VerticalAlignment="Center"
                                 Command="{Binding DismissCommand}"
+                                ToolTip.Tip="{DynamicResource Text.ModUpdate_Skip_Tip}"
                                 Content="{DynamicResource Text.Mods_Updates_Dismiss}" />
                       </Grid>
                     </DataTemplate>

@@ -87,7 +87,7 @@ public interface IModUpdateChecker
     Task<IReadOnlyList<ModUpdateStatus>> ReadAsync(
         string modsDirectory, CancellationToken cancellationToken = default);
 
-    /// <summary>Agrees that what is installed is current, clearing the mark.</summary>
+    /// <summary>Skips the update: clears the mark and accepts the page as it is now, so only a later change marks it again.</summary>
     Task<bool> AcceptAsync(string modFolder, CancellationToken cancellationToken = default);
 
     /// <summary>Marks a linked mod as having an update without asking GameBanana: a tool to see the mark.</summary>
@@ -274,7 +274,8 @@ public sealed class ModUpdateChecker(
             return false;
         }
 
-        // The page's timestamp becomes the new baseline.
+        // Now becomes the baseline: the page as it is is accepted, and only a later change marks it again.
+        var now = _time.GetUtcNow();
         await _configs.UpdateAsync(
             modFolder,
             config => config with
@@ -283,7 +284,8 @@ public sealed class ModUpdateChecker(
                 {
                     UpdateAvailable = false,
                     LatestVersion = null,
-                    LastChecked = _time.GetUtcNow(),
+                    LastChecked = now,
+                    DateModifiedTs = now.ToUnixTimeSeconds(),
                 },
             },
             cancellationToken).ConfigureAwait(false);

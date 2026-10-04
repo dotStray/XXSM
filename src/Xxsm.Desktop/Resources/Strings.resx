@@ -3703,8 +3703,12 @@
     <comment>Under a mod's address when the address of a linked mod has been cleared or changed to one that is not GameBanana's, but not saved.</comment>
   </data>
   <data name="CharacterDetail_Detail_Update_Dismiss" xml:space="preserve">
-    <value>It is current</value>
-    <comment>Button that agrees the installed version is current and clears the mark.</comment>
+    <value>Skip</value>
+    <comment>Button that keeps the installed version and skips this update; a later one marks the mod again.</comment>
+  </data>
+  <data name="ModUpdate_Skip_Tip" xml:space="preserve">
+    <value>Keep this version and skip this update. A later update is shown again.</value>
+    <comment>Hover text of Skip, wherever a newer version is offered.</comment>
   </data>
   <data name="ModRow_Update" xml:space="preserve">
     <value>A newer version is on GameBanana</value>
@@ -3847,8 +3851,8 @@
     <comment>Opens that mod's GameBanana page.</comment>
   </data>
   <data name="Mods_Updates_Dismiss" xml:space="preserve">
-    <value>It is current</value>
-    <comment>Takes that mod off the list by agreeing the installed version is current.</comment>
+    <value>Skip</value>
+    <comment>Takes that mod off the list: keeps the installed version and skips this update.</comment>
   </data>
   <data name="Mods_Updates_Notice" xml:space="preserve">
     <value>{0} in {1} have a newer version on GameBanana</value>

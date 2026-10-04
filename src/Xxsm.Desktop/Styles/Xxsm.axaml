@@ -856,6 +856,11 @@
     <Setter Property="Stroke" Value="{DynamicResource XxsmMutedBrush}" />
   </Style>
 
+  <!-- On the button that fetches the newer version: green, for go. -->
+  <Style Selector="Path.updateIcon.ready">
+    <Setter Property="Stroke" Value="{DynamicResource XxsmOkBrush}" />
+  </Style>
+
   <!-- A file an update changes: added green, removed red, replaced in the text colour; the word says which too. -->
   <Style Selector="TextBlock.change">
     <Setter Property="Foreground" Value="{DynamicResource XxsmTextBrush}" />
