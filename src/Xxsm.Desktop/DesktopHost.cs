@@ -234,7 +234,9 @@ public static class DesktopHost
             provider.GetRequiredService<ILogger>(),
             ct => provider.GetRequiredService<MainWindowViewModel>().RescanModsAsync(ct),
             modFolder => provider.GetRequiredService<MainWindowViewModel>().GoToMod(modFolder),
-            provider.GetRequiredService<SwitchRunNotices>()));
+            provider.GetRequiredService<SwitchRunNotices>(),
+            name => provider.GetRequiredService<MainWindowViewModel>().InstalledGameNamed(name),
+            gameId => provider.GetRequiredService<MainWindowViewModel>().SwitchGameAsync(gameId)));
 
         services.AddSingleton(provider => new CharacterManagerViewModel(
             provider.GetRequiredService<GameContext>(),

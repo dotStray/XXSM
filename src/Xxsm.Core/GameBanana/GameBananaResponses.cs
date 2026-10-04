@@ -45,6 +45,10 @@ public sealed record GameBananaProfilePage
     [JsonPropertyName("_aPreviewMedia")]
     public GameBananaPreviewMedia? PreviewMedia { get; init; }
 
+    /// <summary>The game the mod is listed under.</summary>
+    [JsonPropertyName("_aGame")]
+    public GameBananaGame? Game { get; init; }
+
     /// <summary>The category, which for a character mod is usually the character.</summary>
     [JsonPropertyName("_aCategory")]
     public GameBananaCategory? Category { get; init; }
@@ -136,6 +140,22 @@ public sealed record GameBananaImage
     /// <summary>The 100px-wide file name, when there is one.</summary>
     [JsonPropertyName("_sFile100")]
     public string? File100 { get; init; }
+}
+
+/// <summary>The game a mod is listed under on GameBanana.</summary>
+public sealed record GameBananaGame
+{
+    /// <summary>The game's id on GameBanana.</summary>
+    [JsonPropertyName("_idRow")]
+    public long? IdRow { get; init; }
+
+    /// <summary>The game's name, as GameBanana writes it.</summary>
+    [JsonPropertyName("_sName")]
+    public string? Name { get; init; }
+
+    /// <summary>GameBanana's abbreviation for the game, for example <c>GI</c>.</summary>
+    [JsonPropertyName("_sAbbreviation")]
+    public string? Abbreviation { get; init; }
 }
 
 /// <summary>A mod's category, or its parent category.</summary>

@@ -3,6 +3,7 @@ using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Xxsm.Core;
+using Xxsm.Core.GameBanana;
 using Xxsm.Core.Mods;
 using Xxsm.Core.Settings;
 using Xxsm.Desktop.Services;
@@ -343,6 +344,28 @@ public sealed partial class MainWindowViewModel : ViewModelBase
     /// <summary>Sends the user to the Mods page.</summary>
     [RelayCommand]
     public void ShowMods() => SelectedNavigationItem = _modsItem;
+
+    /// <summary>The installed game with this name in letters and digits, ignoring capitals and punctuation, or null.</summary>
+    public GameOptionViewModel? InstalledGameNamed(string displayName)
+    {
+        ArgumentNullException.ThrowIfNull(displayName);
+
+        return Games.FirstOrDefault(option => GameBananaGameNames.IsSame(displayName, null, option.DisplayName, null));
+    }
+
+    /// <summary>Selects another installed game and waits until it has loaded; an unknown one changes nothing.</summary>
+    public async Task SwitchGameAsync(string gameId)
+    {
+        if (Games.FirstOrDefault(option => string.Equals(option.GameId, gameId, StringComparison.OrdinalIgnoreCase))
+                is not { } wanted
+            || ReferenceEquals(wanted, SelectedGame))
+        {
+            return;
+        }
+
+        SelectedGame = wanted;
+        await WhenIdleAsync().ConfigureAwait(true);
+    }
 
     /// <summary>Sends the user to one game's Mods page, switching game first when another is selected.</summary>
     /// <param name="gameId">The game; null, or one no longer installed, opens the current game's.</param>

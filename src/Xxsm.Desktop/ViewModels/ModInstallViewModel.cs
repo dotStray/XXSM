@@ -503,8 +503,12 @@ public sealed partial class ModInstallViewModel(
     ILogger logger,
     Func<CancellationToken, Task> rescan,
     Func<string, bool> goToMod,
-    SwitchRunNotices switchNotices) : ObservableObject, IDisposable
+    SwitchRunNotices switchNotices,
+    Func<string, GameOptionViewModel?> installedGameNamed,
+    Func<string, Task> switchGame) : ObservableObject, IDisposable
 {
+    private readonly Func<string, GameOptionViewModel?> _installedGameNamed = installedGameNamed;
+    private readonly Func<string, Task> _switchGame = switchGame;
     private readonly SwitchRunNotices _switchNotices = switchNotices;
     private readonly GameContext _game = game;
     private readonly IModInstaller _installer = installer;
@@ -602,7 +606,7 @@ public sealed partial class ModInstallViewModel(
     /// <summary>The panel's title.</summary>
     public string Heading => IsListingDownloads
         ? _text[nameof(Strings.Downloads_Heading)]
-        : IsAskingForAddress || IsChoosingFile
+        : IsAskingForAddress || IsChoosingFile || IsOtherGame
         ? _text[nameof(Strings.GameBanana_Prompt_Heading)]
         : IsAlreadyInstalled
         ? _text[nameof(Strings.GameBanana_Already_Heading)]
@@ -613,7 +617,7 @@ public sealed partial class ModInstallViewModel(
     /// <summary>Whether the line under the title has a count to give yet: only once a source was read.</summary>
     public bool HasSummary =>
         !IsReading && !IsDownloading && !IsAskingForAddress && !IsDownloadBlocked && !IsAlreadyInstalled
-        && !IsChoosingFile && !IsListingDownloads;
+        && !IsChoosingFile && !IsListingDownloads && !IsOtherGame;
 
     /// <summary>What was found, in one line.</summary>
     public string SummaryText => _text.Format(
@@ -641,7 +645,7 @@ public sealed partial class ModInstallViewModel(
     /// <summary>Whether the source held nothing that looks like a mod, once one was read.</summary>
     public bool IsEmpty =>
         !IsReading && !IsDownloading && !IsAskingForAddress && !IsDownloadBlocked && !IsAlreadyInstalled
-        && !IsChoosingFile && !IsListingDownloads && Rows.Count == 0;
+        && !IsChoosingFile && !IsListingDownloads && !IsOtherGame && Rows.Count == 0;
 
     // Every download at once
 
@@ -856,8 +860,109 @@ public sealed partial class ModInstallViewModel(
     [ObservableProperty]
     private string? _addressProblem;
 
-    /// <summary>Whether the box holds an address worth reading.</summary>
-    public bool CanSubmitAddress => GameBananaUrl.FindModId(AddressInput) is not null;
+    /// <summary>Whether the box holds an address worth reading, and there is a Mods folder to install it in.</summary>
+    public bool CanSubmitAddress => !NeedsModsFolder && GameBananaUrl.FindModId(AddressInput) is not null;
+
+    /// <summary>Whether the selected game has no Mods folder, so nothing can be installed until one is chosen.</summary>
+    public bool NeedsModsFolder => !_game.HasModsDirectory;
+
+    // A mod GameBanana lists under another game
+
+    /// <summary>The page read, held while the panel asks what to do with a mod for another game.</summary>
+    private GameBananaMod? _otherGamePage;
+
+    /// <summary>The installed game the mod is for, or null when none has its name.</summary>
+    private string? _otherGameId;
+
+    /// <summary>Whether the panel is paused because GameBanana lists the mod under another game.</summary>
+    [ObservableProperty]
+    private bool _isOtherGame;
+
+    /// <summary>Which game the mod is for and which is selected, while paused.</summary>
+    [ObservableProperty]
+    private string? _otherGameText;
+
+    /// <summary>Whether the mod's own game is installed, so the panel can switch to it.</summary>
+    [ObservableProperty]
+    private bool _canSwitchToOtherGame;
+
+    /// <summary>The label on the button that switches to the mod's own game.</summary>
+    [ObservableProperty]
+    private string? _switchToOtherGameText;
+
+    /// <summary>Goes on with a mod for another game, into the selected game's Mods folder.</summary>
+    /// <returns>A task that completes when the download has started or the file choice is up.</returns>
+    [RelayCommand]
+    public Task InstallHereAnywayAsync()
+    {
+        if (_otherGamePage is not { } page)
+        {
+            return Task.CompletedTask;
+        }
+
+        ClearOtherGame();
+        GoOnWith(page);
+
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Switches to the game the mod is for, and opens the mod there.</summary>
+    /// <returns>A task that completes when the other game is loaded and the mod is on its way.</returns>
+    [RelayCommand]
+    public async Task SwitchToOtherGameAsync()
+    {
+        if (_otherGamePage is not { } page || _otherGameId is not { } gameId)
+        {
+            return;
+        }
+
+        Close();
+        await _switchGame(gameId).ConfigureAwait(true);
+        await OpenFromGameBananaAsync(page.ModId, null, null, CancellationToken.None).ConfigureAwait(true);
+    }
+
+    private void ClearOtherGame()
+    {
+        _otherGamePage = null;
+        _otherGameId = null;
+        IsOtherGame = false;
+        OtherGameText = null;
+        CanSwitchToOtherGame = false;
+        SwitchToOtherGameText = null;
+    }
+
+    /// <summary>Whether GameBanana lists the mod under a game other than the selected one, by its names.</summary>
+    private bool IsForAnotherGame(GameBananaMod page) =>
+        page.GameName is { Length: > 0 } theirs
+        && _game.DisplayName is { Length: > 0 } ours
+        && !GameBananaGameNames.IsSame(theirs, page.GameShortName, ours, _game.Data?.Game.ShortName);
+
+    private void PauseForOtherGame(GameBananaMod page)
+    {
+        var theirs = page.GameName!.Trim();
+        var installed = _installedGameNamed(theirs);
+        _otherGamePage = page;
+        _otherGameId = installed?.GameId;
+        GameBananaNote = null;
+        OtherGameText = _text.Format(nameof(Strings.GameBanana_OtherGame_Body), theirs, _game.DisplayName ?? string.Empty);
+        CanSwitchToOtherGame = _otherGameId is not null;
+        SwitchToOtherGameText = _text.Format(nameof(Strings.GameBanana_OtherGame_Switch), installed?.DisplayName ?? theirs);
+        IsOtherGame = true;
+        RaiseCounts();
+
+        _logger.Information(
+            "GameBanana mod {ModId} is listed under {TheirGame}, not the selected {OurGame}; asked before downloading",
+            page.ModId, theirs, _game.DisplayName);
+    }
+
+    /// <summary>Says the selected game has no Mods folder, where an install would otherwise stop without a word.</summary>
+    private void ReportNoModsFolder()
+    {
+        _notifications.Add(
+            NotificationSeverity.Warning,
+            _text[nameof(Strings.GameBanana_Prompt_Heading)],
+            _text[nameof(Strings.FirstRun_Done_NoFolder)]);
+    }
 
     /// <summary>Opens the panel asking for a mod's address; nothing is fetched until <em>Get it</em>.</summary>
     /// <param name="targetVariantId">A character to file it under, overriding the sorter, or null.</param>
@@ -871,9 +976,13 @@ public sealed partial class ModInstallViewModel(
         _askTargetVariantId = targetVariantId;
         TargetName = targetDisplayName;
         AddressInput = address ?? string.Empty;
-        AddressProblem = null;
+        AddressProblem = NeedsModsFolder
+            ? _text.Format(nameof(Strings.GameBanana_Prompt_NoFolder), _game.DisplayName ?? string.Empty)
+            : null;
         IsAskingForAddress = true;
         IsOpen = true;
+        OnPropertyChanged(nameof(NeedsModsFolder));
+        OnPropertyChanged(nameof(CanSubmitAddress));
         RaiseCounts();
     }
 
@@ -905,6 +1014,13 @@ public sealed partial class ModInstallViewModel(
     [RelayCommand]
     public Task SubmitAddressAsync()
     {
+        if (NeedsModsFolder)
+        {
+            AddressProblem = _text.Format(nameof(Strings.GameBanana_Prompt_NoFolder), _game.DisplayName ?? string.Empty);
+
+            return Task.CompletedTask;
+        }
+
         if (GameBananaUrl.FindModId(AddressInput) is not { } modId)
         {
             AddressProblem = GameBananaUrl.IsFileAddress(AddressInput)
@@ -936,8 +1052,15 @@ public sealed partial class ModInstallViewModel(
         CancellationToken cancellationToken,
         bool again = false)
     {
-        if (_game.Data is null || _game.ModsDirectory is not { Length: > 0 })
+        if (_game.Data is null)
         {
+            return;
+        }
+
+        if (_game.ModsDirectory is not { Length: > 0 })
+        {
+            ReportNoModsFolder();
+
             return;
         }
 
@@ -1010,6 +1133,19 @@ public sealed partial class ModInstallViewModel(
             return;
         }
 
+        // Listed under another game: asked before anything downloads into this one.
+        if (IsForAnotherGame(page))
+        {
+            PauseForOtherGame(page);
+
+            return;
+        }
+
+        GoOnWith(page);
+    }
+
+    private void GoOnWith(GameBananaMod page)
+    {
         // Several files: the user chooses before anything downloads.
         if (page is { HasFileChoice: true, IsUnavailable: false })
         {
@@ -1090,8 +1226,15 @@ public sealed partial class ModInstallViewModel(
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
 
-        if (_game.Data is null || _game.ModsDirectory is not { Length: > 0 })
+        if (_game.Data is null)
         {
+            return;
+        }
+
+        if (_game.ModsDirectory is not { Length: > 0 })
+        {
+            ReportNoModsFolder();
+
             return;
         }
 
@@ -1344,8 +1487,15 @@ public sealed partial class ModInstallViewModel(
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(source);
 
-        if (_game.Data is not { } data || _game.ModsDirectory is not { Length: > 0 } modsDirectory)
+        if (_game.Data is not { } data)
         {
+            return;
+        }
+
+        if (_game.ModsDirectory is not { Length: > 0 } modsDirectory)
+        {
+            ReportNoModsFolder();
+
             return;
         }
 
@@ -1583,6 +1733,7 @@ public sealed partial class ModInstallViewModel(
         IsChoosingFile = false;
         _choosingPage = null;
         FileChooser.Clear();
+        ClearOtherGame();
         AddressProblem = null;
         IsDownloading = false;
         DownloadName = null;

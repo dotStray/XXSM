@@ -56,6 +56,10 @@
                 Command="{Binding DownloadChosenFileCommand}"
                 Content="{DynamicResource Text.ModInstall_DownloadFile}" />
         <Button Grid.Column="2" Classes="accent" Margin="8,0,0,0"
+                IsVisible="{Binding IsOtherGame}"
+                Command="{Binding InstallHereAnywayCommand}"
+                Content="{DynamicResource Text.GameBanana_OtherGame_InstallHere}" />
+        <Button Grid.Column="2" Classes="accent" Margin="8,0,0,0"
                 IsVisible="{Binding IsAlreadyInstalled}"
                 Command="{Binding DownloadAnywayCommand}"
                 Content="{DynamicResource Text.GameBanana_Already_Again}" />
@@ -164,6 +168,20 @@
           <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap"
                      IsVisible="{Binding AddressProblem, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                      Text="{Binding AddressProblem}" />
+          <!-- No Mods folder: the same way to one the Mods page offers. -->
+          <Button HorizontalAlignment="Left"
+                  IsVisible="{Binding NeedsModsFolder}"
+                  Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ShowSettingsCommand, FallbackValue={x:Null}}"
+                  Content="{DynamicResource Text.Mods_NoFolder_Action}" />
+        </StackPanel>
+
+        <!-- GameBanana lists the mod under another game: asked before anything downloads. Install here anyway sits where Install would. -->
+        <StackPanel Spacing="10" VerticalAlignment="Top" IsVisible="{Binding IsOtherGame}">
+          <TextBlock TextWrapping="Wrap" Text="{Binding OtherGameText}" />
+          <Button HorizontalAlignment="Left"
+                  IsVisible="{Binding CanSwitchToOtherGame}"
+                  Command="{Binding SwitchToOtherGameCommand}"
+                  Content="{Binding SwitchToOtherGameText}" />
         </StackPanel>
 
         <!-- The page has several files: which one, before anything downloads. -->

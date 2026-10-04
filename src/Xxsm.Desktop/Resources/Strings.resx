@@ -3862,6 +3862,22 @@
     <value>Nothing was downloaded. The Mods page lists them, with a link to each page.</value>
     <comment>Body of that notice.</comment>
   </data>
+  <data name="GameBanana_Prompt_NoFolder" xml:space="preserve">
+    <value>{0} has no Mods folder yet, so there is nowhere to install it.</value>
+    <comment>Under the GameBanana address box when the selected game has no Mods folder. {0} is the game.</comment>
+  </data>
+  <data name="GameBanana_OtherGame_Body" xml:space="preserve">
+    <value>On GameBanana this mod is for {0}, but {1} is selected. Installing it here puts it in {1}'s Mods folder.</value>
+    <comment>The install panel, paused before downloading a mod GameBanana lists under another game. {0} is that game, {1} the selected one.</comment>
+  </data>
+  <data name="GameBanana_OtherGame_Switch" xml:space="preserve">
+    <value>Switch to {0}</value>
+    <comment>Button on that pause: switches to the mod's own game and opens it there. {0} is the game.</comment>
+  </data>
+  <data name="GameBanana_OtherGame_InstallHere" xml:space="preserve">
+    <value>Install here anyway</value>
+    <comment>Button on that pause: downloads it for the selected game.</comment>
+  </data>
   <data name="Mods_Updates_Notice_Action" xml:space="preserve">
     <value>Show them</value>
     <comment>Button on that notice; switches to that game and opens its Mods page.</comment>

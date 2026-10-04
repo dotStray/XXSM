@@ -39,6 +39,12 @@ public sealed record GameBananaMod
     /// <summary>When the mod was first submitted.</summary>
     public DateTimeOffset? DateAdded { get; init; }
 
+    /// <summary>The game GameBanana lists the mod under, or null when the page did not say.</summary>
+    public string? GameName { get; init; }
+
+    /// <summary>GameBanana's abbreviation for that game, or null when the page did not say.</summary>
+    public string? GameShortName { get; init; }
+
     /// <summary>The mod's category, for example a character's name.</summary>
     public string? Category { get; init; }
 
@@ -168,6 +174,8 @@ public sealed record GameBananaMod
             DateModified = FromUnixSeconds(page.DateModifiedTs),
             DateModifiedTs = page.DateModifiedTs,
             DateAdded = FromUnixSeconds(page.DateAddedTs),
+            GameName = Trimmed(page.Game?.Name),
+            GameShortName = Trimmed(page.Game?.Abbreviation),
             Category = Trimmed(page.Category?.Name),
             SuperCategory = Trimmed(page.SuperCategory?.Name),
             // A null in any of these lists is skipped rather than failing the whole answer.
