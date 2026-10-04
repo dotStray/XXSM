@@ -93,6 +93,18 @@
         </WrapPanel>
       </StackPanel>
 
+      <!-- A source of several folders: one mod made of parts, or a mod per folder; XXSM's reading first, and why. -->
+      <StackPanel DockPanel.Dock="Bottom" Spacing="6" Margin="0,12,0,0" IsVisible="{Binding HasGroupingChoice}">
+        <TextBlock Classes="sectionLabel" Text="{DynamicResource Text.ModInstall_Grouping_Label}" />
+        <WrapPanel ItemSpacing="20" LineSpacing="6">
+          <RadioButton GroupName="installGrouping" IsChecked="{Binding InstallAsOne}"
+                       Content="{DynamicResource Text.ModInstall_Grouping_AsOne}" />
+          <RadioButton GroupName="installGrouping" IsChecked="{Binding InstallSeparately}"
+                       Content="{Binding SeparatelyText}" />
+        </WrapPanel>
+        <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{Binding GroupingReason}" />
+      </StackPanel>
+
       <!-- The download itself: how much has arrived, how fast, how much longer. First in the panel while it runs. -->
       <Border DockPanel.Dock="Top" Classes="inlineNotice" Padding="12" Margin="0,0,0,10"
               IsVisible="{Binding IsDownloading}">

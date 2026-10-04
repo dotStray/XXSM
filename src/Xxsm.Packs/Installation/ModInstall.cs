@@ -48,7 +48,8 @@ public sealed record InstallCandidate
     /// <summary>Whether the sorter identified a character at all.</summary>
     public bool WasIdentified => SuggestedVariantId is { Length: > 0 };
 
-    /// <summary>The folders from the same archive that were put inside this one, by name; empty for most mods.</summary>
+    /// <summary>The folders this mod is made of, relative to it, when a source's folders were read as parts of one mod;
+    /// empty otherwise.</summary>
     public IReadOnlyList<string> IncludedParts { get; init; } = [];
 
     /// <summary>Whether <see cref="Files"/> stops short of <see cref="FileCount"/>.</summary>
@@ -99,6 +100,15 @@ public enum InstallSwitching
     AsItIs,
 }
 
+/// <summary>One way to read a source: as one mod, or as separate mods.</summary>
+/// <param name="IsOneMod">Whether the source's folders are read as parts of one mod.</param>
+/// <param name="Candidates">The mods this reading installs.</param>
+/// <param name="StrandedFiles">Files in the source that none of them holds, relative to its root; left behind.</param>
+public sealed record InstallGrouping(
+    bool IsOneMod,
+    IReadOnlyList<InstallCandidate> Candidates,
+    IReadOnlyList<string> StrandedFiles);
+
 /// <summary>What an install source contains, before anything is copied. Dispose to delete its staging.</summary>
 public sealed class InstallPlan : IDisposable
 {
@@ -109,16 +119,18 @@ public sealed class InstallPlan : IDisposable
         string source,
         string modsDirectory,
         ExtractedArchive? archive,
-        IReadOnlyList<InstallCandidate> candidates,
-        IReadOnlyList<string> strandedFiles,
+        InstallGrouping suggested,
+        InstallGrouping? alternative,
+        string? groupingReason,
         IReadOnlyList<Diagnostic> diagnostics,
         string? targetVariantId)
     {
         Source = source;
         ModsDirectory = modsDirectory;
         _archive = archive;
-        Candidates = candidates;
-        StrandedFiles = strandedFiles;
+        Suggested = suggested;
+        Alternative = alternative;
+        GroupingReason = groupingReason;
         Diagnostics = diagnostics;
         TargetVariantId = targetVariantId;
     }
@@ -132,11 +144,20 @@ public sealed class InstallPlan : IDisposable
     /// <summary>The Mods folder everything will be installed under.</summary>
     public string ModsDirectory { get; }
 
-    /// <summary>Every mod found, outermost first.</summary>
-    public IReadOnlyList<InstallCandidate> Candidates { get; }
+    /// <summary>How XXSM reads the source: one mod, or separate mods.</summary>
+    public InstallGrouping Suggested { get; }
 
-    /// <summary>Files in the source that belong to no mod, relative to its root; they are left behind.</summary>
-    public IReadOnlyList<string> StrandedFiles { get; }
+    /// <summary>The other way to read it, or null when there is no other: a source that is one mod, or one folder.</summary>
+    public InstallGrouping? Alternative { get; }
+
+    /// <summary>Why <see cref="Suggested"/> reads it that way, or null when there is no <see cref="Alternative"/>.</summary>
+    public string? GroupingReason { get; }
+
+    /// <summary>The mods <see cref="Suggested"/> installs, in path order.</summary>
+    public IReadOnlyList<InstallCandidate> Candidates => Suggested.Candidates;
+
+    /// <summary>Files in the source that <see cref="Suggested"/> leaves behind, relative to its root.</summary>
+    public IReadOnlyList<string> StrandedFiles => Suggested.StrandedFiles;
 
     /// <summary>Anything noticed while reading the source. Never fatal.</summary>
     public IReadOnlyList<Diagnostic> Diagnostics { get; }

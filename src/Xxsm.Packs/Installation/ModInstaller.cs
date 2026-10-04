@@ -21,6 +21,7 @@ public sealed class ModInstaller(
     IModFiling filing,
     IModRepository repository,
     IModSwitcher switcher,
+    ISortRunner sorting,
     ILogger logger) : IModInstaller
 {
     private readonly IModArchiveReader _archives = archives;
@@ -32,6 +33,7 @@ public sealed class ModInstaller(
     private readonly IModFiling _filing = filing;
     private readonly IModRepository _repository = repository;
     private readonly IModSwitcher _switcher = switcher;
+    private readonly ISortRunner _sorting = sorting;
     private readonly ILogger _logger = logger.ForContext<ModInstaller>();
 
     /// <inheritdoc />
@@ -315,55 +317,22 @@ public sealed class ModInstaller(
         SortSettings? settings,
         CancellationToken cancellationToken)
     {
+        var read = await ReadSourceAsync(folder, archiveName: null, isArchive: false, data, target, settings, cancellationToken)
+            .ConfigureAwait(false);
+
         var diagnostics = new List<Diagnostic>();
-        var candidates = new List<InstallCandidate>();
 
-        if (ModsFolderLayout.LooksLikeModFolder(folder))
+        if (read.Suggested.Candidates.Count == 0)
         {
-            candidates.Add(await CandidateAsync(
-                    folder,
-                    relativePath: string.Empty,
-                    Path.GetFileName(folder),
-                    archiveName: null,
-                    data,
-                    target,
-                    settings,
-                    cancellationToken)
-                .ConfigureAwait(false));
-        }
-        else
-        {
-            foreach (var child in Directory.EnumerateDirectories(folder).Order(PathComparer.Instance))
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                var name = Path.GetFileName(child);
-
-                // Both tests for a child, only the structural one for the folder the user picked.
-                if (ModsFolderLayout.IsReservedEntry(name)
-                    || !ModsFolderLayout.LooksLikeModFolder(child)
-                    || !ModsFolderLayout.ContainsModContent(child))
-                {
-                    continue;
-                }
-
-                candidates.Add(await CandidateAsync(
-                        child, name, name, archiveName: null, data, target, settings, cancellationToken)
-                    .ConfigureAwait(false));
-            }
-
-            if (candidates.Count == 0)
-            {
-                diagnostics.Add(new Diagnostic(
-                    DiagnosticSeverity.Warning,
-                    ModDiagnosticCodes.UnfiledMod,
-                    $"Nothing in '{PathDisplay.Show(folder)}' looks like a 3DMigoto mod — no INI, no buffers, no " +
-                    "textures. Check you pointed at the mod itself rather than the folder above it."));
-            }
+            diagnostics.Add(new Diagnostic(
+                DiagnosticSeverity.Warning,
+                ModDiagnosticCodes.UnfiledMod,
+                $"Nothing in '{PathDisplay.Show(folder)}' looks like a 3DMigoto mod — no INI, no buffers, no " +
+                "textures. Check you pointed at the mod itself rather than the folder above it."));
         }
 
         return new InstallPlan(
-            folder, modsDirectory, archive: null, candidates, strandedFiles: [], diagnostics, target?.InternalName);
+            folder, modsDirectory, archive: null, read.Suggested, read.Alternative, read.Reason, diagnostics, target?.InternalName);
     }
 
     private async Task<InstallPlan> PlanArchiveAsync(
@@ -379,29 +348,13 @@ public sealed class ModInstaller(
 
         try
         {
-            var candidates = new List<InstallCandidate>();
-
-            foreach (var root in extracted.ModRoots)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                candidates.Add(await CandidateAsync(
-                        root.Path,
-                        root.RelativePath,
-                        root.Name is { Length: > 0 } named ? named : extracted.ArchiveName,
-                        extracted.ArchiveName,
-                        data,
-                        target,
-                        settings,
-                        cancellationToken)
-                    .ConfigureAwait(false));
-            }
-
-            candidates = JoinParts(candidates);
+            var read = await ReadSourceAsync(
+                    extracted.StagingDirectory, extracted.ArchiveName, isArchive: true, data, target, settings, cancellationToken)
+                .ConfigureAwait(false);
 
             var diagnostics = new List<Diagnostic>(extracted.Diagnostics);
 
-            if (candidates.Count == 0)
+            if (read.Suggested.Candidates.Count == 0)
             {
                 diagnostics.Add(new Diagnostic(
                     DiagnosticSeverity.Warning,
@@ -414,8 +367,9 @@ public sealed class ModInstaller(
                 archivePath,
                 modsDirectory,
                 extracted,
-                candidates,
-                extracted.StrandedFiles,
+                read.Suggested,
+                read.Alternative,
+                read.Reason,
                 diagnostics,
                 target?.InternalName);
         }
@@ -426,70 +380,252 @@ public sealed class ModInstaller(
         }
     }
 
-    /// <summary>
-    /// Puts each folder of an archive that matches no known hash inside the one folder that does: an add-on part of
-    /// that mod, not a mod of its own. Changes nothing unless exactly one folder matches, and never takes a folder
-    /// whose name points at a character still waiting for hashes. Moves only within the unpacked archive.
-    /// </summary>
-    private List<InstallCandidate> JoinParts(List<InstallCandidate> candidates)
+    /// <summary>How a source was read: the grouping proposed, the other one, and why.</summary>
+    private sealed record SourceReading(InstallGrouping Suggested, InstallGrouping? Alternative, string? Reason)
     {
-        var hosts = candidates.Where(candidate => !MatchesNoKnownHash(candidate)).ToList();
-
-        if (hosts.Count != 1 || candidates.Count < 2)
-        {
-            return candidates;
-        }
-
-        var host = hosts[0];
-        var parts = candidates
-            .Where(candidate => !ReferenceEquals(candidate, host)
-                                && MatchesNoKnownHash(candidate)
-                                && !candidate.Learned.Decision.MatchedVariantHasNoHashes
-                                && !PathComparer.IsSameOrUnder(host.SourcePath, candidate.SourcePath)
-                                && !PathComparer.IsSameOrUnder(candidate.SourcePath, host.SourcePath))
-            .ToList();
-
-        if (parts.Count == 0)
-        {
-            return candidates;
-        }
-
-        var included = new List<string>();
-
-        foreach (var part in parts)
-        {
-            var name = Path.GetFileName(part.SourcePath);
-            var destination = Path.Combine(host.SourcePath, name);
-
-            for (var number = 2; Directory.Exists(destination) || File.Exists(destination); number++)
-            {
-                destination = Path.Combine(host.SourcePath, $"{name} ({number})");
-            }
-
-            Directory.Move(part.SourcePath, destination);
-            included.Add(Path.GetFileName(destination));
-
-            _logger.Information(
-                "Put {Part}, which matches no known hash, inside {Host} from the same archive: {Before} -> {After}",
-                part.Name, host.Name, part.SourcePath, destination);
-        }
-
-        var (fileCount, bytes, files) = Inspect(host.SourcePath);
-        var joined = host with
-        {
-            FileCount = fileCount,
-            Bytes = bytes,
-            Files = files,
-            IncludedParts = included,
-            Reason = $"{host.Reason} {string.Join(", ", included)} {(included.Count == 1 ? "matches" : "match")} " +
-                     $"no known hash, so {(included.Count == 1 ? "it goes" : "they go")} inside this mod as part of it.",
-        };
-
-        return [.. candidates.Where(candidate => !parts.Contains(candidate)).Select(candidate => ReferenceEquals(candidate, host) ? joined : candidate)];
+        public static SourceReading Nothing { get; } = new(new InstallGrouping(IsOneMod: false, [], []), null, null);
     }
 
-    /// <summary>Whether none of a folder's hashes is in the game's data, so its hashes say nothing about whose it is.</summary>
-    private static bool MatchesNoKnownHash(InstallCandidate candidate) => candidate.Learned.Decision.Candidates.Count == 0;
+    /// <summary>
+    /// Reads a folder or an unpacked archive. A source that is a mod is one mod. Otherwise each folder in it is placed
+    /// as the sort places a folder in the Mods folder, and the folders are one mod made of parts unless they point at
+    /// different characters or two of them change the same things.
+    /// </summary>
+    private async Task<SourceReading> ReadSourceAsync(
+        string root,
+        string? archiveName,
+        bool isArchive,
+        GameData data,
+        Merge.MergedVariant? target,
+        SortSettings? settings,
+        CancellationToken cancellationToken)
+    {
+        var top = ModsFolderLayout.UnwrapLoneFolder(root);
+
+        if (ModsFolderLayout.LooksLikeModFolder(top))
+        {
+            // A folder the user picked may be a mod of pictures alone; one found inside a source must hold mod content.
+            if ((isArchive || !PathComparer.AreEqual(root, top)) && !ModsFolderLayout.ContainsModContent(top))
+            {
+                return SourceReading.Nothing;
+            }
+
+            var only = await WholeAsync(root, top, archiveName, data, target, settings, decided: null, cancellationToken)
+                .ConfigureAwait(false);
+
+            return new SourceReading(new InstallGrouping(IsOneMod: true, [only], []), null, null);
+        }
+
+        var sorted = await _sorting.PlanAsync(top, data, settings, cancellationToken).ConfigureAwait(false);
+        var rows = sorted.Rows.Where(row => ModsFolderLayout.ContainsModContent(row.Mod.Path)).ToList();
+
+        if (rows.Count == 0)
+        {
+            return SourceReading.Nothing;
+        }
+
+        var separate = new List<InstallCandidate>(rows.Count);
+
+        foreach (var row in rows)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            separate.Add(await CandidateAsync(
+                    row.Mod.Path,
+                    RelativeTo(root, row.Mod.Path),
+                    Path.GetFileName(row.Mod.Path),
+                    archiveName: null,
+                    data,
+                    target,
+                    settings,
+                    row,
+                    cancellationToken)
+                .ConfigureAwait(false));
+        }
+
+        separate.Sort(static (left, right) => PathComparer.Instance.Compare(left.RelativePath, right.RelativePath));
+
+        var pointing = new List<SortRunRow>();
+
+        foreach (var row in rows.Where(PointsAtACharacter))
+        {
+            if (!pointing.Exists(other => PathComparer.AreNamesEqual(other.DestinationFolderName, row.DestinationFolderName)))
+            {
+                pointing.Add(row);
+            }
+        }
+
+        var whole = await WholeAsync(
+                root, top, archiveName, data, target, settings, pointing.Count == 1 ? pointing[0] : null, cancellationToken)
+            .ConfigureAwait(false);
+
+        whole = whole with { IncludedParts = [.. separate.Select(part => RelativeTo(top, part.SourcePath))] };
+
+        var joined = new InstallGrouping(IsOneMod: true, [whole], []);
+        var apart = new InstallGrouping(IsOneMod: false, separate, Stranded(root, top, separate));
+
+        if (separate.Count == 1)
+        {
+            return new SourceReading(joined, null, null);
+        }
+
+        var clash = FirstClash(separate);
+        var count = separate.Count.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+        string reason;
+        bool isOneMod;
+
+        if (pointing.Count > 1)
+        {
+            isOneMod = false;
+            reason = $"Suggested: {count} separate mods, as the folders are for {Characters(pointing, data)}.";
+        }
+        else if (clash is { } pair)
+        {
+            isOneMod = false;
+            reason = $"Suggested: {count} separate mods, as '{pair.First}' and '{pair.Second}' change the same things, " +
+                     "so they cannot be on together.";
+        }
+        else
+        {
+            isOneMod = true;
+            var recognised = pointing.Count == 1
+                ? $"only {Characters(pointing, data)} is recognised in them"
+                : "none is recognised in them";
+
+            reason = $"Suggested: one mod, as its {count} folders change different things, and {recognised}.";
+        }
+
+        _logger.Information(
+            "Read {Source} as {Grouping}: {Folders} folders, {Characters} characters recognised, clash {Clash}",
+            root,
+            isOneMod ? "one mod" : "separate mods",
+            separate.Count,
+            pointing.Count,
+            clash is { } found ? $"{found.First} / {found.Second}" : "none");
+
+        return isOneMod
+            ? new SourceReading(joined, apart, reason)
+            : new SourceReading(apart, joined, reason);
+    }
+
+    /// <summary>The source's top folder as one candidate, named after the archive when it is the archive's root.</summary>
+    private Task<InstallCandidate> WholeAsync(
+        string root,
+        string top,
+        string? archiveName,
+        GameData data,
+        Merge.MergedVariant? target,
+        SortSettings? settings,
+        SortRunRow? decided,
+        CancellationToken cancellationToken)
+    {
+        var name = PathComparer.AreEqual(root, top) && archiveName is { Length: > 0 } archive
+            ? archive
+            : Path.GetFileName(PathComparer.Normalize(top).TrimEnd('/'));
+
+        return CandidateAsync(top, RelativeTo(root, top), name, archiveName, data, target, settings, decided, cancellationToken);
+    }
+
+    /// <summary>Whether the sort placed a folder under a character on evidence of its own: a known hash, a character
+    /// waiting for hashes, or the user's filing. A folder only named like someone points nowhere.</summary>
+    private static bool PointsAtACharacter(SortRunRow row) =>
+        !PathComparer.AreNamesEqual(row.DestinationFolderName, ModsFolderLayout.UnsortedFolderName)
+        && (row.Decision.Candidates.Count > 0
+            || row.Decision.MatchedVariantHasNoHashes
+            || row.Decision.DecidedBy == SortDecidedBy.Manual);
+
+    /// <summary>The first two folders that change the same things — at least two hashes, and at least half of the
+    /// smaller one's — so cannot be on together; null when no two do.</summary>
+    private static (string First, string Second)? FirstClash(List<InstallCandidate> candidates)
+    {
+        var hashes = candidates
+            .Select(candidate => candidate.Learned.Hashes
+                .Select(hash => hash.Entry.Hash.ToLowerInvariant())
+                .ToHashSet(StringComparer.Ordinal))
+            .ToList();
+
+        for (var first = 0; first < candidates.Count; first++)
+        {
+            for (var second = first + 1; second < candidates.Count; second++)
+            {
+                var shared = hashes[first].Count(hashes[second].Contains);
+                var smaller = Math.Min(hashes[first].Count, hashes[second].Count);
+
+                if (shared >= 2 && shared * 2 >= smaller)
+                {
+                    return (candidates[first].Name, candidates[second].Name);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>The characters some folders were placed under, by display name: three, then how many more.</summary>
+    private static string Characters(IReadOnlyList<SortRunRow> rows, GameData data)
+    {
+        var names = rows
+            .Select(row => VariantFor(row, data)?.DisplayName ?? row.DestinationFolderName)
+            .ToList();
+
+        if (names.Count == 1)
+        {
+            return names[0];
+        }
+
+        if (names.Count <= 3)
+        {
+            return $"{string.Join(", ", names.Take(names.Count - 1))} and {names[^1]}";
+        }
+
+        var more = (names.Count - 3).ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+        return $"{string.Join(", ", names.Take(3))} and {more} more";
+    }
+
+    /// <summary>The variant whose folder the sort chose: the one it decided on when that is the folder, else the first
+    /// filed under it.</summary>
+    private static Merge.MergedVariant? VariantFor(SortRunRow row, GameData data)
+    {
+        if (row.Decision.VariantId is { Length: > 0 } decided
+            && data.Find(decided) is { } variant
+            && PathComparer.AreNamesEqual(variant.ModFilesName, row.DestinationFolderName))
+        {
+            return variant;
+        }
+
+        return data.Variants.FirstOrDefault(
+            candidate => PathComparer.AreNamesEqual(candidate.ModFilesName, row.DestinationFolderName));
+    }
+
+    /// <summary>A path inside a source, relative to it with <c>/</c>; empty for the source itself.</summary>
+    private static string RelativeTo(string root, string path) =>
+        PathComparer.AreEqual(root, path)
+            ? string.Empty
+            : PathComparer.Normalize(Path.GetRelativePath(root, path));
+
+    /// <summary>The files of a source that none of its separate mods holds, relative to the source; clutter left out.</summary>
+    private static List<string> Stranded(string root, string top, IReadOnlyList<InstallCandidate> candidates)
+    {
+        var stranded = new List<string>();
+
+        foreach (var file in FileTree.Files(top))
+        {
+            var relative = RelativeTo(root, file);
+
+            if (relative.Split('/').Any(ModsFolderLayout.IsSourceClutter)
+                || candidates.Any(candidate => PathComparer.IsSameOrUnder(candidate.SourcePath, file)))
+            {
+                continue;
+            }
+
+            stranded.Add(relative);
+        }
+
+        stranded.Sort(PathComparer.Instance);
+        return stranded;
+    }
 
     private async Task<InstallCandidate> CandidateAsync(
         string path,
@@ -499,6 +635,7 @@ public sealed class ModInstaller(
         GameData data,
         Merge.MergedVariant? target,
         SortSettings? settings,
+        SortRunRow? decided,
         CancellationToken cancellationToken)
     {
         var learned = await _learner
@@ -513,7 +650,7 @@ public sealed class ModInstaller(
         var preview = await _previews.FindAsync(path, config: null, bounds: null, cancellationToken)
             .ConfigureAwait(false);
 
-        var (variantId, folderName, reason) = Propose(learned, target, data);
+        var (variantId, folderName, reason) = Propose(learned, target, decided, data);
         var (fileCount, bytes, files) = Inspect(path);
 
         return new InstallCandidate
@@ -572,7 +709,7 @@ public sealed class ModInstaller(
 
     /// <summary>Where a candidate should go and why; a character the user chose outranks the sorter.</summary>
     private static (string? VariantId, string FolderName, string Reason) Propose(
-        LearnedFromMod learned, Merge.MergedVariant? target, GameData data)
+        LearnedFromMod learned, Merge.MergedVariant? target, SortRunRow? decided, GameData data)
     {
         if (target is not null)
         {
@@ -589,7 +726,14 @@ public sealed class ModInstaller(
             return (target.InternalName, target.ModFilesName, reason);
         }
 
-        if (learned.MatchedVariantId is { Length: > 0 } variantId && data.Find(variantId) is { } variant)
+        if (decided is not null)
+        {
+            if (VariantFor(decided, data) is { } placed)
+            {
+                return (placed.InternalName, placed.ModFilesName, decided.Reason);
+            }
+        }
+        else if (learned.MatchedVariantId is { Length: > 0 } variantId && data.Find(variantId) is { } variant)
         {
             return (variant.InternalName, variant.ModFilesName, Explain(learned));
         }

@@ -12,6 +12,9 @@ namespace Xxsm.Cli.Output;
 /// <param name="SwitchRunId">The run that switched the character's other mods off, for <c>xxsm switches undo</c>; null
 /// when none was.</param>
 /// <param name="SwitchedOff">Each other mod switched off, as it was before.</param>
+/// <param name="Grouping">How the source was read: <c>one</c> mod made of parts, or <c>separate</c> mods.</param>
+/// <param name="GroupingReason">Why XXSM reads it the way it does, or null when there is no other way.</param>
+/// <param name="OtherReadingCount">How many mods the other reading installs, or null when there is none.</param>
 public sealed record ModAddReport(
     string Source,
     bool IsArchive,
@@ -22,7 +25,10 @@ public sealed record ModAddReport(
     IReadOnlyList<InstallOutcomeReport> Outcomes,
     IReadOnlyList<string> Notes,
     string? SwitchRunId,
-    IReadOnlyList<string> SwitchedOff);
+    IReadOnlyList<string> SwitchedOff,
+    string Grouping,
+    string? GroupingReason,
+    int? OtherReadingCount);
 
 /// <summary>One mod an install source contains.</summary>
 /// <param name="Name">The name it would be installed as.</param>

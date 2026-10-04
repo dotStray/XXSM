@@ -608,18 +608,38 @@ public sealed class ModUpdater(
                    "The download finished but its archive is no longer there.", page.ModId, page.PageUrl);
     }
 
-    /// <summary>The archive's mod that replaces this one: the only one, most files shared, then same name.</summary>
+    /// <summary>The folder of the archive that replaces this mod: one of its mods, or the whole archive for a mod installed
+    /// as one made of parts; most files shared, then same name.</summary>
     private static ArchiveModRoot ChooseRoot(
         ExtractedArchive extracted, Dictionary<string, string> installed, string modFolder)
     {
-        if (extracted.ModRoots.Count == 1)
+        var roots = extracted.ModRoots.ToList();
+        var whole = ModsFolderLayout.UnwrapLoneFolder(extracted.StagingDirectory);
+
+        if (!roots.Exists(root => PathComparer.AreEqual(root.Path, whole)))
         {
-            return extracted.ModRoots[0];
+            var relative = PathComparer.AreEqual(whole, extracted.StagingDirectory)
+                ? string.Empty
+                : PathComparer.Normalize(Path.GetRelativePath(extracted.StagingDirectory, whole));
+
+            var files = FileTree.Files(whole).ToList();
+
+            roots.Add(new ArchiveModRoot(
+                relative,
+                PathComparer.Normalize(whole),
+                relative.Length == 0 ? extracted.ArchiveName : Path.GetFileName(whole),
+                files.Count,
+                files.Sum(file => new FileInfo(file).Length)));
+        }
+
+        if (roots.Count == 1)
+        {
+            return roots[0];
         }
 
         var bare = ModsFolderLayout.StripDisabledPrefix(Path.GetFileName(modFolder));
 
-        return extracted.ModRoots
+        return roots
             .OrderByDescending(root => FilesIn(root.Path, skipMetadata: true).Keys.Count(installed.ContainsKey))
             .ThenByDescending(root => PathComparer.AreNamesEqual(root.Name, bare))
             .First();

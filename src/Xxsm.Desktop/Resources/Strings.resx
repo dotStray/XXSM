@@ -1616,6 +1616,18 @@
     <value>Nothing in it looks like a 3DMigoto mod — no INI, no buffers, no textures. Check you pointed at the mod itself rather than the folder above it.</value>
     <comment>Body shown when a source holds no mod.</comment>
   </data>
+  <data name="ModInstall_Grouping_Label" xml:space="preserve">
+    <value>Install as</value>
+    <comment>Label over the install card's choice for a source of several folders: one mod made of parts, or a mod per folder.</comment>
+  </data>
+  <data name="ModInstall_Grouping_AsOne" xml:space="preserve">
+    <value>One mod</value>
+    <comment>The first choice: the whole source installed as one mod, its folders inside it.</comment>
+  </data>
+  <data name="ModInstall_Grouping_Separately" xml:space="preserve">
+    <value>{0}, one per folder</value>
+    <comment>The second choice: each folder its own mod. {0} is how many mods, for example "3 mods".</comment>
+  </data>
   <data name="ModInstall_Switch_Label" xml:space="preserve">
     <value>Once added</value>
     <comment>Label over the install card's three choices: whether the new mods arrive switched off, on with the character's other mods off, or on.</comment>

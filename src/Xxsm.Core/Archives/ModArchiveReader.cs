@@ -122,7 +122,7 @@ public sealed class ModArchiveReader(IAppPaths paths, ILogger logger) : IModArch
             {
                 var name = Path.GetFileName(child);
 
-                if (ModsFolderLayout.IsReservedEntry(name) || name.StartsWith('.') || name.StartsWith("__"))
+                if (ModsFolderLayout.IsSourceClutter(name))
                 {
                     continue;
                 }

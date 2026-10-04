@@ -531,6 +531,8 @@ public sealed partial class ModInstallViewModel(
     private readonly Func<CancellationToken, Task> _rescan = rescan;
 
     private InstallPlan? _plan;
+    private InstallGrouping? _shown;
+    private GameBananaSource? _from;
 
     /// <summary>Whether the mods arrive switched off, on with their character's other mods off, or on. Off each time
     /// the card opens.</summary>
@@ -558,6 +560,48 @@ public sealed partial class ModInstallViewModel(
         get => Switching == InstallSwitching.AsItIs;
         set => ChooseSwitching(value, InstallSwitching.AsItIs);
     }
+
+    /// <summary>Whether the source can be read two ways, as one mod or as a mod per folder.</summary>
+    public bool HasGroupingChoice => _plan?.Alternative is not null && _shown is not null;
+
+    /// <summary>The source installed as one mod made of parts.</summary>
+    public bool InstallAsOne
+    {
+        get => _shown?.IsOneMod == true;
+        set
+        {
+            if (value)
+            {
+                Regroup(oneMod: true);
+            }
+        }
+    }
+
+    /// <summary>The source installed as a mod per folder.</summary>
+    public bool InstallSeparately
+    {
+        get => _shown is { IsOneMod: false };
+        set
+        {
+            if (value)
+            {
+                Regroup(oneMod: false);
+            }
+        }
+    }
+
+    /// <summary>The second's words, with how many mods that is.</summary>
+    public string SeparatelyText => _text.Format(
+        nameof(Strings.ModInstall_Grouping_Separately),
+        _text.Mods(_plan is { } plan
+            ? (plan.Suggested.IsOneMod ? plan.Alternative?.Candidates.Count ?? 0 : plan.Suggested.Candidates.Count)
+            : 0));
+
+    /// <summary>Why XXSM reads the source the way it suggests, or null when there is only one way.</summary>
+    public string? GroupingReason => HasGroupingChoice ? _plan?.GroupingReason : null;
+
+    /// <summary>The last change of reading, for a caller that waits on it.</summary>
+    public Task Regrouping { get; private set; } = Task.CompletedTask;
 
     /// <summary>Whether the second is offered: one mod selected, going to a character rather than Others.</summary>
     public bool CanSwitchOnlyThis =>
@@ -1516,8 +1560,6 @@ public sealed partial class ModInstallViewModel(
         IsReading = true;
         RaiseCounts();
 
-        var targets = Choices(data);
-
         await _work.RunAsync(
             Heading,
             async ct =>
@@ -1530,58 +1572,11 @@ public sealed partial class ModInstallViewModel(
                     .ConfigureAwait(true);
 
                 _plan = plan;
+                _from = pending is null
+                    ? null
+                    : new GameBananaSource(pending, pendingFile, pendingPicture, saved.GameBanana.FetchOnInstallOrDefault);
 
-                // One mod shows its files open; several start folded.
-                var expandFiles = plan.Candidates.Count == 1;
-
-                var single = plan.Candidates.Count == 1;
-                var fill = pending is not null && saved.GameBanana.FetchOnInstallOrDefault;
-
-                foreach (var candidate in plan.Candidates)
-                {
-                    var row = new InstallRowViewModel(
-                        candidate,
-                        targets,
-                        _text,
-                        _clipboard,
-                        _picker,
-                        _downloader,
-                        _gameBanana,
-                        _settings,
-                        _logger,
-                        expandFiles);
-
-                    if (pending is { } page)
-                    {
-                        row.GameBanana = _gameBananaSource.ProvenanceOf(page, pendingFile);
-                        row.ModUrl = page.PageUrl.AbsoluteUri;
-
-                        if (fill)
-                        {
-                            row.Author = page.Author ?? row.Author;
-                            row.Version = page.Version ?? row.Version;
-                            row.Description = GameBananaText.ForStorage(page.Description) ?? row.Description;
-
-                            if (single)
-                            {
-                                row.DisplayName = page.Name ?? row.DisplayName;
-
-                                if (pendingPicture is { } picture)
-                                {
-                                    await row.UseFetchedPictureAsync(picture).ConfigureAwait(true);
-                                }
-                            }
-                        }
-                    }
-
-                    row.PropertyChanged += OnRowChanged;
-                    Rows.Add(row);
-                }
-
-                foreach (var file in plan.StrandedFiles)
-                {
-                    StrandedFiles.Add(file);
-                }
+                await ShowAsync(plan.Suggested).ConfigureAwait(true);
 
                 foreach (var diagnostic in plan.Diagnostics)
                 {
@@ -1592,6 +1587,102 @@ public sealed partial class ModInstallViewModel(
 
         IsReading = false;
         RaiseCounts();
+    }
+
+    /// <summary>The GameBanana page a source came from, kept to fill the rows again when the reading changes.</summary>
+    private sealed record GameBananaSource(GameBananaMod Page, GameBananaFile? File, PreviewImageSource? Picture, bool Fill);
+
+    /// <summary>Puts one reading of the source on the card: a row per mod, and the files it leaves behind.</summary>
+    private async Task ShowAsync(InstallGrouping grouping)
+    {
+        ClearRows();
+        _shown = grouping;
+
+        if (_game.Data is not { } data)
+        {
+            return;
+        }
+
+        var targets = Choices(data);
+
+        // One mod shows its files open; several start folded.
+        var single = grouping.Candidates.Count == 1;
+
+        foreach (var candidate in grouping.Candidates)
+        {
+            var row = new InstallRowViewModel(
+                candidate,
+                targets,
+                _text,
+                _clipboard,
+                _picker,
+                _downloader,
+                _gameBanana,
+                _settings,
+                _logger,
+                single);
+
+            if (_from is { } from)
+            {
+                row.GameBanana = _gameBananaSource.ProvenanceOf(from.Page, from.File);
+                row.ModUrl = from.Page.PageUrl.AbsoluteUri;
+
+                if (from.Fill)
+                {
+                    row.Author = from.Page.Author ?? row.Author;
+                    row.Version = from.Page.Version ?? row.Version;
+                    row.Description = GameBananaText.ForStorage(from.Page.Description) ?? row.Description;
+
+                    if (single)
+                    {
+                        row.DisplayName = from.Page.Name ?? row.DisplayName;
+
+                        if (from.Picture is { } picture)
+                        {
+                            await row.UseFetchedPictureAsync(picture).ConfigureAwait(true);
+                        }
+                    }
+                }
+            }
+
+            row.PropertyChanged += OnRowChanged;
+            Rows.Add(row);
+        }
+
+        foreach (var file in grouping.StrandedFiles)
+        {
+            StrandedFiles.Add(file);
+        }
+
+        RaiseGrouping();
+        RaiseCounts();
+    }
+
+    /// <summary>Shows the other reading of the source when the one asked for is not on the card already.</summary>
+    private void Regroup(bool oneMod)
+    {
+        if (_plan is not { } plan || _shown is null || _shown.IsOneMod == oneMod)
+        {
+            return;
+        }
+
+        var wanted = plan.Suggested.IsOneMod == oneMod ? plan.Suggested : plan.Alternative;
+
+        if (wanted is null)
+        {
+            return;
+        }
+
+        Regrouping = _work.RunAsync(Heading, _ => ShowAsync(wanted), CancellationToken.None);
+    }
+
+    private void RaiseGrouping()
+    {
+        OnPropertyChanged(nameof(HasGroupingChoice));
+        OnPropertyChanged(nameof(InstallAsOne));
+        OnPropertyChanged(nameof(InstallSeparately));
+        OnPropertyChanged(nameof(SeparatelyText));
+        OnPropertyChanged(nameof(GroupingReason));
     }
 
     /// <summary>Copies in the mods whose rows are still ticked.</summary>
@@ -1694,9 +1785,8 @@ public sealed partial class ModInstallViewModel(
             .OrderBy(choice => choice.DisplayName, StringComparer.CurrentCultureIgnoreCase),
     ];
 
-    private void Reset()
+    private void ClearRows()
     {
-        Switching = InstallSwitching.Off;
         var rows = Rows.ToList();
 
         foreach (var row in rows)
@@ -1711,11 +1801,21 @@ public sealed partial class ModInstallViewModel(
         {
             row.Dispose();
         }
+
         StrandedFiles.Clear();
+    }
+
+    private void Reset()
+    {
+        Switching = InstallSwitching.Off;
+        ClearRows();
 
         // Disposing the plan deletes the staging the rows point at, so only once they are gone.
         _plan?.Dispose();
         _plan = null;
+        _shown = null;
+        _from = null;
+        RaiseGrouping();
         _pending = null;
         _pendingFile = null;
         _pendingPicture = null;

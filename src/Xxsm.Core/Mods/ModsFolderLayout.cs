@@ -79,6 +79,63 @@ public static class ModsFolderLayout
     public static bool IsReservedEntry(string? name) =>
         string.IsNullOrEmpty(name) || name.StartsWith('.');
 
+    /// <summary>Whether an entry of a folder or archive being installed is clutter to skip: bookkeeping, or an
+    /// archiver's own folder such as <c>__MACOSX</c>.</summary>
+    /// <param name="name">The entry's own name, not a path.</param>
+    public static bool IsSourceClutter(string? name) =>
+        IsReservedEntry(name) || name!.StartsWith("__", StringComparison.Ordinal);
+
+    /// <summary>The folder a source's mods start in: down through every folder that is not a mod and holds nothing
+    /// but one folder.</summary>
+    /// <param name="directory">The folder or unpacked archive to look into. Not modified.</param>
+    /// <returns><paramref name="directory"/> itself, or the innermost such folder under it.</returns>
+    public static string UnwrapLoneFolder(string directory)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(directory);
+
+        var current = directory;
+
+        while (!LooksLikeModFolder(current))
+        {
+            try
+            {
+                if (Directory.EnumerateFiles(current).Any(file => !IsSourceClutter(Path.GetFileName(file))))
+                {
+                    return current;
+                }
+
+                var folders = Directory.EnumerateDirectories(current)
+                    .Where(folder => !IsSourceClutter(Path.GetFileName(folder)))
+                    .Take(2)
+                    .ToList();
+
+                if (folders.Count != 1)
+                {
+                    return current;
+                }
+
+                current = folders[0];
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // Unreadable: stop here. Reading the folder for its mods reports the failure.
+                return current;
+            }
+        }
+
+        return current;
+    }
+
+    /// <summary>Whether a directory has a mod's own <c>.xxsm</c>: details or pictures, not a Mods folder's
+    /// journals.</summary>
+    private static bool HoldsModDetails(string directory)
+    {
+        var state = Path.Combine(directory, ModConfigSchema.DirectoryName);
+
+        return Directory.Exists(state)
+               && !Directory.EnumerateFiles(state, "*.jsonl", SearchOption.TopDirectoryOnly).Any();
+    }
+
     /// <summary>Where things taken out of Mods go when no trash will take them: the folder holding Mods.</summary>
     /// <param name="modsDirectory">The Mods folder.</param>
     /// <returns>Its parent, or null for a Mods folder at the top of a disk.</returns>
@@ -188,7 +245,7 @@ public static class ModsFolderLayout
                 }
             }
 
-            if (Directory.Exists(Path.Combine(directory, ModConfigSchema.DirectoryName)))
+            if (HoldsModDetails(directory))
             {
                 return true;
             }
@@ -221,7 +278,7 @@ public static class ModsFolderLayout
     {
         try
         {
-            if (Directory.Exists(Path.Combine(directory, ModConfigSchema.DirectoryName)))
+            if (HoldsModDetails(directory))
             {
                 return true;
             }

@@ -130,11 +130,19 @@ internal static class ModAddCommand
         };
         switching.AcceptOnlyFromAmong("off", "only", "on");
 
+        var grouping = new Option<string?>("--as")
+        {
+            Description = "For a source of several folders: one (one mod made of parts) or separate (each folder its own " +
+                          "mod). Without it XXSM decides: separate when the folders are for different characters or " +
+                          "change the same things, otherwise one.",
+        };
+        grouping.AcceptOnlyFromAmong("one", "separate");
+
         var command = new Command(
             "add", "Install a folder or an archive, working out where each mod in it belongs.")
         {
             source, game, pack, mods, character, only, name, displayName, author, url, notes,
-            preview, files, apply, dryRun, fileId, again, switching,
+            preview, files, apply, dryRun, fileId, again, switching, grouping,
         };
 
         command.SetAction(async (parse, cancellationToken) =>
@@ -214,8 +222,9 @@ internal static class ModAddCommand
                 .ConfigureAwait(false);
 
             var wanted = parse.GetValue(only) ?? [];
+            var read = Grouping(plan, parse.GetValue(grouping));
 
-            var chosen = plan.Candidates
+            var chosen = read.Candidates
                 .Where(candidate => wanted.Length == 0
                                     || wanted.Any(path => PathComparer.AreEqual(path, candidate.RelativePath)))
                 .ToList();
@@ -287,10 +296,10 @@ internal static class ModAddCommand
 
             if (parse.GetValue(GlobalOptions.Json))
             {
-                return CliJson.Write(Describe(plan, choices, result, shouldApply), result?.Failures.Count > 0 ? 1 : 0);
+                return CliJson.Write(Describe(plan, read, choices, result, shouldApply), result?.Failures.Count > 0 ? 1 : 0);
             }
 
-            Write(plan, choices, result, shouldApply, parse.GetValue(files));
+            Write(plan, read, choices, result, shouldApply, parse.GetValue(files));
             return result?.Failures.Count > 0 ? 1 : 0;
         });
 
@@ -431,8 +440,17 @@ internal static class ModAddCommand
         }
     }
 
+    /// <summary>The reading <c>--as</c> asked for, or XXSM's own when it gave none or there is no other.</summary>
+    private static InstallGrouping Grouping(InstallPlan plan, string? wanted) => wanted switch
+    {
+        "one" when !plan.Suggested.IsOneMod && plan.Alternative is { } one => one,
+        "separate" when plan.Suggested.IsOneMod && plan.Alternative is { } separate => separate,
+        _ => plan.Suggested,
+    };
+
     private static void Write(
         InstallPlan plan,
+        InstallGrouping read,
         List<InstallChoice> choices,
         InstallResult? result,
         bool applied,
@@ -449,10 +467,20 @@ internal static class ModAddCommand
             return;
         }
 
-        Console.Out.WriteLine($"{EnglishCount.Plural(plan.Candidates.Count, "mod", "mods")} found:");
+        if (plan.GroupingReason is { } why && plan.Alternative is { } other)
+        {
+            Console.Out.WriteLine(
+                ReferenceEquals(read, plan.Suggested)
+                    ? $"{why} --as {(other.IsOneMod ? "one" : "separate")} installs " +
+                      $"{EnglishCount.Plural(other.Candidates.Count, "mod", "mods")} instead."
+                    : $"Read as {(read.IsOneMod ? "one mod" : "separate mods")}, as --as asked. {why}");
+            Console.Out.WriteLine();
+        }
+
+        Console.Out.WriteLine($"{EnglishCount.Plural(read.Candidates.Count, "mod", "mods")} found:");
         Console.Out.WriteLine();
 
-        foreach (var candidate in plan.Candidates)
+        foreach (var candidate in read.Candidates)
         {
             var selected = choices.Any(choice =>
                 ReferenceEquals(choice.Candidate, candidate));
@@ -495,13 +523,13 @@ internal static class ModAddCommand
             Console.Out.WriteLine();
         }
 
-        if (plan.StrandedFiles.Count > 0)
+        if (read.StrandedFiles.Count > 0)
         {
             Console.Out.WriteLine(
-                $"{EnglishCount.Plural(plan.StrandedFiles.Count, "file", "files")} in the source belong to no " +
+                $"{EnglishCount.Plural(read.StrandedFiles.Count, "file", "files")} in the source belong to no " +
                 "mod and will not be installed:");
 
-            foreach (var file in plan.StrandedFiles)
+            foreach (var file in read.StrandedFiles)
             {
                 Console.Out.WriteLine($"  {PathDisplay.Show(file)}");
             }
@@ -571,13 +599,13 @@ internal static class ModAddCommand
     };
 
     private static ModAddReport Describe(
-        InstallPlan plan, IReadOnlyList<InstallChoice> choices, InstallResult? result, bool applied) => new(
+        InstallPlan plan, InstallGrouping read, IReadOnlyList<InstallChoice> choices, InstallResult? result, bool applied) => new(
         plan.Source,
         plan.IsArchive,
         plan.ModsDirectory,
         applied && result is not null,
         [
-            .. plan.Candidates.Select(candidate => new InstallCandidateReport(
+            .. read.Candidates.Select(candidate => new InstallCandidateReport(
                 candidate.Name,
                 candidate.RelativePath,
                 candidate.SuggestedVariantId,
@@ -592,7 +620,7 @@ internal static class ModAddCommand
                 choices.Any(choice => ReferenceEquals(choice.Candidate, candidate)),
                 candidate.Files)),
         ],
-        plan.StrandedFiles,
+        read.StrandedFiles,
         [
             .. (result?.Outcomes ?? []).Select(outcome => new InstallOutcomeReport(
                 outcome.Choice.Candidate.Name,
@@ -604,5 +632,8 @@ internal static class ModAddCommand
         ],
         [.. plan.Diagnostics.Select(diagnostic => diagnostic.Message)],
         result?.SwitchedOff?.RunId,
-        [.. (result?.SwitchedOff?.Outcomes ?? []).Where(outcome => outcome.Changed).Select(outcome => outcome.Switch.ModFolder)]);
+        [.. (result?.SwitchedOff?.Outcomes ?? []).Where(outcome => outcome.Changed).Select(outcome => outcome.Switch.ModFolder)],
+        read.IsOneMod ? "one" : "separate",
+        plan.GroupingReason,
+        plan.Alternative is null ? null : (ReferenceEquals(read, plan.Suggested) ? plan.Alternative : plan.Suggested).Candidates.Count);
 }
