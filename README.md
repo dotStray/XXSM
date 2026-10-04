@@ -90,5 +90,7 @@ Pack Studio, in the app, is the usual way to make one. If you want to build pack
 [`PRESET_SCHEMA.md`](PRESET_SCHEMA.md).
 
 ## Licence
-[MIT](LICENSE). The libraries it uses and their licences are listed in
-[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+XXSM is free software: you can redistribute it and/or modify it under the terms of the
+[GNU General Public License](LICENSE) as published by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version. Versions up to 1.0.0 were released under the MIT License.
+The libraries it uses and their licences are listed in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).

@@ -1,6 +1,6 @@
 # Third-party notices
 
-XXSM is MIT-licensed (see `LICENSE`). The downloads also contain the software below, each under its own licence.
+XXSM is licensed under the GNU General Public License, version 3 or later (see `LICENSE`). The downloads also contain the software below, each under its own licence.
 
 | Component | Licence | Copyright | Source |
 |---|---|---|---|
