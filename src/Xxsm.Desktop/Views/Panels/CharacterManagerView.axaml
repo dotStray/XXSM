@@ -180,7 +180,15 @@
                     <TextBlock Classes="muted" FontSize="11" TextWrapping="Wrap"
                                Text="{Binding HashesText}" />
 
-                    <ItemsControl ItemsSource="{Binding Hashes}" IsVisible="{Binding HasHashes}">
+                    <!-- A box of its own, about eight rows tall: a long list keeps the rest of the panel in reach.
+                         Only the rows on screen are built. -->
+                    <ScrollViewer MaxHeight="320" IsVisible="{Binding HasHashes}">
+                    <ItemsControl ItemsSource="{Binding Hashes}">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                          <VirtualizingStackPanel />
+                        </ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
                       <ItemsControl.ItemTemplate>
                         <DataTemplate x:DataType="vm:HashRowViewModel">
                           <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,2">
@@ -199,6 +207,7 @@
                         </DataTemplate>
                       </ItemsControl.ItemTemplate>
                     </ItemsControl>
+                    </ScrollViewer>
 
                     <TextBox AcceptsReturn="True" Height="76"
                              Text="{Binding PastedHashes}"
