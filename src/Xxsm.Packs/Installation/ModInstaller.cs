@@ -397,6 +397,8 @@ public sealed class ModInstaller(
                     .ConfigureAwait(false));
             }
 
+            candidates = JoinParts(candidates);
+
             var diagnostics = new List<Diagnostic>(extracted.Diagnostics);
 
             if (candidates.Count == 0)
@@ -423,6 +425,71 @@ public sealed class ModInstaller(
             throw;
         }
     }
+
+    /// <summary>
+    /// Puts each folder of an archive that matches no known hash inside the one folder that does: an add-on part of
+    /// that mod, not a mod of its own. Changes nothing unless exactly one folder matches, and never takes a folder
+    /// whose name points at a character still waiting for hashes. Moves only within the unpacked archive.
+    /// </summary>
+    private List<InstallCandidate> JoinParts(List<InstallCandidate> candidates)
+    {
+        var hosts = candidates.Where(candidate => !MatchesNoKnownHash(candidate)).ToList();
+
+        if (hosts.Count != 1 || candidates.Count < 2)
+        {
+            return candidates;
+        }
+
+        var host = hosts[0];
+        var parts = candidates
+            .Where(candidate => !ReferenceEquals(candidate, host)
+                                && MatchesNoKnownHash(candidate)
+                                && !candidate.Learned.Decision.MatchedVariantHasNoHashes
+                                && !PathComparer.IsSameOrUnder(host.SourcePath, candidate.SourcePath)
+                                && !PathComparer.IsSameOrUnder(candidate.SourcePath, host.SourcePath))
+            .ToList();
+
+        if (parts.Count == 0)
+        {
+            return candidates;
+        }
+
+        var included = new List<string>();
+
+        foreach (var part in parts)
+        {
+            var name = Path.GetFileName(part.SourcePath);
+            var destination = Path.Combine(host.SourcePath, name);
+
+            for (var number = 2; Directory.Exists(destination) || File.Exists(destination); number++)
+            {
+                destination = Path.Combine(host.SourcePath, $"{name} ({number})");
+            }
+
+            Directory.Move(part.SourcePath, destination);
+            included.Add(Path.GetFileName(destination));
+
+            _logger.Information(
+                "Put {Part}, which matches no known hash, inside {Host} from the same archive: {Before} -> {After}",
+                part.Name, host.Name, part.SourcePath, destination);
+        }
+
+        var (fileCount, bytes, files) = Inspect(host.SourcePath);
+        var joined = host with
+        {
+            FileCount = fileCount,
+            Bytes = bytes,
+            Files = files,
+            IncludedParts = included,
+            Reason = $"{host.Reason} {string.Join(", ", included)} {(included.Count == 1 ? "matches" : "match")} " +
+                     $"no known hash, so {(included.Count == 1 ? "it goes" : "they go")} inside this mod as part of it.",
+        };
+
+        return [.. candidates.Where(candidate => !parts.Contains(candidate)).Select(candidate => ReferenceEquals(candidate, host) ? joined : candidate)];
+    }
+
+    /// <summary>Whether none of a folder's hashes is in the game's data, so its hashes say nothing about whose it is.</summary>
+    private static bool MatchesNoKnownHash(InstallCandidate candidate) => candidate.Learned.Decision.Candidates.Count == 0;
 
     private async Task<InstallCandidate> CandidateAsync(
         string path,

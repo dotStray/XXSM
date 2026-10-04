@@ -48,6 +48,9 @@ public sealed record InstallCandidate
     /// <summary>Whether the sorter identified a character at all.</summary>
     public bool WasIdentified => SuggestedVariantId is { Length: > 0 };
 
+    /// <summary>The folders from the same archive that were put inside this one, by name; empty for most mods.</summary>
+    public IReadOnlyList<string> IncludedParts { get; init; } = [];
+
     /// <summary>Whether <see cref="Files"/> stops short of <see cref="FileCount"/>.</summary>
     public bool FileListIsTruncated => FileCount > Files.Count;
 
