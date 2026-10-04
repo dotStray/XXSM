@@ -359,7 +359,7 @@ public sealed class ModFileOperations(ITrashService trash, IVolumeResolver volum
     /// <summary>Checks a folder name XXSM is about to create; not for a name a moved folder already has.</summary>
     private static string RequireUsableName(string name, string source)
     {
-        var bare = ModsFolderLayout.StripDisabledPrefix(name.Trim());
+        var bare = ModsFolderLayout.StripDisabledPrefix(name.Trim()).Trim();
 
         if (ModsFolderLayout.DescribeUnusableFolderName(bare) is { } problem)
         {
